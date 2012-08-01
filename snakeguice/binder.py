@@ -29,13 +29,30 @@ class Binder(object):
     def __init__(self, parent=None):
         self._parent = parent or _EmptyBinder()
         self._binding_map = {}
+        self._scope_cache = {}
+        # register the builtin scopes
+        self.bindScope(scopes.NO_SCOPE, scopes.NO_SCOPE())
+        self.bindScope(scopes.SINGLETON, scopes.SINGLETON())
+        # Allow the scopes to be injected.
+        # Note: no need to specify a scope, because they ARE the scope.
+        # However, should they be injectable?
+        self.bind(scopes.NO_SCOPE, to_instance=self._scope_cache[scopes.NO_SCOPE])
+        self.bind(scopes.SINGLETON, to_instance=self._scope_cache[scopes.SINGLETON])
 
     def bind(self, _class, **kwargs):
         key = Key(interface=_class, annotation=kwargs.get('annotated_with'))
 
         binding = Binding()
         binding.key = key
-        binding.scope = kwargs.get('in_scope', scopes.NO_SCOPE)
+        scope = kwargs.get('in_scope')
+        if scope is not None:
+            if not self._scope_cache.has_key(scope):
+                raise errors.BindingError("'scope' has not been bound to this Binder via bindScope")
+            scope = self._scope_cache[scope]
+        else:
+            scope = self._scope_cache[scopes.NO_SCOPE]
+        
+        binding.scope = scope
 
         if key in self._binding_map:
             raise errors.BindingError('baseclass %r already bound' % _class)
@@ -67,12 +84,28 @@ class Binder(object):
     def create_child(self):
         return Binder(self)
 
+    def bindScope(self, scopeClazz, scopeInstance):
+        if not isinstance(scopeClazz, type):
+            raise errors.BindingError(
+                "bindScope requires a new-style class")
+        if not isinstance(scopeInstance, scopeClazz):
+            raise errors.BindingError(
+                "bindScope requires an instance of the scope class")
+        self._scope_cache[scopeClazz] = scopeInstance
 
 class LazyBinder(object):
 
     def __init__(self, parent=None):
         self._parent = parent or _EmptyBinder()
         self._binding_map = {}
+        self._scope_cache = {}
+        # register the builtin scopes
+        self.bindScope(scopes.NO_SCOPE, scopes.NO_SCOPE())
+        self.bindScope(scopes.SINGLETON, scopes.SINGLETON())
+        # Allow the scopes to be injected.
+        # Note: no need to specify a scope, because they ARE the scope.
+        self.bind(scopes.NO_SCOPE, to_instance=self._scope_cache[scopes.NO_SCOPE])
+        self.bind(scopes.SINGLETON, to_instance=self._scope_cache[scopes.SINGLETON])
         self._errors = []
 
     def add_error(self, msg):
@@ -95,6 +128,12 @@ class LazyBinder(object):
 
         binding = Binding()
         binding.key = key
+        scope = kwargs.get('in_scope')
+        if scope is not None and not self._scope_cache.has_key(scope):
+            self.add_error("'scope' has not been bound to this Binder via bindScope")
+        else:
+            scope = self._scope_cache[scopes._NoCache]
+            
         binding.scope = kwargs.get('in_scope', scopes.NO_SCOPE)
 
         if key in self._binding_map:
@@ -127,6 +166,12 @@ class LazyBinder(object):
     def create_child(self):
         return Binder(self)
 
+    def bindScope(self, scopeClazz, scopeInstance):
+        if not isinstance(scopeClazz, type):
+            self.add_error("bindScope requires a new-style class")
+        if not isinstance(scopeInstance, scopeClazz):
+            self.add_error("bindScope requires an instance of the scope class")
+        self.__scope_cache[scopeClazz] = scopeInstance
 
 class Binding(object):
 

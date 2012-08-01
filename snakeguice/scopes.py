@@ -32,6 +32,5 @@ class _Singleton(object):
                     providers.create_instance_provider(instance)
         return cached_provider
 
-
-NO_SCOPE = _NoScope()
-SINGLETON = _Singleton()
+NO_SCOPE = _NoScope
+SINGLETON = _Singleton

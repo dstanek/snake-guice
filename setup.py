@@ -2,7 +2,7 @@ from os.path import join as joinpath, dirname
 from setuptools import setup, Command
 
 from snakeguice import __pkginfo__ as pkg
-
+import sys
 
 cmdclass = {}
 

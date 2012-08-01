@@ -58,18 +58,36 @@ class TestSingletonScope(object):
         obj = Injector(MyModule()).get_instance(self.DomainObject)
         self.assert_obj(obj)
 
-    def _test_inject_into_singleton(self):
-        class MyLogger(object):
-            hot_place = inject(ch.Place, annotation='hot')
-            cold_place = inject(ch.Place, annotation='cold')
+    def test_singleton_has_injector_scope(self):
+        class MyModule:
+            def configure(self, binder):
+                binder.bind(ch.Place, to=ch.Beach, in_scope=scopes.SINGLETON)
 
+        injector_a = Injector(MyModule())
+        injector_b = Injector(MyModule())
+
+        place_a = injector_a.get_instance(ch.Place)
+        place_b = injector_a.get_instance(ch.Place)
+        place_c = injector_b.get_instance(ch.Place)
+
+        assert place_a is place_b
+        assert place_b is not place_c
+
+    def test_inject_into_singleton(self):
+        class MyLogger(object):
+            @inject(hot=ch.Place, cold=ch.Place)
+            @annotate(hot='hot', cold='cold')
+            def __init__(self, hot, cold):
+                self.hot_place = hot
+                self.cold_place = cold
+                
         class MyModule:
             def configure(self, binder):
                 binder.bind(ch.Logger, to=MyLogger, in_scope=scopes.SINGLETON)
                 binder.bind(ch.Place, annotated_with='hot',
-                            to=ch.Beach, to_scope=scopes.SINGLETON)
+                            to=ch.Beach, in_scope=scopes.SINGLETON)
                 binder.bind(ch.Place, annotated_with='cold',
-                            to=ch.Glacier, to_scope=scopes.SINGLETON)
+                            to=ch.Glacier, in_scope=scopes.SINGLETON)
 
         obj = Injector(MyModule()).get_instance(self.DomainObject)
         self.assert_obj(obj)

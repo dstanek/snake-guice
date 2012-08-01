@@ -1,5 +1,5 @@
 import cherrypy
-from snakeguice.providers import InstanceProvider
+from snakeguice.providers import create_instance_provider
 
 
 class CherrypyRequestScope(object):
@@ -14,7 +14,7 @@ class CherrypyRequestScope(object):
                 if not value:
                     value = cherrypy.request.__guicy__[key] = provider.get()
                 return value
-        return InstanceProvider(SessionProvider())
+        return create_instance_provider(SessionProvider())
 
 
 class CherrypySessionScope(object):
@@ -26,8 +26,8 @@ class CherrypySessionScope(object):
                 if not value:
                     value = cherrypy.session[key] = provider.get()
                 return value
-        return InstanceProvider(SessionProvider())
+        return create_instance_provider(SessionProvider())
 
 
-CHERRYPY_REQUEST_SCOPE = CherrypyRequestScope()
-CHERRYPY_SESSION_SCOPE = CherrypySessionScope()
+CHERRYPY_REQUEST_SCOPE = CherrypyRequestScope
+CHERRYPY_SESSION_SCOPE = CherrypySessionScope

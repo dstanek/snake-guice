@@ -4,9 +4,11 @@
 injector module unit tests
 """
 
+from nose.tools import raises
+
 from dingus import Dingus
 
-from snakeguice import create_injector, injector, binder
+from snakeguice import create_injector, injector, binder, BindingError
 import cls_heirarchy as ch
 
 
@@ -96,3 +98,34 @@ class test_using_get_provider(object):
 
     def test_provider_provides_an_instance(self):
         assert isinstance(self.instance, ch.EvilPerson)
+
+class test_custom_scope(object):
+    class CustomScope(object):
+        def scope(self, key, provider):
+            return provider
+
+    @raises(BindingError)
+    def test_bindScope_invalid_classParameter(self):
+        class MyModule(object):
+            def configure(self, binder):
+                binder.bindScope(4, 5)
+        injector = create_injector([MyModule()])
+
+    @raises(BindingError)
+    def test_bindScope_invalid_instanceParameter(self):
+        this = self
+        class MyModule(object):
+            def configure(self, binder):
+                binder.bindScope(this.CustomScope, 4)
+        injector = create_injector([MyModule()])
+
+    def test_bindScope_valid_scope(self):
+        this = self
+        class MyModule(object):
+            def configure(self, binder):
+                binder.bindScope(this.CustomScope, this.CustomScope())
+                binder.bind(ch.Person, to=ch.EvilPerson)
+                
+        injector = create_injector([MyModule()])
+        obj = injector.get_instance(ch.Person)
+        assert isinstance(obj, ch.EvilPerson)

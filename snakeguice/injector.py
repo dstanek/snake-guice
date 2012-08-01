@@ -79,7 +79,12 @@ class Injector(object):
         key = Key(cls, annotation)
         binding = self._binder.get_binding(key)
         if binding:
-            provider = binding.scope.scope(key, binding.provider)
+            # Both the binding.provider and the scope's
+            # provider could be types, so inject both.
+            bindingProvider = binding.provider
+            if isinstance(bindingProvider, type):
+                bindingProvider = self.get_instance(bindingProvider)
+            provider = binding.scope.scope(key, bindingProvider)
             if isinstance(provider, type):
                 provider = self.get_instance(provider)
             return provider.get()
