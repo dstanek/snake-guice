@@ -108,7 +108,7 @@ class test_custom_scope(object):
     def test_bindScope_invalid_classParameter(self):
         class MyModule(object):
             def configure(self, binder):
-                binder.bindScope(4, 5)
+                binder.bind_scope(4, 5)
         injector = create_injector([MyModule()])
 
     @raises(BindingError)
@@ -116,14 +116,14 @@ class test_custom_scope(object):
         this = self
         class MyModule(object):
             def configure(self, binder):
-                binder.bindScope(this.CustomScope, 4)
+                binder.bind_scope(this.CustomScope, 4)
         injector = create_injector([MyModule()])
 
     def test_bindScope_valid_scope(self):
         this = self
         class MyModule(object):
             def configure(self, binder):
-                binder.bindScope(this.CustomScope, this.CustomScope())
+                binder.bind_scope(this.CustomScope, this.CustomScope())
                 binder.bind(ch.Person, to=ch.EvilPerson)
                 
         injector = create_injector([MyModule()])

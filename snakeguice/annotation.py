@@ -12,3 +12,6 @@ class Annotation(object):
 
     def __ne__(self, other):
         return not self == other
+
+    def __str__(self):
+        return "<Annotation class '%s' value: %s>" % (self.__class__.__name__, self._value)

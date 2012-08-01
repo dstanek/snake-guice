@@ -16,11 +16,13 @@ class Key(object):
 
     def __ne__(self, other):
         return not self == other
-
+    
+    def __str__(self):
+        return "<Key(%s, %s)>" % (self._interface, self._annotation)
 
 class _EmptyBinder(object):
 
-    def get_binding(self, key):
+    def get_binding(self, key, annotated_with=None):
         return None
 
 
@@ -31,8 +33,8 @@ class Binder(object):
         self._binding_map = {}
         self._scope_cache = {}
         # register the builtin scopes
-        self.bindScope(scopes.NO_SCOPE, scopes.NO_SCOPE())
-        self.bindScope(scopes.SINGLETON, scopes.SINGLETON())
+        self.bind_scope(scopes.NO_SCOPE, scopes.NO_SCOPE())
+        self.bind_scope(scopes.SINGLETON, scopes.SINGLETON())
         # Allow the scopes to be injected.
         # Note: no need to specify a scope, because they ARE the scope.
         # However, should they be injectable?
@@ -47,11 +49,11 @@ class Binder(object):
         scope = kwargs.get('in_scope')
         if scope is not None:
             if not self._scope_cache.has_key(scope):
-                raise errors.BindingError("'scope' has not been bound to this Binder via bindScope")
+                raise errors.BindingError("'scope' has not been bound to this Binder via bind_scope")
             scope = self._scope_cache[scope]
         else:
             scope = self._scope_cache[scopes.NO_SCOPE]
-        
+
         binding.scope = scope
 
         if key in self._binding_map:
@@ -78,21 +80,22 @@ class Binder(object):
 
         self._binding_map[key] = binding
 
-    def get_binding(self, key):
-        return self._binding_map.get(key) or self._parent.get_binding(key)
+    def get_binding(self, cls, annotated_with=None):
+        key = Key(cls, annotation=annotated_with)
+        return self._binding_map.get(key) or self._parent.get_binding(cls, annotated_with)
 
     def create_child(self):
         return Binder(self)
 
-    def bindScope(self, scopeClazz, scopeInstance):
+    def bind_scope(self, scopeClazz, scopeInstance):
         if not isinstance(scopeClazz, type):
             raise errors.BindingError(
-                "bindScope requires a new-style class")
+                "bind_scope requires a new-style class")
         if not isinstance(scopeInstance, scopeClazz):
             raise errors.BindingError(
-                "bindScope requires an instance of the scope class")
+                "bind_scope requires an instance of the scope class")
         self._scope_cache[scopeClazz] = scopeInstance
-
+        
 class LazyBinder(object):
 
     def __init__(self, parent=None):
@@ -100,8 +103,8 @@ class LazyBinder(object):
         self._binding_map = {}
         self._scope_cache = {}
         # register the builtin scopes
-        self.bindScope(scopes.NO_SCOPE, scopes.NO_SCOPE())
-        self.bindScope(scopes.SINGLETON, scopes.SINGLETON())
+        self.bind_scope(scopes.NO_SCOPE, scopes.NO_SCOPE())
+        self.bind_scope(scopes.SINGLETON, scopes.SINGLETON())
         # Allow the scopes to be injected.
         # Note: no need to specify a scope, because they ARE the scope.
         self.bind(scopes.NO_SCOPE, to_instance=self._scope_cache[scopes.NO_SCOPE])
@@ -160,18 +163,19 @@ class LazyBinder(object):
 
         self._binding_map[key] = binding
 
-    def get_binding(self, key):
-        return self._binding_map.get(key) or self._parent.get_binding(key)
+    def get_binding(self, cls, annotated_with=None):
+        key = Key(cls, annotation=annotated_with)
+        return self._binding_map.get(key) or self._parent.get_binding(cls, annotated_with)
 
     def create_child(self):
         return Binder(self)
 
-    def bindScope(self, scopeClazz, scopeInstance):
+    def bind_scope(self, scopeClazz, scopeInstance):
         if not isinstance(scopeClazz, type):
-            self.add_error("bindScope requires a new-style class")
+            self.add_error("bind_scope requires a new-style class")
         if not isinstance(scopeInstance, scopeClazz):
-            self.add_error("bindScope requires an instance of the scope class")
-        self.__scope_cache[scopeClazz] = scopeInstance
+            self.add_error("bind_scope requires an instance of the scope class")
+        self._scope_cache[scopeClazz] = scopeInstance
 
 class Binding(object):
 
