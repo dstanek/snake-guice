@@ -8,7 +8,9 @@ class Annotation(object):
         return hash(self.__class__.__name__ + ":" + self._value)
 
     def __eq__(self, other):
-        return self.__hash__() == other.__hash__()
+        return self.__hash__() == other.__hash__() \
+               and self.__class__.__name__ == other.__class__.__name__ \
+               and self._value == other._value
 
     def __ne__(self, other):
         return not self == other
