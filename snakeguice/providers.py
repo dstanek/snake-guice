@@ -19,18 +19,11 @@ def create_simple_provider(cls):
 
     return DynamicSimpleProvider
 
-class __InstanceProvider(object):
-    __slots__ = ['__obj']
-    def __init__(self, obj):
-        self.__obj = obj
-    def get(self):
-        return self.__obj
-    
+
 def create_instance_provider(obj):
-    """
-    Snake Guice internal note:
-    Providers can be dynamically instantiated by the injector
-    but there is no reason to delay that when binding directly
-    to instances.
-    """
-    return __InstanceProvider(obj)
+    class DynamicInstanceProvider(object):
+
+        def get(self):
+            return obj
+
+    return DynamicInstanceProvider
