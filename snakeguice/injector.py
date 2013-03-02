@@ -13,7 +13,7 @@ class ProvidesBinderHelper(object):
         members = [m for m in inspect.getmembers(module)
                    if inspect.ismethod(m[1])]
         for name, method in members:
-            if hasattr(method.im_func, '__guice_provides__'):
+            if hasattr(method, '__guice_provides__'):
                 type = method.__guice_provides__
                 provider = self._build_provider(module, type, method)
                 binder.bind(type, to_provider=provider)
@@ -83,6 +83,14 @@ class Injector(object):
             # provider could be types, so inject both.
             bindingProvider = binding.provider
             if isinstance(bindingProvider, type):
+                # We can't update binding.provider as an optimization
+                # unless we can prove that the provider can only
+                # have one instance. 
+                # (by existing inside our binder/parent binders Singleton scopes, 
+                #  or via some other additional proof that there can be only one 
+                #  instance)
+                # The reasoning behind this is that all bindings have
+                # scopes, and the proivder's binding could exist in a scope. 
                 bindingProvider = self.get_instance(bindingProvider)
             provider = binding.scope.scope(key, bindingProvider)
             if isinstance(provider, type):

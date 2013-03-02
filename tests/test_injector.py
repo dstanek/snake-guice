@@ -6,8 +6,6 @@ injector module unit tests
 
 from nose.tools import raises
 
-from dingus import Dingus
-
 from snakeguice import create_injector, injector, binder, BindingError
 import cls_heirarchy as ch
 
