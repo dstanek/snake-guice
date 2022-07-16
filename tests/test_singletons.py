@@ -90,4 +90,4 @@ class TestSingletonScope(object):
             def configure(self, binder):
                 binder.bind(ch.Place, to=ch.Beach, in_scope=scopes.SINGLETON)
 
-        obj = Injector(MyModule()).get_instance(self.SimpleClass)
+        Injector(MyModule()).get_instance(self.SimpleClass)

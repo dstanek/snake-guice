@@ -142,7 +142,7 @@ def test_inject_decorator():
             assert isinstance(person, ch.EvilPerson)
 
         @inject(person=ch.Person, logger=ch.Logger)
-        def multipl(self, logger, person):
+        def multiple(self, logger, person):
             assert isinstance(person, ch.EvilPerson)
             assert isinstance(logger, ch.ConcreteLogger)
 
@@ -152,7 +152,7 @@ def test_inject_decorator():
             binder.bind(ch.Logger, to=ch.ConcreteLogger)
 
     injector = Injector(MyModule())
-    o = injector.get_instance(DomainObject)
+    injector.get_instance(DomainObject)
 
 
 class TestMethodInterceptors(object):

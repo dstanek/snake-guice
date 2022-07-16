@@ -3,7 +3,7 @@
 import inspect
 
 import routes
-from webob import Request, Response
+from webob import Request
 from webob.exc import HTTPNotFound
 
 from snakeguice.modules import Module

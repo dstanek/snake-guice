@@ -67,9 +67,10 @@ def enclosing_frame(frame=None, level=2):
 
 def inject(**kwargs):
 
-    scope = kwargs.get("scope")
-    if "scope" in kwargs:
-        del kwargs["scope"]
+    # TODO: implement scope
+    # scope = kwargs.get("scope")
+    # if "scope" in kwargs:
+    #     del kwargs["scope"]
 
     def _inject(func):
         class_locals = enclosing_frame().f_locals

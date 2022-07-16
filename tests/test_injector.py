@@ -79,8 +79,9 @@ class test_using_create_injector_factory(object):
         assert isinstance(self.instance, ch.EvilPerson)
 
 
-def test_create_an_injector_without_any_modules():
-    modules = [FakeModule(), FakeModule(), FakeModule()]
+# TODO: implement this test
+# def test_create_an_injector_without_any_modules():
+#     modules = [FakeModule(), FakeModule(), FakeModule()]
 
 
 class test_using_get_provider(object):

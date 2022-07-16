@@ -5,7 +5,7 @@
 import pytest
 
 from snakeguice import annotate, create_injector, inject
-from snakeguice.assist import AssistProvider, assisted, assisted_inject
+from snakeguice.assist import AssistProvider, assisted_inject
 from snakeguice.errors import AssistError
 
 

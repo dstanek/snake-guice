@@ -8,9 +8,10 @@ from snakeguice.interfaces import Injector
 
 def assisted_inject(**kwargs):
 
-    scope = kwargs.get("scope")
-    if "scope" in kwargs:
-        del kwargs["scope"]
+    # TODO: implement scope
+    # scope = kwargs.get("scope")
+    # if "scope" in kwargs:
+    #     del kwargs["scope"]
 
     def _assisted_inject(func):
         if func.__name__ != "__init__":
@@ -30,9 +31,6 @@ def assisted_inject(**kwargs):
         return func
 
     return _assisted_inject
-
-
-assisted = object()
 
 
 def AssistProvider(cls):
