@@ -51,9 +51,8 @@ class GuiceArg(object):
 
 def _validate_func_args(func, kwargs):
     """Validate decorator args when used to decorate a function."""
-
-    args, varargs, varkw, defaults = inspect.getargspec(func)
-    if set(kwargs.keys()) != set(args[1:]): # chop off self
+    sig = inspect.signature(func)
+    if set(kwargs.keys()) != set(list(sig.parameters.keys())[1:]): # chop off self
         raise TypeError("decorator kwargs do not match %s()'s kwargs"
                         % func.__name__)
 

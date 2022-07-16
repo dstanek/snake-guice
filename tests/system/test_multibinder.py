@@ -1,5 +1,4 @@
 from snakeguice import create_injector, inject
-from snakeguice.interfaces import Injector
 from snakeguice.multibinder import ListBinder, List, DictBinder, Dict
 from snakeguice import providers
 

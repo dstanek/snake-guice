@@ -1,7 +1,5 @@
 #!python
 
-from mock import Mock
-
 from snakeguice import config
 
 
@@ -9,7 +7,7 @@ from snakeguice import config
 class __TestConfig(object):
 
     def setup(self):
-        super(TestConfig, self).setup()
+        super(__TestConfig, self).setup()
 
         self.s = 'some string value'
         self.c = config.Config(self.s)

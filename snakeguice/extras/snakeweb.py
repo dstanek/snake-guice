@@ -25,7 +25,7 @@ class RoutesBinder(object):
         if controller is None:
             raise TypeError('no controller specified')
 
-        key = unicode((id(controller), repr(controller)))
+        key = str((id(controller), repr(controller)))
         self.controller_map[key] = controller
         kwargs['controller'] = key
         self.mapper.connect(*args, **kwargs)

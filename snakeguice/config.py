@@ -1,5 +1,5 @@
 import os
-from ConfigParser import SafeConfigParser
+from configparser import SafeConfigParser
 
 from snakeguice.annotation import Annotation
 

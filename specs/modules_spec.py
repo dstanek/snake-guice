@@ -1,8 +1,9 @@
 #TODO: define simple and standard modules in the documentation
 
-from nose.tools import raises
-from mock import Mock
 from contextlib import nested
+from unittest.mock import Mock
+
+import pytest
 
 from snakeguice.modules import Module
 
@@ -46,6 +47,6 @@ def given_a_standard_module():
 
     def when_not_overriding_configure():
 
-        @raises(NotImplementedError)
         def then_an_NotImplementedError_should_be_raised():
-            mod.configure(None)
+            with pytest.raises(NotImplementedError):
+                mod.configure(None)

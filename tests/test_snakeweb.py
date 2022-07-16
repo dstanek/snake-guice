@@ -1,15 +1,17 @@
-from nose.tools import raises
-from nose.plugins.skip import SkipTest
-from mock import Mock, patch
+from unittest import TestCase
+from unittest.mock import Mock, patch
+
+import pytest
 
 from snakeguice.extras import snakeweb
 
 
-class TestRoutesModuleSetup(object):
+class TestRoutesModuleSetup(TestCase):
 
-    @patch('snakeguice.extras.snakeweb.routes')
-    def setup(self, mock_routes):
-        self.mock_routes = mock_routes
+    def setUp(self):
+        patcher = patch('snakeguice.extras.snakeweb.routes')
+        self.mock_routes = patcher.start()
+        self.addCleanup(patcher.stop)
 
         class MyRoutesModule(snakeweb.RoutesModule):
             configure = Mock()
@@ -18,8 +20,8 @@ class TestRoutesModuleSetup(object):
         self.module = MyRoutesModule()
         self.module.run_configure(binder=self.binder)
 
+    @pytest.mark.skip("Not sure why this needs to be skipped...")
     def test_configure_is_called_with_a_mapper(self):
-        raise SkipTest
         assert self.module.configure.calls('()',
                 snakeweb.RoutesBinder.return_value)
 
@@ -32,9 +34,9 @@ class TestRoutesModuleIsAbstract(object):
     def setup(self):
         self.module = snakeweb.RoutesModule()
 
-    @raises(NotImplementedError)
     def test_configure_mapper_is_not_implemented(self):
-        self.module.configure(Mock())
+        with pytest.raises(NotImplementedError):
+            self.module.configure(Mock())
 
 
 class BaseTestRoutesBinder(object):
@@ -48,9 +50,9 @@ class BaseTestRoutesBinder(object):
 
 class TestRoutesBinderConnectWithInvalidControllers(BaseTestRoutesBinder):
 
-    @raises(TypeError)
     def test_an_exception_is_raised_is_no_controller_is_specified(self):
-        self.binder.connect('/post/3/view')
+        with pytest.raises(TypeError):
+            self.binder.connect('/post/3/view')
 
 
 class TestWhenCallingRoutesBinder(BaseTestRoutesBinder):
@@ -62,7 +64,7 @@ class TestWhenCallingRoutesBinder(BaseTestRoutesBinder):
         self.kwargs = dict(a=Mock(), controller=object)
         self.binder.connect(*self.args, **self.kwargs)
 
-        self.key = unicode((id(self.controller), repr(self.controller)))
+        self.key = str((id(self.controller), repr(self.controller)))
         self.kwargs['controller'] = self.key
 
     def test_pass_through_to_real_mapper(self):
@@ -72,10 +74,12 @@ class TestWhenCallingRoutesBinder(BaseTestRoutesBinder):
         assert self.binder.controller_map == {self.key: self.controller}
 
 
-class TestWhenAutoConfiguringRoutes(object):
+class TestWhenAutoConfiguringRoutes(TestCase):
 
-    @patch('snakeguice.extras.snakeweb.RoutesBinder')
-    def setup(self, mock_RoutesBinder):
+    def setUp(self):
+        patcher = patch('snakeguice.extras.snakeweb.RoutesBinder')
+        patcher.start()
+        self.addCleanup(patcher.stop)
 
         class MyController(object):
             def __call__(self):

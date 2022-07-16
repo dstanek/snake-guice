@@ -40,33 +40,6 @@ except ImportError:
     """Pylint is not installed."""
 
 try:
-    import nose
-
-    class TestsCommand(Command):
-        description = "Run unit tests with nose"
-        user_options = [('coverage', 'c', 'Generate figleaf sections.')]
-
-        def initialize_options(self):
-            self.coverage = None
-
-        def finalize_options(self):
-            self.coverage = bool(self.coverage)
-
-        def run(self):
-            if self.coverage:
-                import figleaf
-                figleaf.start()
-            nose.run(argv=['nosetests'])
-            if self.coverage:
-                figleaf.stop()
-                figleaf.write_coverage('.figleaf')
-
-    cmdclass['tests'] = TestsCommand
-
-except ImportError:
-    """Nose is not installed."""
-
-try:
     import mote.runner
 
     class SpecsCommand(Command):

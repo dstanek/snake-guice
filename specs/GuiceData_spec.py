@@ -1,7 +1,5 @@
 """Behavioral tests for the GuiceData implementation."""
 
-from nose.tools import raises
-
 from snakeguice.decorators import GuiceData
 
 

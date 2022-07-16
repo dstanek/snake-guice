@@ -1,4 +1,7 @@
-nose==1.1.2
-mock==1.0b1
-routes==1.13
-webob==1.2.1
+pytest==7.1.2
+flake8==4.0.1
+black==22.6.0
+isort==5.10.1
+
+routes==2.5.1
+webob==1.8.7

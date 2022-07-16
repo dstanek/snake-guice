@@ -6,7 +6,7 @@ Tests for the singleton scope.py
 
 from snakeguice import inject, scopes, Injector, annotate
 
-import cls_heirarchy as ch
+from . import cls_heirarchy as ch
 
 
 class TestSingletonScope(object):

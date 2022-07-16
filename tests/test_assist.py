@@ -2,7 +2,7 @@
 
 """Tests for the assisted injection feature."""
 
-from nose.tools import raises
+import pytest
 
 from snakeguice import inject, create_injector, annotate
 from snakeguice.assist import assisted_inject, assisted, AssistProvider
@@ -66,9 +66,9 @@ class test_partiall_injecting_an_object(object):
 
 class base_AssistProvider_decorator_errors(object):
 
-    @raises(AssistError)
     def test_that_an_exception_is_raised(self):
-        AssistProvider(self.C)
+        with pytest.raises(AssistError):
+            AssistProvider(self.C)
 
 
 class test_creating_an_AssistProvider_from_an_inject(
@@ -91,11 +91,11 @@ class test_creating_an_AssistProvider_from_an_uninjected_object(
         self.C = C
 
 
-@raises(AssistError)
 def test_using_assisted_inject_on_a_method():
+    with pytest.raises(AssistError):
 
-    class C(object):
+        class C(object):
 
-        @assisted_inject(x=object)
-        def m(self, x):
-            pass
+            @assisted_inject(x=object)
+            def m(self, x):
+                pass

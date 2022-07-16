@@ -1,6 +1,6 @@
 """Behavioral tests for the snake-guice decorators."""
 
-from nose.tools import raises
+import pytest
 
 from snakeguice.decorators import inject, GuiceArg, annotate
 
@@ -28,9 +28,9 @@ def test_inject_methods():
             pass
 
     assert SomeClass.__guice__.init is None
-    assert SomeClass.__guice__.methods.items() == [
-            ('go', {'y': GuiceArg(float)}),
-    ]
+    assert SomeClass.__guice__.methods == {
+        'go': {'y': GuiceArg(float)},
+    }
 
 def test_inject_all():
     """Using combinations of inject including annotations."""
@@ -56,66 +56,69 @@ def test_inject_all():
             {'a': GuiceArg(bool, 'free'),
              'b': GuiceArg(int, 'paid'),
              'c': GuiceArg(float)})
-    print SomeClass.__guice__.methods.items()
-    assert SomeClass.__guice__.methods.items() == [
-            ('go', {'y': GuiceArg(float)}),
-            ('stop',
-             {'x': GuiceArg(int),
-              'y': GuiceArg(int, 'old'),
-              'z': GuiceArg(object, 'new')})]
+    print(SomeClass.__guice__.methods.items())
+    assert SomeClass.__guice__.methods == {
+        'go': {'y': GuiceArg(float)},
+        'stop': {
+            'x': GuiceArg(int),
+            'y': GuiceArg(int, 'old'),
+            'z': GuiceArg(object, 'new')
+        }
+    }
 
 
-@raises(TypeError)
 def test_incorrect_methods0():
     """Ensure inject is validating method calls."""
 
-    class SomeClass(object):
+    with pytest.raises(TypeError):
+        class SomeClass(object):
 
-        @inject(int, y=int)
-        def f(self, x, y):
-            pass
+            @inject(int, y=int)
+            def f(self, x, y):
+                pass
 
 
-@raises(TypeError)
 def test_incorrect_methods1():
     """Ensure inject is validating method calls."""
 
-    class SomeClass(object):
+    with pytest.raises(TypeError):
+        class SomeClass(object):
 
-        @inject(z=int, y=int)
-        def f(self, x, y):
-            pass
+            @inject(z=int, y=int)
+            def f(self, x, y):
+                pass
 
 
-@raises(TypeError)
 def test_incorrect_methods2():
     """Ensure inject is validating method calls."""
 
-    class SomeClass(object):
+    with pytest.raises(TypeError):
 
-        @inject(y=int)
-        def f(self, x, y):
-            pass
+        class SomeClass(object):
+
+            @inject(y=int)
+            def f(self, x, y):
+                pass
 
 
-@raises(TypeError)
 def test_incorrect_methods3():
     """Ensure inject is validating method calls."""
 
-    class SomeClass(object):
+    with pytest.raises(TypeError):
+        class SomeClass(object):
 
-        @inject
-        def f(self, x, y):
-            pass
+            @inject
+            def f(self, x, y):
+                pass
 
 
-@raises(Exception)
 def test_order_of_annotate():
     """The annotate decorator must me applied to a method before inject."""
 
-    class SomeClass(object):
+    with pytest.raises(Exception):
+        class SomeClass(object):
 
-        @annotate(a='large')
-        @inject(a=int)
-        def f(self, a):
-            pass
+            @annotate(a='large')
+            @inject(a=int)
+            def f(self, a):
+                pass

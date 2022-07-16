@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import nose
+import pytest
 
 import snakeguice as sg
 
@@ -42,10 +42,10 @@ class _TestBinder(object):
         assert isinstance(binding, sg.Binding)
         assert Person in self.binder._map
 
-    @nose.tools.raises(sg.BindingError)
     def test_duplicate_keys(self):
         self.binder.bind(Person)
-        self.binder.bind(Person) # this should fail
+        with pytest.raises(sg.BindingError):
+            self.binder.bind(Person)
 
     def test_get_binding(self):
         self.binder.bind(Person)
@@ -88,9 +88,9 @@ class _TestBinding(object):
     #    assert rv is self.binding
     #    self.check_keys('otherkey', 'somekey')
 
-    #@nose.tools.raises(sg.BindingError)
     #def test_duplicate_keys(self):
-    #    self.binding.to('x').and_to('x')
+    #    with pytest.raises(sg.BindingError):
+    #        self.binding.to('x').and_to('x')
 
 
 def _test_binding_classes_to_strings():

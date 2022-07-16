@@ -5,7 +5,7 @@ injector module unit tests
 """
 
 from snakeguice import create_injector, injector, binder
-import cls_heirarchy as ch
+from . import cls_heirarchy as ch
 
 
 class FakeModule(object):
