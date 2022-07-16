@@ -2,26 +2,23 @@ import inspect
 import warnings
 
 from snakeguice.binder import Binder, Key
-from snakeguice.decorators import GuiceData as _GuiceData, inject
-from snakeguice.modules import ModuleAdapter
+from snakeguice.decorators import GuiceData as _GuiceData
+from snakeguice.decorators import inject
 from snakeguice.interfaces import Injector as IInjector
+from snakeguice.modules import ModuleAdapter
 
 
 class ProvidesBinderHelper(object):
-
     def bind_providers(self, module, binder):
-        members = [m for m in inspect.getmembers(module)
-                   if inspect.ismethod(m[1])]
+        members = [m for m in inspect.getmembers(module) if inspect.ismethod(m[1])]
         for name, method in members:
-            if hasattr(method, '__guice_provides__'):
+            if hasattr(method, "__guice_provides__"):
                 type = method.__guice_provides__
                 provider = self._build_provider(module, type, method)
                 binder.bind(type, to_provider=provider)
 
     def _build_provider(self, module, type, method):
-
         class GenericProvider(object):
-
             @inject(injector=IInjector)
             def __init__(self, injector):
                 self._injector = injector
@@ -33,18 +30,18 @@ class ProvidesBinderHelper(object):
                 injectable_args = guice_data.methods.get(method_name, {})
                 for name, guicearg in injectable_args.items():
                     kwargs[name] = self._injector.get_instance(
-                            guicearg.datatype, guicearg.annotation)
+                        guicearg.datatype, guicearg.annotation
+                    )
                 return method(**kwargs)
 
         return GenericProvider
 
 
 class Injector(object):
-
     def __init__(self, modules=None, binder=None, stage=None):
         if modules is None:
             modules = []
-        elif not hasattr(modules, '__iter__'):
+        elif not hasattr(modules, "__iter__"):
             modules = [modules]
 
         if binder:
@@ -66,14 +63,13 @@ class Injector(object):
         injector = self
 
         class DynamicProvider(object):
-
             def get(self):
                 return injector.get_instance(cls, annotation)
 
         return DynamicProvider()
 
     def get_instance(self, cls, annotation=None):
-        if cls is IInjector: # TODO: i don't like this, but it works for now
+        if cls is IInjector:  # TODO: i don't like this, but it works for now
             return self
 
         key = Key(cls, annotation)
@@ -99,10 +95,12 @@ class Injector(object):
         return Injector(modules, binder=binder, stage=self._stage)
 
     def create_object(self, cls):
-        if not hasattr(cls, '__mro__'):
-            warnings.warn("can't create an instance of %r - no __mro__; "
-                         "this legacy behavior will be removed in a future "
-                          "version")
+        if not hasattr(cls, "__mro__"):
+            warnings.warn(
+                "can't create an instance of %r - no __mro__; "
+                "this legacy behavior will be removed in a future "
+                "version"
+            )
             return cls
 
         guice_data = _GuiceData.composite_from_class(cls)
@@ -112,8 +110,7 @@ class Injector(object):
         else:
             kwargs = {}
             for name, guicearg in guice_data.init.items():
-                kwargs[name] = self.get_instance(guicearg.datatype,
-                                                 guicearg.annotation)
+                kwargs[name] = self.get_instance(guicearg.datatype, guicearg.annotation)
             instance = cls(**kwargs)
 
         return instance
@@ -125,8 +122,9 @@ class Injector(object):
         for name, gm in guice_data.methods.items():
             kwargs = {}
             for param, guicearg in gm.items():
-                kwargs[param] = self.get_instance(guicearg.datatype,
-                                                  guicearg.annotation)
+                kwargs[param] = self.get_instance(
+                    guicearg.datatype, guicearg.annotation
+                )
             getattr(instance, name)(**kwargs)
         return instance
 

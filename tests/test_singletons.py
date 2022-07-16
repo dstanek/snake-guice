@@ -4,15 +4,13 @@
 Tests for the singleton scope.py
 """
 
-from snakeguice import inject, scopes, Injector, annotate
+from snakeguice import Injector, annotate, inject, scopes
 
 from . import cls_heirarchy as ch
 
 
 class TestSingletonScope(object):
-
     class DomainObject(object):
-
         @inject(logger_a=ch.Logger, logger_b=ch.Logger, logger_c=ch.Logger)
         def set_loggers(self, logger_a, logger_b, logger_c):
             self.logger_a = logger_a
@@ -20,28 +18,27 @@ class TestSingletonScope(object):
             self.logger_c = logger_c
 
         @inject(place_a=ch.Place)
-        @annotate(place_a='hot')
+        @annotate(place_a="hot")
         def set_place_a(self, place_a):
             self.place_a = place_a
 
         @inject(place_b=ch.Place)
-        @annotate(place_b='hot')
+        @annotate(place_b="hot")
         def set_place_b(self, place_b):
             self.place_b = place_b
 
         @inject(place_c=ch.Place)
-        @annotate(place_c='cold')
+        @annotate(place_c="cold")
         def set_place_c(self, place_c):
             self.place_c = place_c
 
         @inject(place_d=ch.Place)
-        @annotate(place_d='cold')
+        @annotate(place_d="cold")
         def set_place_d(self, place_d):
             self.place_d = place_d
 
     class SimpleClass(object):
-
-        @inject(place = ch.Place)
+        @inject(place=ch.Place)
         def __init__(self, place):
             self.place = place
 
@@ -56,26 +53,32 @@ class TestSingletonScope(object):
         class MyModule:
             def configure(self, binder):
                 binder.bind(ch.Logger, to_instance=ch.ConcreteLogger())
-                binder.bind(ch.Place, annotated_with='hot',
-                        to_instance=ch.Beach())
-                binder.bind(ch.Place, annotated_with='cold',
-                        to_instance=ch.Glacier())
+                binder.bind(ch.Place, annotated_with="hot", to_instance=ch.Beach())
+                binder.bind(ch.Place, annotated_with="cold", to_instance=ch.Glacier())
 
         obj = Injector(MyModule()).get_instance(self.DomainObject)
         self.assert_obj(obj)
 
     def _test_inject_into_singleton(self):
         class MyLogger(object):
-            hot_place = inject(ch.Place, annotation='hot')
-            cold_place = inject(ch.Place, annotation='cold')
+            hot_place = inject(ch.Place, annotation="hot")
+            cold_place = inject(ch.Place, annotation="cold")
 
         class MyModule:
             def configure(self, binder):
                 binder.bind(ch.Logger, to=MyLogger, in_scope=scopes.SINGLETON)
-                binder.bind(ch.Place, annotated_with='hot',
-                            to=ch.Beach, to_scope=scopes.SINGLETON)
-                binder.bind(ch.Place, annotated_with='cold',
-                            to=ch.Glacier, to_scope=scopes.SINGLETON)
+                binder.bind(
+                    ch.Place,
+                    annotated_with="hot",
+                    to=ch.Beach,
+                    to_scope=scopes.SINGLETON,
+                )
+                binder.bind(
+                    ch.Place,
+                    annotated_with="cold",
+                    to=ch.Glacier,
+                    to_scope=scopes.SINGLETON,
+                )
 
         obj = Injector(MyModule()).get_instance(self.DomainObject)
         self.assert_obj(obj)
@@ -83,9 +86,8 @@ class TestSingletonScope(object):
         assert obj.logger_a.cold_place is obj.place_c
 
     def test_simple_singleton(self):
-
         class MyModule:
             def configure(self, binder):
-              binder.bind(ch.Place, to=ch.Beach,
-                          in_scope=scopes.SINGLETON)
+                binder.bind(ch.Place, to=ch.Beach, in_scope=scopes.SINGLETON)
+
         obj = Injector(MyModule()).get_instance(self.SimpleClass)

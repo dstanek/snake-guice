@@ -8,19 +8,23 @@ import snakeguice as sg
 # sample class heirarchy
 #
 
+
 class Person(object):
     pass
 
+
 class GoodPerson(Person):
-    x = 'good'
+    x = "good"
+
 
 class EvilPerson(Person):
-    x = 'evil'
+    x = "evil"
 
 
 #
 # tests for the Binder class
 #
+
 
 class _TestBinder(object):
     """Tests for the Binder class."""
@@ -31,7 +35,7 @@ class _TestBinder(object):
     def test_add_error(self):
         """Test the accumulation of errors in the Binder class."""
         binder = self.binder
-        binder.add_error(Exception, 'just a basic exception')
+        binder.add_error(Exception, "just a basic exception")
         binder.add_error(NotImplementedError, "this thing isn't implemented")
         assert len(binder._errors) == 2
         assert isinstance(binder._errors[0], Exception)
@@ -79,21 +83,21 @@ class _TestBinding(object):
         binding = sg.Binding(EvilPerson)
         assert binding.get_implementation() is EvilPerson
 
-    #def test_bind_properties(self):
+    # def test_bind_properties(self):
     #    binding = sg.Binding(Person)
     #    binding.bind_property(Person.name, str)
 
-    #def test_and_to(self):
+    # def test_and_to(self):
     #    rv = self.binding.to('otherkey')
     #    assert rv is self.binding
     #    self.check_keys('otherkey', 'somekey')
 
-    #def test_duplicate_keys(self):
+    # def test_duplicate_keys(self):
     #    with pytest.raises(sg.BindingError):
     #        self.binding.to('x').and_to('x')
 
 
 def _test_binding_classes_to_strings():
     binder = sg.Binder()
-    binder.bind(GoodPerson).to('good')
-    binder.bind(EvilPerson).to('evil')
+    binder.bind(GoodPerson).to("good")
+    binder.bind(EvilPerson).to("evil")

@@ -4,19 +4,19 @@
 injector module unit tests
 """
 
-from snakeguice import create_injector, injector, binder
+from snakeguice import binder, create_injector, injector
+
 from . import cls_heirarchy as ch
 
 
 class FakeModule(object):
-
     def __init__(self):
         self.binder = None
         self.num_calls = 0
 
     def configure(self, binder):
         self.binder = binder
-        self.num_calls +=1
+        self.num_calls += 1
 
     def was_called(self):
         return self.num_calls
@@ -43,13 +43,14 @@ def test_injector_multi_module_init():
 
 def test_create_child():
     """Create an injector child."""
+
     class ParentModule:
         def configure(self, binder):
             binder.bind(ch.Person, to=ch.EvilPerson)
 
     class ChildModule:
         def configure(self, binder):
-            binder.bind(ch.Person, annotated_with='good', to=ch.GoodPerson)
+            binder.bind(ch.Person, annotated_with="good", to=ch.GoodPerson)
 
     inj = injector.Injector(ParentModule())
     person = inj.get_instance(ch.Person)
@@ -58,16 +59,16 @@ def test_create_child():
     child_inj = inj.create_child(ChildModule())
     person = child_inj.get_instance(ch.Person)
     assert isinstance(person, ch.EvilPerson)
-    person = child_inj.get_instance(ch.Person, 'good')
+    person = child_inj.get_instance(ch.Person, "good")
     assert isinstance(person, ch.GoodPerson)
 
 
 class test_using_create_injector_factory(object):
-
     def setup(self):
         class PeopleModule(object):
             def configure(self, binder):
                 binder.bind(ch.Person, to=ch.EvilPerson)
+
         self.injector = create_injector([PeopleModule()])
         self.instance = self.injector.get_instance(ch.Person)
 
@@ -83,11 +84,11 @@ def test_create_an_injector_without_any_modules():
 
 
 class test_using_get_provider(object):
-
     def setup(self):
         class PeopleModule(object):
             def configure(self, binder):
                 binder.bind(ch.Person, to=ch.EvilPerson)
+
         self.injector = create_injector([PeopleModule()])
         self.provider = self.injector.get_provider(ch.Person)
         self.instance = self.provider.get()

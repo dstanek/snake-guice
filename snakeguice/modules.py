@@ -1,14 +1,13 @@
-
 class ModuleAdapter(object):
     """Adapts the simple and standard module interfaces to a common one."""
 
     def __init__(self, module, injector):
-        if hasattr(module, 'set_injector'):
+        if hasattr(module, "set_injector"):
             module.set_injector(injector)
         self._module = module
 
     def configure(self, binder):
-        if hasattr(self._module, 'run_configure'):
+        if hasattr(self._module, "run_configure"):
             self._module.run_configure(binder)
         else:
             self._module.configure(binder)
@@ -57,13 +56,16 @@ class PrivateModule(Module):
     def expose(self, binder, interface, annotation=None):
         """Expose the child injector to the parent inject for a binding."""
         private_module = self
+
         class Provider(object):
             def get(self):
                 return private_module.private_injector.get_instance(
-                        interface, annotation)
+                    interface, annotation
+                )
 
-        self.original_binder.bind(interface, annotated_with=annotation,
-                                  to_provider=Provider)
+        self.original_binder.bind(
+            interface, annotated_with=annotation, to_provider=Provider
+        )
 
     def run_configure(self, binder):
         self.original_binder = binder

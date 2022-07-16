@@ -11,7 +11,6 @@ class Something(object):
 
 
 class SomethingProvider(object):
-
     @inject(injector=Injector)
     def __init__(self, injector):
         self.injector = injector
@@ -21,7 +20,6 @@ class SomethingProvider(object):
 
 
 class Module(object):
-
     def configure(self, binder):
         binder.bind(ISomething, to_provider=SomethingProvider)
 

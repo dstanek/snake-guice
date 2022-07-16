@@ -12,7 +12,7 @@ class _NoScope(object):
     a module.
     """
 
-    def scope(self, key, unscoped_provider): # pylint: disable-msg=R0201,W0613
+    def scope(self, key, unscoped_provider):  # pylint: disable-msg=R0201,W0613
         return unscoped_provider
 
 
@@ -28,8 +28,9 @@ class _Singleton(object):
         cached_provider = self._cached_provider_map.get(key)
         if not cached_provider:
             instance = provider.get()
-            cached_provider = self._cached_provider_map[key] = \
-                    providers.create_instance_provider(instance)
+            cached_provider = self._cached_provider_map[
+                key
+            ] = providers.create_instance_provider(instance)
         return cached_provider
 
 

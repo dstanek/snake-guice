@@ -4,17 +4,15 @@
 Examples of using the snakeguice API.
 """
 
-#TODO: add a test proving call throughs work
+# TODO: add a test proving call throughs work
 
 
-from snakeguice import inject, ParameterInterceptor, annotate
-from snakeguice import Injector, provides
+from snakeguice import Injector, ParameterInterceptor, annotate, inject, provides
 
 from .. import cls_heirarchy as ch
 
 
 class given_an_injector(object):
-
     def when_asking_for_a_class_not_bound_by_a_module(self):
         injector = Injector([])
         self.person = injector.get_instance(ch.Person)
@@ -36,7 +34,7 @@ def test_injector_simple():
 def test_annotated_injector():
     class DomainObject(object):
         @inject(person0=ch.Person, person1=ch.Person, person2=ch.Person)
-        @annotate(person0='good', person1='evil')
+        @annotate(person0="good", person1="evil")
         def __init__(self, person0, person1, person2):
             self.person0 = person0
             self.person1 = person1
@@ -45,8 +43,8 @@ def test_annotated_injector():
     class MyModule:
         def configure(self, binder):
             binder.bind(DomainObject, to=DomainObject)
-            binder.bind(ch.Person, annotated_with='evil', to=ch.EvilPerson)
-            binder.bind(ch.Person, annotated_with='good', to=ch.GoodPerson)
+            binder.bind(ch.Person, annotated_with="evil", to=ch.EvilPerson)
+            binder.bind(ch.Person, annotated_with="good", to=ch.GoodPerson)
 
     injector = Injector(MyModule())
     obj = injector.get_instance(DomainObject)
@@ -58,7 +56,7 @@ def test_annotated_injector():
 def test_annotations():
     class DomainObject(object):
         @inject(hero=ch.Person, villian=ch.Person, victim=ch.Person)
-        @annotate(hero='good', villian='evil')
+        @annotate(hero="good", villian="evil")
         def __init__(self, hero, villian, victim):
             self.hero = hero
             self.villian = villian
@@ -69,8 +67,8 @@ def test_annotations():
 
     class MyModule:
         def configure(self, binder):
-            binder.bind(ch.Person, annotated_with='evil', to=ch.EvilPerson)
-            binder.bind(ch.Person, annotated_with='good', to=ch.GoodPerson)
+            binder.bind(ch.Person, annotated_with="evil", to=ch.EvilPerson)
+            binder.bind(ch.Person, annotated_with="good", to=ch.GoodPerson)
             binder.bind(ch.Person, to=ByStander)
 
     injector = Injector(MyModule())
@@ -81,7 +79,6 @@ def test_annotations():
 
 
 def test_injector_injecting_a_provider():
-
     class SimpleProvider(object):
         def get(self):
             return ch.GoodPerson()
@@ -96,7 +93,6 @@ def test_injector_injecting_a_provider():
 
 
 def test_injector_injecting_from_a_provider():
-
     class SimpleProvider(object):
         def get(self):
             return ch.GoodPerson()
@@ -115,12 +111,11 @@ def Xtest_collision():
 
 
 def test_inject_provider_with_args():
-
     class PersonProvider(object):
         def get(self, typ):
-            if typ == 'good':
+            if typ == "good":
                 return ch.GoodPerson
-            elif typ == 'evil':
+            elif typ == "evil":
                 return ch.EvilPerson
             else:
                 return None
@@ -131,15 +126,13 @@ def test_inject_provider_with_args():
 
     injector = Injector(MyModule())
     person_provider = injector.get_instance(ch.Person)
-    assert person_provider.get('good') == ch.GoodPerson
-    assert person_provider.get('evil') == ch.EvilPerson
-    assert person_provider.get('clueless') is None
+    assert person_provider.get("good") == ch.GoodPerson
+    assert person_provider.get("evil") == ch.EvilPerson
+    assert person_provider.get("clueless") is None
 
 
 def test_inject_decorator():
-
     class DomainObject(object):
-
         @inject(logger=ch.Logger)
         def __init__(self, logger):
             assert isinstance(logger, ch.ConcreteLogger)
@@ -160,24 +153,23 @@ def test_inject_decorator():
 
     injector = Injector(MyModule())
     o = injector.get_instance(DomainObject)
-        
+
 
 class TestMethodInterceptors(object):
-
     def setup(self):
         class MyModule:
             def configure(self, binder):
                 binder.bind(ch.Person, to=ch.EvilPerson)
                 binder.bind(ch.Logger, to_instance=ch.ConcreteLogger())
-                binder.bind(ch.Person, annotated_with='good', to=ch.GoodPerson)
-                binder.bind(ch.Person, annotated_with='evil', to=ch.EvilPerson)
+                binder.bind(ch.Person, annotated_with="good", to=ch.GoodPerson)
+                binder.bind(ch.Person, annotated_with="evil", to=ch.EvilPerson)
 
         self.injector = Injector(MyModule())
         self.interceptor = ParameterInterceptor(self.injector)
 
     def test_noargs(self):
         class DomainObject(object):
-            @self.interceptor(person=ch.Person, annotation='evil')
+            @self.interceptor(person=ch.Person, annotation="evil")
             def intercept_me(self, person):
                 assert isinstance(person, ch.EvilPerson)
 
@@ -186,9 +178,8 @@ class TestMethodInterceptors(object):
 
     def test_args(self):
         class DomainObject(object):
-            @self.interceptor(person=ch.Person, annotation='evil')
-            def intercept_me(self, arg0,
-                    kwarg0=None, kwarg1=None, person=None):
+            @self.interceptor(person=ch.Person, annotation="evil")
+            def intercept_me(self, arg0, kwarg0=None, kwarg1=None, person=None):
                 assert arg0 == 0
                 assert kwarg0 == 1
                 assert kwarg1 is None
@@ -199,8 +190,8 @@ class TestMethodInterceptors(object):
 
     def test_stacking(self):
         class DomainObject(object):
-            @self.interceptor(person0=ch.Person, annotation='good')
-            @self.interceptor(person1=ch.Person, annotation='evil')
+            @self.interceptor(person0=ch.Person, annotation="good")
+            @self.interceptor(person1=ch.Person, annotation="evil")
             def intercept_me(self, person0, person1):
                 assert isinstance(person0, ch.GoodPerson)
                 assert isinstance(person1, ch.EvilPerson)
@@ -210,16 +201,12 @@ class TestMethodInterceptors(object):
 
 
 class test_provides_decorator(object):
-
     def setup(self):
-
         class HappyPerson(object):
-
             def get_home_location(self):
                 return ch.Beach()
 
         class PeopleModule(object):
-
             def configure(self, binder):
                 binder.bind(ch.Person, to=HappyPerson)
 
@@ -234,6 +221,7 @@ class test_provides_decorator(object):
     def test_the_location_was_injected(self):
         assert isinstance(self.location, ch.Beach)
 
-#TODO: constant injection
 
-#TODO: provider injection
+# TODO: constant injection
+
+# TODO: provider injection

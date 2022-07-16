@@ -1,20 +1,19 @@
-import sys
 import inspect
+import sys
 
 
 class GuiceData(object):
-
     def __init__(self):
         self.init = None
         self.methods = {}
 
     @classmethod
     def from_class(cls, target_class):
-        if '__guice__' not in target_class.__dict__:
+        if "__guice__" not in target_class.__dict__:
             guice_data = cls()
             try:
                 target_class.__guice__ = guice_data
-            except TypeError: # special case for builtin/extension types
+            except TypeError:  # special case for builtin/extension types
                 return guice_data
         return target_class.__guice__
 
@@ -23,7 +22,7 @@ class GuiceData(object):
         composite_data = GuiceData()
         for _cls in target_class.__mro__[-1::-1]:
             data = GuiceData.from_class(_cls)
-            if data.init: # only the last class in the chain
+            if data.init:  # only the last class in the chain
                 composite_data.init = data.init
             for name, method in data.methods.items():
                 composite_data.methods[name] = method
@@ -32,56 +31,57 @@ class GuiceData(object):
 
     @classmethod
     def from_class_dict(cls, class_dict):
-        if '__guice__' not in class_dict:
-            class_dict['__guice__'] = cls()
-        return class_dict['__guice__']
+        if "__guice__" not in class_dict:
+            class_dict["__guice__"] = cls()
+        return class_dict["__guice__"]
 
 
 class GuiceArg(object):
-
     def __init__(self, datatype=None, annotation=None, scope=None):
         self.datatype = datatype
         self.annotation = annotation
         self.scope = scope
 
     def __eq__(self, other):
-        return (self.datatype, self.annotation, self.scope
-                ) == (other.datatype, other.annotation, other.scope)
+        return (self.datatype, self.annotation, self.scope) == (
+            other.datatype,
+            other.annotation,
+            other.scope,
+        )
 
 
 def _validate_func_args(func, kwargs):
     """Validate decorator args when used to decorate a function."""
     sig = inspect.signature(func)
-    if set(kwargs.keys()) != set(list(sig.parameters.keys())[1:]): # chop off self
-        raise TypeError("decorator kwargs do not match %s()'s kwargs"
-                        % func.__name__)
+    if set(kwargs.keys()) != set(list(sig.parameters.keys())[1:]):  # chop off self
+        raise TypeError("decorator kwargs do not match %s()'s kwargs" % func.__name__)
 
 
 def enclosing_frame(frame=None, level=2):
     """Get an enclosing frame that skips decorator code"""
     frame = frame or sys._getframe(level)
-    while frame.f_globals.get('__name__') == __name__: frame = frame.f_back
+    while frame.f_globals.get("__name__") == __name__:
+        frame = frame.f_back
     return frame
 
 
 def inject(**kwargs):
 
-    scope = kwargs.get('scope')
-    if 'scope' in kwargs:
-        del kwargs['scope']
+    scope = kwargs.get("scope")
+    if "scope" in kwargs:
+        del kwargs["scope"]
 
     def _inject(func):
         class_locals = enclosing_frame().f_locals
 
         guice_data = GuiceData.from_class_dict(class_locals)
 
-        annotations = getattr(func, '__guice_annotations__', {})
+        annotations = getattr(func, "__guice_annotations__", {})
 
-        gmethod = dict((k, GuiceArg(v, annotations.get(k)))
-                       for k, v in kwargs.items())
+        gmethod = dict((k, GuiceArg(v, annotations.get(k))) for k, v in kwargs.items())
 
         _validate_func_args(func, kwargs)
-        if func.__name__ == '__init__':
+        if func.__name__ == "__init__":
             guice_data.init = gmethod
         else:
             guice_data.methods[func.__name__] = gmethod
@@ -92,21 +92,19 @@ def inject(**kwargs):
 
 
 class annotate(object):
-
     def __init__(self, **kwargs):
         self.kwargs = kwargs
 
     def __call__(self, method):
         class_locals = enclosing_frame().f_locals
-        if '__guice__' in class_locals:
-            if method.__name__ in class_locals['__guice__'].methods:
-                raise Exception('annotate must be applied before inject')
+        if "__guice__" in class_locals:
+            if method.__name__ in class_locals["__guice__"].methods:
+                raise Exception("annotate must be applied before inject")
         method.__guice_annotations__ = self.kwargs
         return method
 
 
 class provides(object):
-
     def __init__(self, type):
         self._type = type
 

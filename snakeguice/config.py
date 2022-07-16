@@ -9,7 +9,6 @@ class Config(Annotation):
 
 
 class ConfigParserLoader(object):
-
     def __init__(self, filename):
         self.filename = filename
         self.short_name = os.path.basename(filename)
@@ -18,8 +17,7 @@ class ConfigParserLoader(object):
         parser = SafeConfigParser()
         parser.read(self.filename)
         for section, option, value in _iterate_parser(parser):
-            annotation = Config('%s:%s:%s'
-                                % (self.short_name, section, option))
+            annotation = Config("%s:%s:%s" % (self.short_name, section, option))
             binder.bind(annotation, to_instance=value)
 
 

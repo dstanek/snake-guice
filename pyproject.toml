@@ -1,3 +1,7 @@
+[tool.black]
+verbose = true
+line-length = 88
+
 [tool.isort]
 profile="black"
-src_paths="snakeguice,tests"
+skip_gitignore = true
