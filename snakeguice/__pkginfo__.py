@@ -5,10 +5,10 @@ libname = "snake-guice"
 modname = "snakeguice"
 packages = ["snakeguice"]
 
-version = "0.4"
+version = "0.5"
 
 license = "MIT"
-copyright = "Copyright (c) 2008-2010 David Stanek (dstanek@dstanek.com)"
+copyright = "Copyright (c) 2008-2022 David Stanek (dstanek@dstanek.com)"
 
 short_desc = "A simple, lightweight Python dependency injection framework"
 long_desc = """\
@@ -28,7 +28,7 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
-    "Programming Language :: Python",
+    "Programming Language :: Python :: 3 :: Only",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Software Development :: Libraries :: Application Frameworks",
 ]
