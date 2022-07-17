@@ -8,7 +8,7 @@ from snakeguice.decorators import GuiceArg, annotate, inject
 def test_inject_init():
     """Using the inject decorator on a constructor."""
 
-    class SomeClass(object):
+    class SomeClass:
         @inject(x=int)
         def __init__(self, x):
             pass
@@ -20,7 +20,7 @@ def test_inject_init():
 def test_inject_methods():
     """Using the inject decorator on a method."""
 
-    class SomeClass(object):
+    class SomeClass:
         @inject(y=float)
         def go(self, y):
             pass
@@ -35,7 +35,7 @@ def test_inject_all():
     """Using combinations of inject including annotations."""
     # TODO: add annotation stuff again
 
-    class SomeClass(object):
+    class SomeClass:
         @inject(a=bool, b=int, c=float)
         @annotate(a="free", b="paid")
         def __init__(self, a, b, c):
@@ -71,7 +71,7 @@ def test_incorrect_methods0():
 
     with pytest.raises(TypeError):
 
-        class SomeClass(object):
+        class SomeClass:
             @inject(int, y=int)
             def f(self, x, y):
                 pass
@@ -82,7 +82,7 @@ def test_incorrect_methods1():
 
     with pytest.raises(TypeError):
 
-        class SomeClass(object):
+        class SomeClass:
             @inject(z=int, y=int)
             def f(self, x, y):
                 pass
@@ -93,7 +93,7 @@ def test_incorrect_methods2():
 
     with pytest.raises(TypeError):
 
-        class SomeClass(object):
+        class SomeClass:
             @inject(y=int)
             def f(self, x, y):
                 pass
@@ -104,7 +104,7 @@ def test_incorrect_methods3():
 
     with pytest.raises(TypeError):
 
-        class SomeClass(object):
+        class SomeClass:
             @inject
             def f(self, x, y):
                 pass
@@ -115,7 +115,7 @@ def test_order_of_annotate():
 
     with pytest.raises(Exception):
 
-        class SomeClass(object):
+        class SomeClass:
             @annotate(a="large")
             @inject(a=int)
             def f(self, a):

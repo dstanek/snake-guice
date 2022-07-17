@@ -8,7 +8,7 @@ from snakeguice.config import Config, ConfigParserLoader
 
 def describe_injecting_configuration_with_the_default_adapter():
 
-    class MyWebService(object):
+    class MyWebService:
 
         @inject(ipaddress=Config('config.ini:webservice:ipaddress'),
                 port=Config('config.ini:webservice:port'))
@@ -16,7 +16,7 @@ def describe_injecting_configuration_with_the_default_adapter():
             self.ipaddress = ipaddress
             self.port = port
 
-    class ConfigModule(object):
+    class ConfigModule:
 
         def configure(self, binder):
             config_loader = ConfigParserLoader('specs/config.ini')

@@ -7,7 +7,7 @@ from snakeguice import inject, annotate
 from forms import MyForm
 
 
-class BaseController(object):
+class BaseController:
 
     @inject(template_dir=str)
     @annotate(template_dir='base template directory')

@@ -9,7 +9,7 @@ import snakeguice as sg
 #
 
 
-class Person(object):
+class Person:
     pass
 
 
@@ -26,7 +26,7 @@ class EvilPerson(Person):
 #
 
 
-class _TestBinder(object):
+class _TestBinder:
     """Tests for the Binder class."""
 
     def setup(self):
@@ -57,7 +57,7 @@ class _TestBinder(object):
         assert isinstance(binding, sg.Binding)
 
 
-class _TestBinding(object):
+class _TestBinding:
     """Test the Binding class."""
 
     def setup(self):

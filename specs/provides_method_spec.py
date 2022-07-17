@@ -9,10 +9,10 @@ from snakeguice import inject, provides, Injector
 def describe_provider_methods():
 
     def describe_providing_an_object_with_no_dependencies():
-        class SomeInterface(object): pass
-        class SomeImpl(object): pass
+        class SomeInterface: pass
+        class SomeImpl: pass
 
-        class Module(object):
+        class Module:
             @provides(SomeInterface)
             def aSomeInterfaceFactory(self):
                 return SomeImpl()
@@ -27,16 +27,16 @@ def describe_provider_methods():
             assert isinstance(some_instance, SomeImpl)
 
     def describe_providing_an_object_with_dependencies():
-        class SomeInterface(object): pass
+        class SomeInterface: pass
 
-        class SomeImpl(object):
+        class SomeImpl:
 
             def __init__(self, other_dep):
                 self.other_dep = other_dep
 
-        class SomeOtherDependency(object): pass
+        class SomeOtherDependency: pass
 
-        class Module(object):
+        class Module:
 
             @provides(SomeInterface)
             @inject(other_dep=SomeOtherDependency)

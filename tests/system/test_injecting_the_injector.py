@@ -2,15 +2,15 @@ from snakeguice import create_injector, inject
 from snakeguice.interfaces import Injector
 
 
-class ISomething(object):
+class ISomething:
     """An interface."""
 
 
-class Something(object):
+class Something:
     """Something a little more concrete."""
 
 
-class SomethingProvider(object):
+class SomethingProvider:
     @inject(injector=Injector)
     def __init__(self, injector):
         self.injector = injector
@@ -19,7 +19,7 @@ class SomethingProvider(object):
         return self.injector.get_instance(Something)
 
 
-class Module(object):
+class Module:
     def configure(self, binder):
         binder.bind(ISomething, to_provider=SomethingProvider)
 

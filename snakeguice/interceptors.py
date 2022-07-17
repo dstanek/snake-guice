@@ -2,7 +2,7 @@
 """
 
 
-class ParameterInterceptor(object):
+class ParameterInterceptor:
     def __init__(self, injector):
         self._injector = injector
 

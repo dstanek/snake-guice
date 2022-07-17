@@ -6,7 +6,7 @@ from snakeguice.decorators import GuiceData
 def describe_initializing_GuiceData_from_a_class():
 
     def describe_without_instance_attached():
-        class Dummy(object): pass
+        class Dummy: pass
 
         data = GuiceData.from_class(Dummy)
 
@@ -18,7 +18,7 @@ def describe_initializing_GuiceData_from_a_class():
 
     def describe_with_instance_attached():
         existing_data = GuiceData()
-        class Dummy(object):
+        class Dummy:
             __guice__ = existing_data
 
         data = GuiceData.from_class(Dummy)
@@ -59,7 +59,7 @@ def describe_getting_GuiceData_from_a_dict():
 
 def describe_compositing_GuiceData_instances():
 
-    class GrandDaddy(object): pass
+    class GrandDaddy: pass
     g_data = GuiceData.from_class(GrandDaddy)
     g_data.init = object()
     g_data.methods = {'g_method': object(),'method': object()}

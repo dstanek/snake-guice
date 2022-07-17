@@ -5,7 +5,7 @@ Sample class heirarchy used in the unit tests
 """
 
 
-class Person(object):
+class Person:
     pass
 
 
@@ -17,7 +17,7 @@ class EvilPerson(Person):
     pass
 
 
-class Place(object):
+class Place:
     pass
 
 
@@ -29,7 +29,7 @@ class Glacier(Place):
     pass
 
 
-class Logger(object):
+class Logger:
     pass
 
 

@@ -1,7 +1,7 @@
 from snakeguice.annotation import Annotation
 
 
-class test_Annotations_with_equal_values(object):
+class test_Annotations_with_equal_values:
     @classmethod
     def setup_class(cls):
         cls.annotation0 = Annotation("value here")
@@ -14,7 +14,7 @@ class test_Annotations_with_equal_values(object):
         assert self.annotation0 == self.annotation1
 
 
-class test_Annotations_without_equal_values(object):
+class test_Annotations_without_equal_values:
     @classmethod
     def setup_class(cls):
         cls.annotation0 = Annotation("value here0")

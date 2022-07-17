@@ -12,7 +12,7 @@ from snakeguice import Injector, ParameterInterceptor, annotate, inject, provide
 from .. import cls_heirarchy as ch
 
 
-class given_an_injector(object):
+class given_an_injector:
     def when_asking_for_a_class_not_bound_by_a_module(self):
         injector = Injector([])
         self.person = injector.get_instance(ch.Person)
@@ -32,7 +32,7 @@ def test_injector_simple():
 
 
 def test_annotated_injector():
-    class DomainObject(object):
+    class DomainObject:
         @inject(person0=ch.Person, person1=ch.Person, person2=ch.Person)
         @annotate(person0="good", person1="evil")
         def __init__(self, person0, person1, person2):
@@ -54,7 +54,7 @@ def test_annotated_injector():
 
 
 def test_annotations():
-    class DomainObject(object):
+    class DomainObject:
         @inject(hero=ch.Person, villian=ch.Person, victim=ch.Person)
         @annotate(hero="good", villian="evil")
         def __init__(self, hero, villian, victim):
@@ -79,7 +79,7 @@ def test_annotations():
 
 
 def test_injector_injecting_a_provider():
-    class SimpleProvider(object):
+    class SimpleProvider:
         def get(self):
             return ch.GoodPerson()
 
@@ -93,7 +93,7 @@ def test_injector_injecting_a_provider():
 
 
 def test_injector_injecting_from_a_provider():
-    class SimpleProvider(object):
+    class SimpleProvider:
         def get(self):
             return ch.GoodPerson()
 
@@ -111,7 +111,7 @@ def Xtest_collision():
 
 
 def test_inject_provider_with_args():
-    class PersonProvider(object):
+    class PersonProvider:
         def get(self, typ):
             if typ == "good":
                 return ch.GoodPerson
@@ -132,7 +132,7 @@ def test_inject_provider_with_args():
 
 
 def test_inject_decorator():
-    class DomainObject(object):
+    class DomainObject:
         @inject(logger=ch.Logger)
         def __init__(self, logger):
             assert isinstance(logger, ch.ConcreteLogger)
@@ -155,7 +155,7 @@ def test_inject_decorator():
     injector.get_instance(DomainObject)
 
 
-class TestMethodInterceptors(object):
+class TestMethodInterceptors:
     def setup(self):
         class MyModule:
             def configure(self, binder):
@@ -168,7 +168,7 @@ class TestMethodInterceptors(object):
         self.interceptor = ParameterInterceptor(self.injector)
 
     def test_noargs(self):
-        class DomainObject(object):
+        class DomainObject:
             @self.interceptor(person=ch.Person, annotation="evil")
             def intercept_me(self, person):
                 assert isinstance(person, ch.EvilPerson)
@@ -177,7 +177,7 @@ class TestMethodInterceptors(object):
         obj.intercept_me()
 
     def test_args(self):
-        class DomainObject(object):
+        class DomainObject:
             @self.interceptor(person=ch.Person, annotation="evil")
             def intercept_me(self, arg0, kwarg0=None, kwarg1=None, person=None):
                 assert arg0 == 0
@@ -189,7 +189,7 @@ class TestMethodInterceptors(object):
         obj.intercept_me(0, kwarg0=1)
 
     def test_stacking(self):
-        class DomainObject(object):
+        class DomainObject:
             @self.interceptor(person0=ch.Person, annotation="good")
             @self.interceptor(person1=ch.Person, annotation="evil")
             def intercept_me(self, person0, person1):
@@ -200,13 +200,13 @@ class TestMethodInterceptors(object):
         obj.intercept_me()
 
 
-class test_provides_decorator(object):
+class test_provides_decorator:
     def setup(self):
-        class HappyPerson(object):
+        class HappyPerson:
             def get_home_location(self):
                 return ch.Beach()
 
-        class PeopleModule(object):
+        class PeopleModule:
             def configure(self, binder):
                 binder.bind(ch.Person, to=HappyPerson)
 

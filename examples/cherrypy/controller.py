@@ -3,7 +3,7 @@ from snakeguice import inject
 from providers import UserProvider, RequestDataProvider
 
 
-class HelloWorld(object):
+class HelloWorld:
 
     @inject(user_provider=UserProvider,
             request_data_provider=RequestDataProvider)

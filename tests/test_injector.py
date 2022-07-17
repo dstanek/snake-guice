@@ -9,7 +9,7 @@ from snakeguice import binder, create_injector, injector
 from . import cls_heirarchy as ch
 
 
-class FakeModule(object):
+class FakeModule:
     def __init__(self):
         self.binder = None
         self.num_calls = 0
@@ -63,9 +63,9 @@ def test_create_child():
     assert isinstance(person, ch.GoodPerson)
 
 
-class test_using_create_injector_factory(object):
+class test_using_create_injector_factory:
     def setup(self):
-        class PeopleModule(object):
+        class PeopleModule:
             def configure(self, binder):
                 binder.bind(ch.Person, to=ch.EvilPerson)
 
@@ -84,9 +84,9 @@ class test_using_create_injector_factory(object):
 #     modules = [FakeModule(), FakeModule(), FakeModule()]
 
 
-class test_using_get_provider(object):
+class test_using_get_provider:
     def setup(self):
-        class PeopleModule(object):
+        class PeopleModule:
             def configure(self, binder):
                 binder.bind(ch.Person, to=ch.EvilPerson)
 

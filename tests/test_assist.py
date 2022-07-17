@@ -9,23 +9,23 @@ from snakeguice.assist import AssistProvider, assisted_inject
 from snakeguice.errors import AssistError
 
 
-class IService(object):
+class IService:
     """An interface for services."""
 
 
-class IWorkerFactory(object):
+class IWorkerFactory:
     """An interface to create Worker instances."""
 
 
-class CustomerService(object):
+class CustomerService:
     """A concrete service for dealing with customers."""
 
 
-class OrderService(object):
+class OrderService:
     """A concrete service for dealing with orders."""
 
 
-class Worker(object):
+class Worker:
     """Uses services to do real work."""
 
     @assisted_inject(c_service=IService, o_service=IService)
@@ -37,7 +37,7 @@ class Worker(object):
         self.date = date
 
 
-class Manager(object):
+class Manager:
     """Makes sure that the worker does its work."""
 
     @inject(worker_factory=IWorkerFactory)
@@ -45,14 +45,14 @@ class Manager(object):
         self.worker = worker_factory.create(name="awesome worker", date="07/09/2010")
 
 
-class Module(object):
+class Module:
     def configure(self, binder):
         binder.bind(IWorkerFactory, to_provider=AssistProvider(Worker))
         binder.bind(IService, annotated_with="customer", to=CustomerService)
         binder.bind(IService, annotated_with="order", to=OrderService)
 
 
-class test_partiall_injecting_an_object(object):
+class test_partiall_injecting_an_object:
     def setup(self):
         inj = create_injector([Module()])
         self.manager = inj.get_instance(Manager)
@@ -61,7 +61,7 @@ class test_partiall_injecting_an_object(object):
         assert isinstance(self.manager.worker, Worker)
 
 
-class base_AssistProvider_decorator_errors(object):
+class base_AssistProvider_decorator_errors:
     def test_that_an_exception_is_raised(self):
         with pytest.raises(AssistError):
             AssistProvider(self.C)
@@ -71,7 +71,7 @@ class test_creating_an_AssistProvider_from_an_inject(
     base_AssistProvider_decorator_errors
 ):
     def setup(self):
-        class C(object):
+        class C:
             @inject(x=object)
             def __init__(self, x):
                 pass
@@ -83,7 +83,7 @@ class test_creating_an_AssistProvider_from_an_uninjected_object(
     base_AssistProvider_decorator_errors
 ):
     def setup(self):
-        class C(object):
+        class C:
             pass
 
         self.C = C
@@ -92,7 +92,7 @@ class test_creating_an_AssistProvider_from_an_uninjected_object(
 def test_using_assisted_inject_on_a_method():
     with pytest.raises(AssistError):
 
-        class C(object):
+        class C:
             @assisted_inject(x=object)
             def m(self, x):
                 pass
