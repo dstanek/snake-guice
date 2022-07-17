@@ -1,4 +1,4 @@
-class ModuleAdapter(object):
+class ModuleAdapter:
     """Adapts the simple and standard module interfaces to a common one."""
 
     def __init__(self, module, injector):
@@ -13,7 +13,7 @@ class ModuleAdapter(object):
             self._module.configure(binder)
 
 
-class Module(object):
+class Module:
     """Base class for all standard modules."""
 
     def __init__(self):
@@ -57,7 +57,7 @@ class PrivateModule(Module):
         """Expose the child injector to the parent inject for a binding."""
         private_module = self
 
-        class Provider(object):
+        class Provider:
             def get(self):
                 return private_module.private_injector.get_instance(
                     interface, annotation

@@ -9,8 +9,8 @@ framework built entirely using snakejuice.
 ## start loggers.py
 ## Logging functionality
 
-class Logger(object): pass
-class FileLogger(Logger): pass
+class Logger: pass
+class FileLogger: pass
 
 ## start loggers.py
 
@@ -25,8 +25,8 @@ from snakeguice import inject
 
 #from loggers import Logger -- not needed in this example
 
-class Session(object): pass
-class WebSession(object):
+class Session: pass
+class WebSession:
     logger = inject(Logger)
 
 ## start session.py
@@ -42,7 +42,7 @@ from snakeguice import inject
 
 #from session import Session -- not needed in this example
 
-class Handler(object):
+class Handler:
 
     session = inject(Session)
 
@@ -65,7 +65,7 @@ from snakeguice import inject
 
 #from handlers import Handler -- not needed in this example
 
-class Server(object): pass
+class Server: pass
 
 class WebServer(Server):
 
@@ -109,7 +109,7 @@ from snakeguice import Injector
 #from myappmodule import MyAppModule -- not needed in this example
 #from server import Server -- not needed in this example
 
-class Application(object):
+class Application:
     """Hello. I am responsible for setting up all of the application's state.
     Not only will I setup the snakeguice injector, but I may also initialize
     dataconnections or other application-wide resources.

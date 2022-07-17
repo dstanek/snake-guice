@@ -8,7 +8,7 @@ def given_an_empty_injector():
 
     def when_requesting_an_Injector_instance():
 
-        class Awesome(object):
+        class Awesome:
             @inject(injector=Injector)
             def __init__(self, injector):
                 self.injector = injector

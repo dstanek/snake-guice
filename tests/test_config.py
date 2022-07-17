@@ -4,7 +4,7 @@ from snakeguice import config
 
 
 # class __TestConfig(DingusTestCase(config.Config)):
-class __TestConfig(object):
+class __TestConfig:
     def setup(self):
         super(__TestConfig, self).setup()
 

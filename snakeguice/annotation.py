@@ -1,4 +1,4 @@
-class Annotation(object):
+class Annotation:
     """Base class for all annotations."""
 
     def __init__(self, value):

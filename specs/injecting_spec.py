@@ -8,19 +8,19 @@ from snakeguice import Injector, inject, annotate
 
 def describe_injecting_a_class():
 
-    class IClass(object):
+    class IClass:
         pass
 
-    class MyClass(object):
+    class MyClass:
         pass
 
-    class DomainObject(object):
+    class DomainObject:
 
         @inject(class_=IClass)
         def __init__(self, class_):
             self.class_ = class_
 
-    class Module(object):
+    class Module:
 
         def configure(self, binder):
             binder.bind(IClass, to_instance=MyClass)

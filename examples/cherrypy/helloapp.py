@@ -6,7 +6,7 @@ from providers import UserProvider, RequestDataProvider
 from scopes import CHERRYPY_REQUEST_SCOPE, CHERRYPY_SESSION_SCOPE
 
 
-class Module(object):
+class Module:
 
     def configure(self, binder):
         binder.bind(UserProvider, to=UserProvider,

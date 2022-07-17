@@ -1,7 +1,7 @@
 from snakeguice import errors, providers, scopes
 
 
-class Key(object):
+class Key:
     def __init__(self, interface, annotation=None):
         self._interface = interface
         self._annotation = annotation
@@ -19,12 +19,12 @@ class Key(object):
         return not self == other
 
 
-class _EmptyBinder(object):
+class _EmptyBinder:
     def get_binding(self, key):
         return None
 
 
-class Binder(object):
+class Binder:
     def __init__(self, parent=None):
         self._parent = parent or _EmptyBinder()
         self._binding_map = {}
@@ -68,7 +68,7 @@ class Binder(object):
         return Binder(self)
 
 
-class LazyBinder(object):
+class LazyBinder:
     def __init__(self, parent=None):
         self._parent = parent or _EmptyBinder()
         self._binding_map = {}
@@ -130,14 +130,14 @@ class LazyBinder(object):
         return Binder(self)
 
 
-class Binding(object):
+class Binding:
     def __init__(self, key=None, provider=None, scope=None):
         self.key = key
         self.provider = provider
         self.scope = scope
 
 
-class BinderErrorRecord(object):
+class BinderErrorRecord:
     def __init__(self, message, location, source):
         self.message = message
         self.location = location

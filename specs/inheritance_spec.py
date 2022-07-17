@@ -6,19 +6,19 @@
 from snakeguice import Injector, inject, annotate
 
 
-class Data(object): pass
-class OldData(object): pass
-class NewData(object): pass
+class Data: pass
+class OldData: pass
+class NewData: pass
 
 
-class Module(object):
+class Module:
     def configure(self, binder):
         binder.bind(Data, annotated_with='old', to=OldData)
         binder.bind(Data, annotated_with='new', to=NewData)
 
 
 def describe_a_child_inheriting_an_injected_init():
-    class Parent(object):
+    class Parent:
         @inject(value=OldData)
         def __init__(self, value):
             self.value = value
@@ -33,7 +33,7 @@ def describe_a_child_inheriting_an_injected_init():
 
 
 def describe_a_child_inheriting_an_injected_method():
-    class Parent(object):
+    class Parent:
         @inject(value=Data)
         @annotate(value='old')
         def set_parent_value(self, value):
@@ -55,7 +55,7 @@ def describe_a_child_inheriting_an_injected_method():
 
 
 def describe_a_child_overriding_an_inherited_method():
-    class Parent(object):
+    class Parent:
         @inject(value=Data)
         @annotate(value='old')
         def set_value(self, value):

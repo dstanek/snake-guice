@@ -13,7 +13,7 @@ def is_unbound_method(func):
     return inspect.ismethod(func) and func.im_self is None
 
 
-class RoutesBinder(object):
+class RoutesBinder:
     def __init__(self, mapper, annotation):
         self.mapper = mapper
         self._annotation = annotation
@@ -68,7 +68,7 @@ class AutoRoutesModule(RoutesModule):
                 routes_binder.connect(route, controller=controller)
 
 
-class Application(object):
+class Application:
     def __init__(self, injector):
         self._injector = injector
 

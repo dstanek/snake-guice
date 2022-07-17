@@ -2,35 +2,35 @@ from snakeguice import create_injector, inject, providers
 from snakeguice.multibinder import Dict, DictBinder, List, ListBinder
 
 
-class ISnack(object):
+class ISnack:
     """A snack interface."""
 
 
-class Twix(object):
+class Twix:
     """A concrete snack implementation."""
 
 
-class Snickers(object):
+class Snickers:
     """A concrete snack implementation."""
 
 
-class Skittles(object):
+class Skittles:
     """A concrete snack implementation."""
 
 
-class Lays(object):
+class Lays:
     """A concrete snack implementation."""
 
 
-class Tostitos(object):
+class Tostitos:
     """A concrete snack implementation."""
 
 
-class Ruffles(object):
+class Ruffles:
     """A concrete snack implementation."""
 
 
-class ListCandyModule(object):
+class ListCandyModule:
     """One to two modules adding to the multibinder."""
 
     def configure(self, binder):
@@ -41,7 +41,7 @@ class ListCandyModule(object):
         listbinder.add_binding(to_instance=Skittles())
 
 
-class ListChipsModule(object):
+class ListChipsModule:
     """One to two modules adding to the multibinder."""
 
     def configure(self, binder):
@@ -52,13 +52,13 @@ class ListChipsModule(object):
         listbinder.add_binding(to_instance=Ruffles())
 
 
-class ListSnackMachine(object):
+class ListSnackMachine:
     @inject(snacks=List(ISnack))
     def __init__(self, snacks):
         self.snacks = snacks
 
 
-class DictCandyModule(object):
+class DictCandyModule:
     """One to two modules adding to the multibinder."""
 
     def configure(self, binder):
@@ -69,7 +69,7 @@ class DictCandyModule(object):
         dictbinder.add_binding("skittles", to_instance=Skittles())
 
 
-class DictChipsModule(object):
+class DictChipsModule:
     """One to two modules adding to the multibinder."""
 
     def configure(self, binder):
@@ -80,7 +80,7 @@ class DictChipsModule(object):
         dictbinder.add_binding("ruffles", to_instance=Ruffles())
 
 
-class DictSnackMachine(object):
+class DictSnackMachine:
     @inject(snacks=Dict(ISnack))
     def __init__(self, snacks):
         self.snacks = snacks
@@ -89,7 +89,7 @@ class DictSnackMachine(object):
 SNACK_CLASSES = (Twix, Snickers, Skittles, Lays, Tostitos, Ruffles)
 
 
-class base_multibinder(object):
+class base_multibinder:
     def test_that_the_injected_value_has_the_correct_number_of_elements(self):
         assert len(self.snack_machine.snacks) == len(SNACK_CLASSES)
 

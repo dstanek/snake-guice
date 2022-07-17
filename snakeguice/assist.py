@@ -40,7 +40,7 @@ def AssistProvider(cls):
             "AssistProvider can only by used on " "@assisted_inject-ed classes"
         )
 
-    class _AssistProvider(object):
+    class _AssistProvider:
         @inject(injector=Injector)
         def __init__(self, injector):
             self._injector = injector
@@ -61,7 +61,7 @@ def build_factory(injector, cls):
     all_args = inspect.getargspec(cls.__init__).args[1:]
     needed_args = set(all_args) - set(providers.keys())
 
-    class DynamicFactory(object):
+    class DynamicFactory:
         def create(self, **kwargs):
             if set(kwargs.keys()) - needed_args:
                 raise TypeError("TODO: error message here about too many values")

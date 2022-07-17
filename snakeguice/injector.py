@@ -8,7 +8,7 @@ from snakeguice.interfaces import Injector as IInjector
 from snakeguice.modules import ModuleAdapter
 
 
-class ProvidesBinderHelper(object):
+class ProvidesBinderHelper:
     def bind_providers(self, module, binder):
         members = [m for m in inspect.getmembers(module) if inspect.ismethod(m[1])]
         for name, method in members:
@@ -18,7 +18,7 @@ class ProvidesBinderHelper(object):
                 binder.bind(type, to_provider=provider)
 
     def _build_provider(self, module, type, method):
-        class GenericProvider(object):
+        class GenericProvider:
             @inject(injector=IInjector)
             def __init__(self, injector):
                 self._injector = injector
@@ -37,7 +37,7 @@ class ProvidesBinderHelper(object):
         return GenericProvider
 
 
-class Injector(object):
+class Injector:
     def __init__(self, modules=None, binder=None, stage=None):
         if modules is None:
             modules = []
@@ -62,7 +62,7 @@ class Injector(object):
     def get_provider(self, cls, annotation=None):
         injector = self
 
-        class DynamicProvider(object):
+        class DynamicProvider:
             def get(self):
                 return injector.get_instance(cls, annotation)
 

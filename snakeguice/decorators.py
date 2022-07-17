@@ -2,7 +2,7 @@ import inspect
 import sys
 
 
-class GuiceData(object):
+class GuiceData:
     def __init__(self):
         self.init = None
         self.methods = {}
@@ -36,7 +36,7 @@ class GuiceData(object):
         return class_dict["__guice__"]
 
 
-class GuiceArg(object):
+class GuiceArg:
     def __init__(self, datatype=None, annotation=None, scope=None):
         self.datatype = datatype
         self.annotation = annotation
@@ -92,7 +92,7 @@ def inject(**kwargs):
     return _inject
 
 
-class annotate(object):
+class annotate:
     def __init__(self, **kwargs):
         self.kwargs = kwargs
 
@@ -105,7 +105,7 @@ class annotate(object):
         return method
 
 
-class provides(object):
+class provides:
     def __init__(self, type):
         self._type = type
 

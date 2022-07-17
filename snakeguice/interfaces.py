@@ -1,5 +1,5 @@
 """Interfaces used by snake-guice directly"""
 
 
-class Injector(object):
+class Injector:
     """An interface automatically bound to the current Injector instance."""
