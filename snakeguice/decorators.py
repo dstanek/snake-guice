@@ -50,11 +50,11 @@ class GuiceArg(object):
         )
 
 
-def _validate_func_args(func, kwargs):
-    """Validate decorator args when used to decorate a function."""
-    sig = inspect.signature(func)
+def _validate_method_args(method, kwargs):
+    """Validate decorator args when used to decorate a method."""
+    sig = inspect.signature(method)
     if set(kwargs.keys()) != set(list(sig.parameters.keys())[1:]):  # chop off self
-        raise TypeError("decorator kwargs do not match %s()'s kwargs" % func.__name__)
+        raise TypeError("decorator kwargs do not match %s()'s kwargs" % method.__name__)
 
 
 def enclosing_frame(frame=None, level=2):
@@ -72,22 +72,22 @@ def inject(**kwargs):
     # if "scope" in kwargs:
     #     del kwargs["scope"]
 
-    def _inject(func):
+    def _inject(method):
         class_locals = enclosing_frame().f_locals
 
         guice_data = GuiceData.from_class_dict(class_locals)
 
-        annotations = getattr(func, "__guice_annotations__", {})
+        annotations = getattr(method, "__guice_annotations__", {})
 
         gmethod = dict((k, GuiceArg(v, annotations.get(k))) for k, v in kwargs.items())
 
-        _validate_func_args(func, kwargs)
-        if func.__name__ == "__init__":
+        _validate_method_args(method, kwargs)
+        if method.__name__ == "__init__":
             guice_data.init = gmethod
         else:
-            guice_data.methods[func.__name__] = gmethod
+            guice_data.methods[method.__name__] = gmethod
 
-        return func
+        return method
 
     return _inject
 
