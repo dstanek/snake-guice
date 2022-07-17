@@ -13,8 +13,8 @@ def assisted_inject(**kwargs):
     # if "scope" in kwargs:
     #     del kwargs["scope"]
 
-    def _assisted_inject(func):
-        if func.__name__ != "__init__":
+    def _assisted_inject(method):
+        if method.__name__ != "__init__":
             raise AssistError("assisted_inject can only be used on __init__s")
 
         class_locals = enclosing_frame().f_locals
@@ -22,13 +22,13 @@ def assisted_inject(**kwargs):
         guice_data = GuiceData.from_class_dict(class_locals)
         guice_data.assisted = True  # TODO: I don't like this, but it works for now
 
-        annotations = getattr(func, "__guice_annotations__", {})
+        annotations = getattr(method, "__guice_annotations__", {})
 
         guice_data.init = dict(
             (k, GuiceArg(v, annotations.get(k))) for k, v in kwargs.items()
         )
 
-        return func
+        return method
 
     return _assisted_inject
 
