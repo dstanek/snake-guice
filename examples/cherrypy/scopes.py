@@ -2,10 +2,10 @@ import cherrypy
 from snakeguice.providers import InstanceProvider
 
 
-class CherrypyRequestScope(object):
+class CherrypyRequestScope:
 
     def scope(self, key, provider):
-        class SessionProvider(object):
+        class SessionProvider:
             def get(self):
                 if not hasattr(cherrypy.request, '__guicy__'):
                     cherrypy.request.__guicy__ = {}
@@ -17,10 +17,10 @@ class CherrypyRequestScope(object):
         return InstanceProvider(SessionProvider())
 
 
-class CherrypySessionScope(object):
+class CherrypySessionScope:
 
     def scope(self, key, provider):
-        class SessionProvider(object):
+        class SessionProvider:
             def get(self):
                 value = cherrypy.session.get(key)
                 if not value:

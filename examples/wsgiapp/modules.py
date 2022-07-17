@@ -4,7 +4,7 @@ from snakeguice.extras.snakeweb import RoutesModule
 from controllers import HomeController
 
 
-class MainModule(object):
+class MainModule:
 
     def configure(self, binder):
         app_dir = path.dirname(__file__)

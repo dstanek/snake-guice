@@ -4,23 +4,23 @@ from snakeguice import inject, annotate, Injector
 from snakeguice.modules import Module, PrivateModule
 
 
-class IFoot(object): pass
-class ILeg(object): pass
-class IRobot(object): pass
+class IFoot: pass
+class ILeg: pass
+class IRobot: pass
 
 
-class LeftFoot(object): pass
-class RightFoot(object): pass
+class LeftFoot: pass
+class RightFoot: pass
 
 
-class Leg(object):
+class Leg:
 
     @inject(foot=IFoot)
     def __init__(self, foot):
         self.foot = foot
 
 
-class Robot(object):
+class Robot:
 
     @inject(left_leg=ILeg, right_leg=ILeg)
     @annotate(left_leg="left", right_leg="right")

@@ -5,7 +5,7 @@
 from snakeguice import providers
 
 
-class _NoScope(object):
+class _NoScope:
     """A default scrope returns the same provider that gets passed in.
 
     This is internally used and will probably never be directly used in
@@ -16,7 +16,7 @@ class _NoScope(object):
         return unscoped_provider
 
 
-class _Singleton(object):
+class _Singleton:
     """A singleton scope only allows a single instance to be created for a
     given key.
     """

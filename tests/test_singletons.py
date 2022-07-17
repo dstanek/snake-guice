@@ -9,8 +9,8 @@ from snakeguice import Injector, annotate, inject, scopes
 from . import cls_heirarchy as ch
 
 
-class TestSingletonScope(object):
-    class DomainObject(object):
+class TestSingletonScope:
+    class DomainObject:
         @inject(logger_a=ch.Logger, logger_b=ch.Logger, logger_c=ch.Logger)
         def set_loggers(self, logger_a, logger_b, logger_c):
             self.logger_a = logger_a
@@ -37,7 +37,7 @@ class TestSingletonScope(object):
         def set_place_d(self, place_d):
             self.place_d = place_d
 
-    class SimpleClass(object):
+    class SimpleClass:
         @inject(place=ch.Place)
         def __init__(self, place):
             self.place = place
@@ -60,7 +60,7 @@ class TestSingletonScope(object):
         self.assert_obj(obj)
 
     def _test_inject_into_singleton(self):
-        class MyLogger(object):
+        class MyLogger:
             hot_place = inject(ch.Place, annotation="hot")
             cold_place = inject(ch.Place, annotation="cold")
 

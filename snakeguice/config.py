@@ -8,7 +8,7 @@ class Config(Annotation):
     """Annotation for ConfigParser style config files."""
 
 
-class ConfigParserLoader(object):
+class ConfigParserLoader:
     def __init__(self, filename):
         self.filename = filename
         self.short_name = os.path.basename(filename)

@@ -1,12 +1,12 @@
 from snakeguice.scopes import _NoScope, _Singleton
 
 
-class FakeProvider(object):
+class FakeProvider:
     def get(self):
         return object()
 
 
-class test_the_NoScope_scope(object):
+class test_the_NoScope_scope:
     def setup(self):
         self.provider = FakeProvider()
         self.scope = _NoScope()
@@ -15,7 +15,7 @@ class test_the_NoScope_scope(object):
         assert self.scope.scope("key", self.provider) is self.provider
 
 
-class test_the_Singleton_scope(object):
+class test_the_Singleton_scope:
     def setup(self):
         self.key = "key"
         self.provider = FakeProvider()

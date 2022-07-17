@@ -27,7 +27,7 @@ class TestRoutesModuleSetup(TestCase):
         assert self.mock_routes.Mapper.calls()
 
 
-class TestRoutesModuleIsAbstract(object):
+class TestRoutesModuleIsAbstract:
     def setup(self):
         self.module = snakeweb.RoutesModule()
 
@@ -36,7 +36,7 @@ class TestRoutesModuleIsAbstract(object):
             self.module.configure(Mock())
 
 
-class BaseTestRoutesBinder(object):
+class BaseTestRoutesBinder:
     def setup(self):
         self.routes_mapper = Mock()
         self.annotation = Mock()
@@ -73,7 +73,7 @@ class TestWhenAutoConfiguringRoutes(TestCase):
         patcher.start()
         self.addCleanup(patcher.stop)
 
-        class MyController(object):
+        class MyController:
             def __call__(self):
                 pass
 

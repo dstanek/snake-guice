@@ -6,7 +6,7 @@ from snakeguice.modules import Module
 from snakeguice.extras import snakeweb
 
 
-class HWController(object):
+class HWController:
 
     def index(self, request):
         return snakeweb.Response('Hello, World!<br>I see you are from: {0}'

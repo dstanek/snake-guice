@@ -6,7 +6,7 @@ from snakeguice.errors import MultiBindingError
 from snakeguice.interfaces import Injector
 
 
-class _MultiBinder(object):
+class _MultiBinder:
     def __init__(self, binder, interface):
         self._binder = binder
         self._interface = interface
@@ -52,7 +52,7 @@ class ListBinder(_MultiBinder):
         self._provider.add_provider(provider)
 
     def _create_provider(self):
-        class DynamicMultiBindingProvider(object):
+        class DynamicMultiBindingProvider:
             providers = []
 
             @inject(injector=Injector)
@@ -84,7 +84,7 @@ class DictBinder(_MultiBinder):
     def _create_provider(self):
         binder_self = self
 
-        class DynamicMultiBindingProvider(object):
+        class DynamicMultiBindingProvider:
             providers = {}
 
             @inject(injector=Injector)
