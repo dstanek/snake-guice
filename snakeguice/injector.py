@@ -1,8 +1,7 @@
 import inspect
-import warnings
 
+from snakeguice._extractor import extract_params
 from snakeguice.binder import Binder, Key
-from snakeguice.decorators import GuiceData as _GuiceData
 from snakeguice.decorators import inject
 from snakeguice.interfaces import Injector as IInjector
 from snakeguice.modules import ModuleAdapter
@@ -25,12 +24,9 @@ class ProvidesBinderHelper:
 
             def get(self):
                 kwargs = {}
-                method_name = method.__name__
-                guice_data = _GuiceData.from_class(module.__class__)
-                injectable_args = guice_data.methods.get(method_name, {})
-                for name, guicearg in injectable_args.items():
-                    kwargs[name] = self._injector.get_instance(
-                        guicearg.datatype, guicearg.annotation
+                for param in extract_params(method):
+                    kwargs[param.name] = self._injector.get_instance(
+                        param.dtype, param.annotation
                     )
                 return method(**kwargs)
 
@@ -95,29 +91,19 @@ class Injector:
         return Injector(modules, binder=binder, stage=self._stage)
 
     def create_object(self, cls):
-        guice_data = _GuiceData.composite_from_class(cls)
-
-        if not guice_data.init:
-            instance = cls()
-        else:
-            kwargs = {}
-            for name, guicearg in guice_data.init.items():
-                kwargs[name] = self.get_instance(guicearg.datatype, guicearg.annotation)
-            instance = cls(**kwargs)
-
-        return instance
+        kwargs = {}
+        for param in extract_params(cls.__init__):
+            kwargs[param.name] = self.get_instance(param.dtype, param.annotation)
+        return cls(**kwargs)
 
     def inject_members(self, instance):
         # this may be a little slow; done twice
-        guice_data = _GuiceData.composite_from_class(instance.__class__)
-
-        for name, gm in guice_data.methods.items():
+        for method_name in getattr(instance.__class__, "__guice_methods__", []):
             kwargs = {}
-            for param, guicearg in gm.items():
-                kwargs[param] = self.get_instance(
-                    guicearg.datatype, guicearg.annotation
-                )
-            getattr(instance, name)(**kwargs)
+            method = getattr(instance, method_name)
+            for param in extract_params(method):
+                kwargs[param.name] = self.get_instance(param.dtype, param.annotation)
+            method(**kwargs)
         return instance
 
 
