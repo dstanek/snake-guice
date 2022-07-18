@@ -1,7 +1,8 @@
 import inspect
 
 from snakeguice import inject
-from snakeguice.decorators import GuiceArg, GuiceData, enclosing_frame
+from snakeguice._extractor import extract_params
+from snakeguice.decorators import enclosing_frame
 from snakeguice.errors import AssistError
 from snakeguice.interfaces import Injector
 
@@ -17,16 +18,12 @@ def assisted_inject(**kwargs):
         if method.__name__ != "__init__":
             raise AssistError("assisted_inject can only be used on __init__s")
 
+        method.__guice_types__ = kwargs
+
         class_locals = enclosing_frame().f_locals
 
-        guice_data = GuiceData.from_class_dict(class_locals)
-        guice_data.assisted = True  # TODO: I don't like this, but it works for now
-
-        annotations = getattr(method, "__guice_annotations__", {})
-
-        guice_data.init = dict(
-            (k, GuiceArg(v, annotations.get(k))) for k, v in kwargs.items()
-        )
+        # TODO: I don't like this, but it works for now
+        class_locals["__guice_assisted__"] = True
 
         return method
 
@@ -34,8 +31,7 @@ def assisted_inject(**kwargs):
 
 
 def AssistProvider(cls):
-    guice_data = GuiceData.from_class(cls)
-    if not getattr(guice_data, "assisted", False):
+    if not getattr(cls, "__guice_assisted__", False):
         raise AssistError(
             "AssistProvider can only by used on " "@assisted_inject-ed classes"
         )
@@ -52,11 +48,9 @@ def AssistProvider(cls):
 
 
 def build_factory(injector, cls):
-    guice_data = GuiceData.from_class(cls)
-
     providers = {}
-    for name, guicearg in guice_data.init.items():
-        providers[name] = injector.get_provider(guicearg.datatype, guicearg.annotation)
+    for param in extract_params(cls.__init__):
+        providers[param.name] = injector.get_provider(param.dtype, param.annotation)
 
     all_args = inspect.getargspec(cls.__init__).args[1:]
     needed_args = set(all_args) - set(providers.keys())

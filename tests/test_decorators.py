@@ -2,7 +2,7 @@
 
 import pytest
 
-from snakeguice.decorators import GuiceArg, annotate, inject
+from snakeguice.decorators import annotate, inject
 
 
 def test_inject_init():
@@ -13,8 +13,7 @@ def test_inject_init():
         def __init__(self, x):
             pass
 
-    assert SomeClass.__guice__.init == {"x": GuiceArg(int)}
-    assert len(SomeClass.__guice__.methods) == 0
+    assert SomeClass.__init__.__guice_types__ == {"x": int}
 
 
 def test_inject_methods():
@@ -25,10 +24,7 @@ def test_inject_methods():
         def go(self, y):
             pass
 
-    assert SomeClass.__guice__.init is None
-    assert SomeClass.__guice__.methods == {
-        "go": {"y": GuiceArg(float)},
-    }
+    assert SomeClass.go.__guice_types__ == {"y": float}
 
 
 def test_inject_all():
@@ -50,19 +46,24 @@ def test_inject_all():
         def stop(self, x, y, z):
             pass
 
-    assert SomeClass.__guice__.init == {
-        "a": GuiceArg(bool, "free"),
-        "b": GuiceArg(int, "paid"),
-        "c": GuiceArg(float),
+    assert SomeClass.__init__.__guice_types__ == {
+        "a": bool,
+        "b": int,
+        "c": float,
     }
-    print(SomeClass.__guice__.methods.items())
-    assert SomeClass.__guice__.methods == {
-        "go": {"y": GuiceArg(float)},
-        "stop": {
-            "x": GuiceArg(int),
-            "y": GuiceArg(int, "old"),
-            "z": GuiceArg(object, "new"),
-        },
+    assert SomeClass.__init__.__guice_annotations__ == {
+        "a": "free",
+        "b": "paid",
+    }
+    assert SomeClass.go.__guice_types__ == {"y": float}
+    assert SomeClass.stop.__guice_types__ == {
+        "x": int,
+        "y": int,
+        "z": object,
+    }
+    assert SomeClass.stop.__guice_annotations__ == {
+        "y": "old",
+        "z": "new",
     }
 
 
@@ -107,16 +108,4 @@ def test_incorrect_methods3():
         class SomeClass:
             @inject
             def f(self, x, y):
-                pass
-
-
-def test_order_of_annotate():
-    """The annotate decorator must me applied to a method before inject."""
-
-    with pytest.raises(Exception):
-
-        class SomeClass:
-            @annotate(a="large")
-            @inject(a=int)
-            def f(self, a):
                 pass
