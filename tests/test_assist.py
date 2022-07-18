@@ -28,9 +28,9 @@ class OrderService:
 class Worker:
     """Uses services to do real work."""
 
-    @assisted_inject(c_service=IService, o_service=IService)
+    @assisted_inject("name", "date")
     @annotate(c_service="customer", o_service="order")
-    def __init__(self, c_service, o_service, name, date):
+    def __init__(self, c_service: IService, o_service: IService, name: str, date: str):
         self.c_service = c_service
         self.o_service = o_service
         self.name = name
@@ -40,8 +40,8 @@ class Worker:
 class Manager:
     """Makes sure that the worker does its work."""
 
-    @inject(worker_factory=IWorkerFactory)
-    def __init__(self, worker_factory):
+    @inject
+    def __init__(self, worker_factory: IWorkerFactory):
         self.worker = worker_factory.create(name="awesome worker", date="07/09/2010")
 
 
@@ -59,6 +59,8 @@ class test_partiall_injecting_an_object:
 
     def test(self):
         assert isinstance(self.manager.worker, Worker)
+        assert self.manager.worker.name == "awesome worker"
+        assert self.manager.worker.date == "07/09/2010"
 
 
 class Base_AssistProvider_decorator_errors:
@@ -72,8 +74,8 @@ class Test_creating_an_AssistProvider_from_an_inject(
 ):
     def setup(self):
         class C:
-            @inject(x=object)
-            def __init__(self, x):
+            @inject
+            def __init__(self, x: object):
                 pass
 
         self.C = C
@@ -93,6 +95,6 @@ def test_using_assisted_inject_on_a_method():
     with pytest.raises(AssistError):
 
         class C:
-            @assisted_inject(x=object)
-            def m(self, x):
+            @assisted_inject("x")
+            def m(self, x: object):
                 pass

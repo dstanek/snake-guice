@@ -2,11 +2,15 @@ import inspect
 import sys
 
 
-def _validate_method_args(method, kwargs):
+def _validate_method_args(method):
     """Validate decorator args when used to decorate a method."""
     sig = inspect.signature(method)
-    if set(kwargs.keys()) != set(list(sig.parameters.keys())[1:]):  # chop off self
-        raise TypeError("decorator kwargs do not match %s()'s kwargs" % method.__name__)
+    for param in sig.parameters.values():
+        if param.name != "self" and param.annotation is inspect.Parameter.empty:
+            raise TypeError(
+                f"param '{param.name}' is missing a type annotation "
+                "and cannot be injected"
+            )
 
 
 def enclosing_frame(frame=None, level=2):
@@ -17,24 +21,12 @@ def enclosing_frame(frame=None, level=2):
     return frame
 
 
-def inject(**kwargs):
-
-    # TODO: implement scope
-    # scope = kwargs.get("scope")
-    # if "scope" in kwargs:
-    #     del kwargs["scope"]
-
-    def _inject(method):
-        method.__guice_types__ = kwargs
+def inject(method):
+    _validate_method_args(method)
+    if method.__name__ != "__init__":
         class_locals = enclosing_frame().f_locals
-
-        _validate_method_args(method, kwargs)
-        if method.__name__ != "__init__":
-            class_locals.setdefault("__guice_methods__", set()).add(method.__name__)
-
-        return method
-
-    return _inject
+        class_locals.setdefault("__guice_methods__", set()).add(method.__name__)
+    return method
 
 
 class annotate:

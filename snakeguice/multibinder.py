@@ -1,9 +1,16 @@
 from snakeguice import providers
-from snakeguice.annotation import Annotation
 from snakeguice.binder import Key
 from snakeguice.decorators import inject
 from snakeguice.errors import MultiBindingError
 from snakeguice.interfaces import Injector
+
+# TODO: now that we are using standand type annotations we can probably simplify
+#       the interface by replacing ListBinder and DictBinder with MultiBinder.
+#
+#       So using:
+#           MultiBinder(binder, list[Thing])
+#       instead of:
+#           ListBinder(binder, list[Thing])
 
 
 class _MultiBinder:
@@ -13,11 +20,11 @@ class _MultiBinder:
         self._provider = self._get_or_create_provider()
 
     def _get_or_create_provider(self):
-        key = Key(self.multibinding_type(self._interface))
+        key = Key(self._interface)
         binding = self._binder.get_binding(key)
         if not binding:
             self._binder.bind(
-                self.multibinding_type(self._interface),
+                self._interface,
                 to_provider=self._create_provider(),
             )
             binding = self._binder.get_binding(key)
@@ -39,14 +46,7 @@ class _MultiBinder:
             )
 
 
-class List(Annotation):
-    """Used for binding lists."""
-
-
 class ListBinder(_MultiBinder):
-
-    multibinding_type = List
-
     def add_binding(self, to=None, to_provider=None, to_instance=None):
         provider = self._dsl_to_provider(to, to_provider, to_instance)
         self._provider.add_provider(provider)
@@ -55,8 +55,8 @@ class ListBinder(_MultiBinder):
         class DynamicMultiBindingProvider:
             providers = []
 
-            @inject(injector=Injector)
-            def __init__(self, injector):
+            @inject
+            def __init__(self, injector: Injector):
                 self._injector = injector
 
             @classmethod
@@ -69,14 +69,7 @@ class ListBinder(_MultiBinder):
         return DynamicMultiBindingProvider
 
 
-class Dict(Annotation):
-    """Used for binding dictionaries."""
-
-
 class DictBinder(_MultiBinder):
-
-    multibinding_type = Dict
-
     def add_binding(self, key, to=None, to_provider=None, to_instance=None):
         provider = self._dsl_to_provider(to, to_provider, to_instance)
         self._provider.add_provider(key, provider)
@@ -87,8 +80,8 @@ class DictBinder(_MultiBinder):
         class DynamicMultiBindingProvider:
             providers = {}
 
-            @inject(injector=Injector)
-            def __init__(self, injector):
+            @inject
+            def __init__(self, injector: Injector):
                 self._injector = injector
 
             @classmethod
