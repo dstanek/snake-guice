@@ -1,5 +1,7 @@
+from typing import Dict, List
+
 from snakeguice import create_injector, inject, providers
-from snakeguice.multibinder import Dict, DictBinder, List, ListBinder
+from snakeguice.multibinder import DictBinder, ListBinder
 
 
 class ISnack:
@@ -34,7 +36,7 @@ class ListCandyModule:
     """One to two modules adding to the multibinder."""
 
     def configure(self, binder):
-        listbinder = ListBinder(binder, ISnack)
+        listbinder = ListBinder(binder, List[ISnack])
         listbinder.add_binding(to=Twix)
         provider = providers.create_simple_provider(Snickers)
         listbinder.add_binding(to_provider=provider)
@@ -45,7 +47,7 @@ class ListChipsModule:
     """One to two modules adding to the multibinder."""
 
     def configure(self, binder):
-        listbinder = ListBinder(binder, ISnack)
+        listbinder = ListBinder(binder, List[ISnack])
         listbinder.add_binding(to=Lays)
         provider = providers.create_simple_provider(Tostitos)
         listbinder.add_binding(to_provider=provider)
@@ -53,8 +55,8 @@ class ListChipsModule:
 
 
 class ListSnackMachine:
-    @inject(snacks=List(ISnack))
-    def __init__(self, snacks):
+    @inject
+    def __init__(self, snacks: List[ISnack]):
         self.snacks = snacks
 
 
@@ -62,7 +64,7 @@ class DictCandyModule:
     """One to two modules adding to the multibinder."""
 
     def configure(self, binder):
-        dictbinder = DictBinder(binder, ISnack)
+        dictbinder = DictBinder(binder, Dict[str, ISnack])
         dictbinder.add_binding("twix", to=Twix)
         provider = providers.create_simple_provider(Snickers)
         dictbinder.add_binding("snickers", to_provider=provider)
@@ -73,7 +75,7 @@ class DictChipsModule:
     """One to two modules adding to the multibinder."""
 
     def configure(self, binder):
-        dictbinder = DictBinder(binder, ISnack)
+        dictbinder = DictBinder(binder, Dict[str, ISnack])
         dictbinder.add_binding("lays", to=Lays)
         provider = providers.create_simple_provider(Tostitos)
         dictbinder.add_binding("tostitos", to_provider=provider)
@@ -81,8 +83,8 @@ class DictChipsModule:
 
 
 class DictSnackMachine:
-    @inject(snacks=Dict(ISnack))
-    def __init__(self, snacks):
+    @inject
+    def __init__(self, snacks: Dict[str, ISnack]):
         self.snacks = snacks
 
 

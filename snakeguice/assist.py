@@ -7,23 +7,13 @@ from snakeguice.errors import AssistError
 from snakeguice.interfaces import Injector
 
 
-def assisted_inject(**kwargs):
-
-    # TODO: implement scope
-    # scope = kwargs.get("scope")
-    # if "scope" in kwargs:
-    #     del kwargs["scope"]
-
+def assisted_inject(*params):
     def _assisted_inject(method):
         if method.__name__ != "__init__":
             raise AssistError("assisted_inject can only be used on __init__s")
 
-        method.__guice_types__ = kwargs
-
         class_locals = enclosing_frame().f_locals
-
-        # TODO: I don't like this, but it works for now
-        class_locals["__guice_assisted__"] = True
+        class_locals["__guice_assisted__"] = params
 
         return method
 
@@ -31,7 +21,7 @@ def assisted_inject(**kwargs):
 
 
 def AssistProvider(cls):
-    if not getattr(cls, "__guice_assisted__", False):
+    if not getattr(cls, "__guice_assisted__", None):
         raise AssistError(
             "AssistProvider can only by used on " "@assisted_inject-ed classes"
         )
@@ -50,12 +40,16 @@ def AssistProvider(cls):
 def build_factory(injector, cls):
     providers = {}
     for param in extract_params(cls.__init__):
+        # if param in cls.__guice_assisted__:
+        #    continue
         providers[param.name] = injector.get_provider(param.dtype, param.annotation)
 
     all_args = inspect.getargspec(cls.__init__).args[1:]
     needed_args = set(all_args) - set(providers.keys())
 
     class DynamicFactory:
+        # TODO: this really should be based on some provided interface to get the
+        #       benefits or optional static typing
         def create(self, **kwargs):
             if set(kwargs.keys()) - needed_args:
                 raise TypeError("TODO: error message here about too many values")

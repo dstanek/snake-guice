@@ -1,0 +1,6 @@
+---
+upgrade:
+  - |
+    snake-guice now depends on using standard type annotations. The `@inject`
+    decorator no longer accepts any arguments. A future version of the project
+    may read type information from guice modules or type stubs.

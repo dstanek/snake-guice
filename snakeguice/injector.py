@@ -18,8 +18,8 @@ class ProvidesBinderHelper:
 
     def _build_provider(self, module, type, method):
         class GenericProvider:
-            @inject(injector=IInjector)
-            def __init__(self, injector):
+            @inject
+            def __init__(self, injector: IInjector):
                 self._injector = injector
 
             def get(self):

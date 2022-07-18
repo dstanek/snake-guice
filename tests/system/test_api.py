@@ -33,9 +33,9 @@ def test_injector_simple():
 
 def test_annotated_injector():
     class DomainObject:
-        @inject(person0=ch.Person, person1=ch.Person, person2=ch.Person)
+        @inject
         @annotate(person0="good", person1="evil")
-        def __init__(self, person0, person1, person2):
+        def __init__(self, person0: ch.Person, person1: ch.Person, person2: ch.Person):
             self.person0 = person0
             self.person1 = person1
             self.person2 = person2
@@ -55,9 +55,9 @@ def test_annotated_injector():
 
 def test_annotations():
     class DomainObject:
-        @inject(hero=ch.Person, villian=ch.Person, victim=ch.Person)
+        @inject
         @annotate(hero="good", villian="evil")
-        def __init__(self, hero, villian, victim):
+        def __init__(self, hero: ch.Person, villian: ch.Person, victim: ch.Person):
             self.hero = hero
             self.villian = villian
             self.victim = victim
@@ -133,16 +133,16 @@ def test_inject_provider_with_args():
 
 def test_inject_decorator():
     class DomainObject:
-        @inject(logger=ch.Logger)
-        def __init__(self, logger):
+        @inject
+        def __init__(self, logger: ch.Logger):
             assert isinstance(logger, ch.ConcreteLogger)
 
-        @inject(person=ch.Person)
-        def do_something(self, person):
+        @inject
+        def do_something(self, person: ch.Person):
             assert isinstance(person, ch.EvilPerson)
 
-        @inject(person=ch.Person, logger=ch.Logger)
-        def multiple(self, logger, person):
+        @inject
+        def multiple(self, logger: ch.Logger, person: ch.Person):
             assert isinstance(person, ch.EvilPerson)
             assert isinstance(logger, ch.ConcreteLogger)
 
@@ -211,8 +211,8 @@ class TestProvidesDecorator:
                 binder.bind(ch.Person, to=HappyPerson)
 
             @provides(ch.Place)
-            @inject(person=ch.Person)
-            def provide_a_persons_home_location(self, person):
+            @inject
+            def provide_a_persons_home_location(self, person: ch.Person):
                 return person.get_home_location()
 
         self.injector = Injector(PeopleModule())

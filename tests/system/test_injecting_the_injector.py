@@ -11,8 +11,8 @@ class Something:
 
 
 class SomethingProvider:
-    @inject(injector=Injector)
-    def __init__(self, injector):
+    @inject
+    def __init__(self, injector: Injector):
         self.injector = injector
 
     def get(self):

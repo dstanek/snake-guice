@@ -11,35 +11,37 @@ from . import cls_heirarchy as ch
 
 class TestSingletonScope:
     class DomainObject:
-        @inject(logger_a=ch.Logger, logger_b=ch.Logger, logger_c=ch.Logger)
-        def set_loggers(self, logger_a, logger_b, logger_c):
+        @inject
+        def set_loggers(
+            self, logger_a: ch.Logger, logger_b: ch.Logger, logger_c: ch.Logger
+        ):
             self.logger_a = logger_a
             self.logger_b = logger_b
             self.logger_c = logger_c
 
-        @inject(place_a=ch.Place)
+        @inject
         @annotate(place_a="hot")
-        def set_place_a(self, place_a):
+        def set_place_a(self, place_a: ch.Place):
             self.place_a = place_a
 
-        @inject(place_b=ch.Place)
+        @inject
         @annotate(place_b="hot")
-        def set_place_b(self, place_b):
+        def set_place_b(self, place_b: ch.Place):
             self.place_b = place_b
 
-        @inject(place_c=ch.Place)
+        @inject
         @annotate(place_c="cold")
-        def set_place_c(self, place_c):
+        def set_place_c(self, place_c: ch.Place):
             self.place_c = place_c
 
-        @inject(place_d=ch.Place)
+        @inject
         @annotate(place_d="cold")
-        def set_place_d(self, place_d):
+        def set_place_d(self, place_d: ch.Place):
             self.place_d = place_d
 
     class SimpleClass:
-        @inject(place=ch.Place)
-        def __init__(self, place):
+        @inject
+        def __init__(self, place: ch.Place):
             self.place = place
 
     def assert_obj(self, obj):
