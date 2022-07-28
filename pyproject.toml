@@ -36,6 +36,7 @@ black = "22.6.0"
 isort = "5.10.1"
 Routes = "^2.5.1"
 WebOb = "^1.8.7"
+mypy = "^0.971"
 
 [tool.poetry.extras]
 docs = ["Sphinx", "myst-parser", "reno"]
@@ -51,3 +52,6 @@ line-length = 88
 [tool.isort]
 profile="black"
 skip_gitignore = true
+
+[tool.mypy]
+ignore_missing_imports = true
