@@ -89,12 +89,12 @@ class DictSnackMachine:
 SNACK_CLASSES = (Twix, Snickers, Skittles, Lays, Tostitos, Ruffles)
 
 
-class base_multibinder:
+class BaseMultibinder:
     def test_that_the_injected_value_has_the_correct_number_of_elements(self):
         assert len(self.snack_machine.snacks) == len(SNACK_CLASSES)
 
 
-class test_using_ListBinder(base_multibinder):
+class TestUsingListBinder(BaseMultibinder):
     def setup(self):
         injector = create_injector([ListCandyModule(), ListChipsModule()])
         self.snack_machine = injector.get_instance(ListSnackMachine)
@@ -104,7 +104,7 @@ class test_using_ListBinder(base_multibinder):
             assert isinstance(snack, SNACK_CLASSES[n])
 
 
-class test_using_DictBinder(base_multibinder):
+class TestUsingDictBinder(BaseMultibinder):
     def setup(self):
         injector = create_injector([DictCandyModule(), DictChipsModule()])
         self.snack_machine = injector.get_instance(DictSnackMachine)

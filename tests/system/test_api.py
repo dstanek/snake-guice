@@ -200,7 +200,7 @@ class TestMethodInterceptors:
         obj.intercept_me()
 
 
-class test_provides_decorator:
+class TestProvidesDecorator:
     def setup(self):
         class HappyPerson:
             def get_home_location(self):

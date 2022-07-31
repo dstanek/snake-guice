@@ -19,9 +19,8 @@ class TestRoutesModuleSetup(TestCase):
         self.module = MyRoutesModule()
         self.module.run_configure(binder=self.binder)
 
-    @pytest.mark.skip("Not sure why this needs to be skipped...")
     def test_configure_is_called_with_a_mapper(self):
-        assert self.module.configure.calls("()", snakeweb.RoutesBinder.return_value)
+        assert self.module.configure.calls("()", snakeweb.RoutesBinder)
 
     def test_real_routes_mapper_was_created(self):
         assert self.mock_routes.Mapper.calls()

@@ -61,14 +61,14 @@ class test_partiall_injecting_an_object:
         assert isinstance(self.manager.worker, Worker)
 
 
-class base_AssistProvider_decorator_errors:
+class Base_AssistProvider_decorator_errors:
     def test_that_an_exception_is_raised(self):
         with pytest.raises(AssistError):
             AssistProvider(self.C)
 
 
-class test_creating_an_AssistProvider_from_an_inject(
-    base_AssistProvider_decorator_errors
+class Test_creating_an_AssistProvider_from_an_inject(
+    Base_AssistProvider_decorator_errors
 ):
     def setup(self):
         class C:
@@ -79,8 +79,8 @@ class test_creating_an_AssistProvider_from_an_inject(
         self.C = C
 
 
-class test_creating_an_AssistProvider_from_an_uninjected_object(
-    base_AssistProvider_decorator_errors
+class Test_creating_an_AssistProvider_from_an_uninjected_object(
+    Base_AssistProvider_decorator_errors
 ):
     def setup(self):
         class C:
