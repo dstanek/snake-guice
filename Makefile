@@ -1,5 +1,8 @@
 CODE_DIRS=snakeguice tests
 
+.PHONY: all
+all: fmt lint tests
+
 .PHONY: tests
 tests:
 	pytest -vv tests
