@@ -63,7 +63,7 @@ def test_create_child():
     assert isinstance(person, ch.GoodPerson)
 
 
-class test_using_create_injector_factory:
+class Test_using_create_injector_factory:
     def setup(self):
         class PeopleModule:
             def configure(self, binder):
@@ -84,7 +84,7 @@ class test_using_create_injector_factory:
 #     modules = [FakeModule(), FakeModule(), FakeModule()]
 
 
-class test_using_get_provider:
+class Test_using_get_provider:
     def setup(self):
         class PeopleModule:
             def configure(self, binder):

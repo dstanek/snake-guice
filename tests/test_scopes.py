@@ -6,7 +6,7 @@ class FakeProvider:
         return object()
 
 
-class test_the_NoScope_scope:
+class Test_the_NoScope_scope:
     def setup(self):
         self.provider = FakeProvider()
         self.scope = _NoScope()
@@ -15,7 +15,7 @@ class test_the_NoScope_scope:
         assert self.scope.scope("key", self.provider) is self.provider
 
 
-class test_the_Singleton_scope:
+class Test_the_Singleton_scope:
     def setup(self):
         self.key = "key"
         self.provider = FakeProvider()
