@@ -13,10 +13,6 @@ class IService:
     """An interface for services."""
 
 
-class IWorkerFactory:
-    """An interface to create Worker instances."""
-
-
 class CustomerService:
     """A concrete service for dealing with customers."""
 
@@ -35,6 +31,13 @@ class Worker:
         self.o_service = o_service
         self.name = name
         self.date = date
+
+
+class IWorkerFactory:
+    """An interface to create Worker instances."""
+
+    def create(self, name: str, date: str) -> Worker:
+        ...
 
 
 class Manager:
