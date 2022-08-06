@@ -33,6 +33,7 @@ black = "22.6.0"
 isort = "5.10.1"
 Routes = "^2.5.1"
 WebOb = "^1.8.7"
+Sphinx = "^5.1.1"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
