@@ -55,7 +55,7 @@ class Module:
         binder.bind(IService, annotated_with="order", to=OrderService)
 
 
-class test_partiall_injecting_an_object:
+class Test_partially_injecting_an_object:
     def setup(self):
         inj = create_injector([Module()])
         self.manager = inj.get_instance(Manager)
