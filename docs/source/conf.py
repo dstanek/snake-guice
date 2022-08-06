@@ -7,14 +7,16 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'snake-guice'
-copyright = '2022, David Stanek'
-author = 'David Stanek'
+copyright = '2022, David Stanek <dstanek@dstanek.com>'
+author = 'David Stanek <dstanek@dstanek.com>'
 release = '1.0.0a1'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = []
+extensions = [
+    "myst_parser",
+]
 
 templates_path = ['_templates']
 exclude_patterns = []
