@@ -202,17 +202,21 @@ class TestMethodInterceptors:
 
 class TestProvidesDecorator:
     def setup(self):
-        class HappyPerson:
+        class Person:
+            def get_home_location(self) -> ch.Place:
+                ...
+
+        class HappyPerson(Person):
             def get_home_location(self):
                 return ch.Beach()
 
         class PeopleModule:
             def configure(self, binder):
-                binder.bind(ch.Person, to=HappyPerson)
+                binder.bind(Person, to=HappyPerson)
 
             @provides(ch.Place)
             @inject
-            def provide_a_persons_home_location(self, person: ch.Person):
+            def provide_a_persons_home_location(self, person: Person):
                 return person.get_home_location()
 
         self.injector = Injector(PeopleModule())
