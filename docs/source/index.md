@@ -10,6 +10,7 @@ This documentation is a work in progress. For general information on the Guice c
 :maxdepth: 1
 :caption: "Contents:"
 
+release_notes
 guicebasics
 userguide
 extending
