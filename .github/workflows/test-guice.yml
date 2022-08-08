@@ -1,8 +1,6 @@
 name: Test snake-guice
 
 on:
-  push:
-    branches: [main]
   pull_request:
 
 jobs:
