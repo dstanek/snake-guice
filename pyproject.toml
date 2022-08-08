@@ -11,7 +11,7 @@ packages = [
 ]
 
 repository = "https://github.com/dstanek/snake-guice"
-documentation = ""
+documentation = "https://snake-guice.readthedocs.io/"
 
 classifiers = [
     "Development Status :: 4 - Beta",
