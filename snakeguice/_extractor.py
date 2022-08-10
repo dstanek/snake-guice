@@ -1,6 +1,8 @@
 from collections import namedtuple
 from typing import Any, Callable, Iterable
 
+from snakeguice.annotation import UNANNOTATED
+
 Param = namedtuple("Param", ["name", "dtype", "annotation"])  # TODO: type me
 
 
@@ -10,5 +12,5 @@ def extract_params(method: Callable[..., Any]) -> Iterable[Param]:
     for name, dtype in types.items():
         if name == "return":
             continue
-        annotation = annotations.get(name)
+        annotation = annotations.get(name, UNANNOTATED)
         yield Param(name, dtype, annotation)
