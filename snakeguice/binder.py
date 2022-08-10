@@ -1,5 +1,7 @@
 from snakeguice import errors, providers, scopes
 
+_NOT_SET = object()
+
 
 class Key:
     def __init__(self, interface, annotation=None):
@@ -29,34 +31,42 @@ class Binder:
         self._parent = parent or _EmptyBinder()
         self._binding_map = {}
 
-    def bind(self, _class, **kwargs):
-        key = Key(interface=_class, annotation=kwargs.get("annotated_with"))
+    def bind(
+        self,
+        _class,
+        to=_NOT_SET,
+        to_provider=_NOT_SET,
+        to_instance=_NOT_SET,
+        in_scope=scopes.NO_SCOPE,
+        annotated_with=None,
+    ):
+        key = Key(interface=_class, annotation=annotated_with)
 
         binding = Binding()
         binding.key = key
-        binding.scope = kwargs.get("in_scope", scopes.NO_SCOPE)
+        binding.scope = in_scope
 
         if key in self._binding_map:
             raise errors.BindingError("baseclass %r already bound" % _class)
 
-        if "to" in kwargs:
-            if not isinstance(kwargs["to"], type):
+        if to is not _NOT_SET:
+            if not isinstance(to, type):
                 raise errors.BindingError("'to' requires a new-style class")
 
-            binding.provider = providers.create_simple_provider(kwargs["to"])
+            binding.provider = providers.create_simple_provider(to)
 
-        elif "to_provider" in kwargs:
+        elif to_provider is not _NOT_SET:
             # TODO: add some validation
-            provider = kwargs["to_provider"]
+            provider = to_provider
             binding.provider = provider
 
-        elif "to_instance" in kwargs:
-            if not isinstance(kwargs["to_instance"], object):
+        elif to_instance is not _NOT_SET:
+            if not isinstance(to_instance, object):
                 raise errors.BindingError(
                     "'to_instance' requires an instance of a new-style class"
                 )
 
-            provider = kwargs["to_instance"]
+            provider = to_instance
             binding.provider = providers.create_instance_provider(provider)
 
         self._binding_map[key] = binding
@@ -91,34 +101,42 @@ class LazyBinder:
     def errors(self):
         return self._errors
 
-    def bind(self, _class, **kwargs):
-        key = Key(interface=_class, annotation=kwargs.get("annotated_with"))
+    def bind(
+        self,
+        _class,
+        to=_NOT_SET,
+        to_provider=_NOT_SET,
+        to_instance=_NOT_SET,
+        in_scope=scopes.NO_SCOPE,
+        annotated_with=None,
+    ):
+        key = Key(interface=_class, annotation=annotated_with)
 
         binding = Binding()
         binding.key = key
-        binding.scope = kwargs.get("in_scope", scopes.NO_SCOPE)
+        binding.scope = in_scope
 
         if key in self._binding_map:
             self.add_error("baseclass %r already bound" % _class)
 
-        if "to" in kwargs:
-            if not isinstance(kwargs["to"], type):
+        if to is not _NOT_SET:
+            if not isinstance(to, type):
                 self.add_error("to requires a new-style class")
 
-            binding.provider = providers.create_simple_provider(kwargs["to"])
+            binding.provider = providers.create_simple_provider(to)
 
-        elif "to_provider" in kwargs:
+        elif to_provider is not _NOT_SET:
             # TODO: add some validation
-            provider = kwargs["to_provider"]
+            provider = to_provider
             binding.provider = provider
 
-        elif "to_instance" in kwargs:
-            if not isinstance(kwargs["to_instance"], object):
+        elif to_instance is not _NOT_SET:
+            if not isinstance(to_instance, object):
                 self.add_error(
                     "to_instance requires an instance of a " "new-style class"
                 )
 
-            provider = kwargs["to_instance"]
+            provider = to_instance
             binding.provider = providers.create_instance_provider(provider)
 
         self._binding_map[key] = binding
