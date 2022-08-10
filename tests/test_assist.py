@@ -26,7 +26,9 @@ class Worker:
 
     @assisted_inject("name", "date")
     @annotate(c_service="customer", o_service="order")
-    def __init__(self, c_service: IService, o_service: IService, name: str, date: str):
+    def __init__(
+        self, c_service: IService, o_service: IService, name: str, date: str
+    ) -> None:
         self.c_service = c_service
         self.o_service = o_service
         self.name = name
@@ -44,7 +46,7 @@ class Manager:
     """Makes sure that the worker does its work."""
 
     @inject
-    def __init__(self, worker_factory: IWorkerFactory):
+    def __init__(self, worker_factory: IWorkerFactory) -> None:
         self.worker = worker_factory.create(name="awesome worker", date="07/09/2010")
 
 
@@ -78,7 +80,7 @@ class Test_creating_an_AssistProvider_from_an_inject(
     def setup(self):
         class C:
             @inject
-            def __init__(self, x: object):
+            def __init__(self, x: object) -> None:
                 pass
 
         self.C = C

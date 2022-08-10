@@ -17,7 +17,7 @@ def describe_injecting_a_class():
     class DomainObject:
 
         @inject(class_=IClass)
-        def __init__(self, class_):
+        def __init__(self, class_) -> None:
             self.class_ = class_
 
     class Module:

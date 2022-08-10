@@ -19,7 +19,7 @@ class ProvidesBinderHelper:
     def _build_provider(self, module, type, method):
         class GenericProvider:
             @inject
-            def __init__(self, injector: IInjector):
+            def __init__(self, injector: IInjector) -> None:
                 self._injector = injector
 
             def get(self):
@@ -34,7 +34,7 @@ class ProvidesBinderHelper:
 
 
 class Injector:
-    def __init__(self, modules=None, binder=None, stage=None):
+    def __init__(self, modules=None, binder=None, stage=None) -> None:
         if modules is None:
             modules = []
         elif not hasattr(modules, "__iter__"):

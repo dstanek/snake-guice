@@ -42,7 +42,7 @@ class TestSingletonScope:
 
     class SimpleClass:
         @inject
-        def __init__(self, place: ch.Place):
+        def __init__(self, place: ch.Place) -> None:
             self.place = place
 
     def assert_obj(self, obj):

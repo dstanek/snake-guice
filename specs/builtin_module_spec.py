@@ -10,7 +10,7 @@ def given_an_empty_injector():
 
         class Awesome:
             @inject(injector=Injector)
-            def __init__(self, injector):
+            def __init__(self, injector) -> None:
                 self.injector = injector
 
         awesome = inj.get_instance(Awesome)

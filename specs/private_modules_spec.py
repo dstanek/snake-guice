@@ -16,7 +16,7 @@ class RightFoot: pass
 class Leg:
 
     @inject(foot=IFoot)
-    def __init__(self, foot):
+    def __init__(self, foot) -> None:
         self.foot = foot
 
 
@@ -24,7 +24,7 @@ class Robot:
 
     @inject(left_leg=ILeg, right_leg=ILeg)
     @annotate(left_leg="left", right_leg="right")
-    def __init__(self, left_leg, right_leg):
+    def __init__(self, left_leg, right_leg) -> None:
         self.left_leg = left_leg
         self.right_leg = right_leg
 

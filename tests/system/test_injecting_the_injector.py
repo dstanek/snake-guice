@@ -12,7 +12,7 @@ class Something:
 
 class SomethingProvider:
     @inject
-    def __init__(self, injector: Injector):
+    def __init__(self, injector: Injector) -> None:
         self.injector = injector
 
     def get(self):

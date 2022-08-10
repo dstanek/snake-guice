@@ -115,7 +115,7 @@ class Application:
     dataconnections or other application-wide resources.
     """
     
-    def __init__(self):
+    def __init__(self) -> None:
         injector = Injector(MyAppModule())
         #connect_to_db()
         #read_config_files()

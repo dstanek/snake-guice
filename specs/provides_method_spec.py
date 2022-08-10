@@ -31,7 +31,7 @@ def describe_provider_methods():
 
         class SomeImpl:
 
-            def __init__(self, other_dep):
+            def __init__(self, other_dep) -> None:
                 self.other_dep = other_dep
 
         class SomeOtherDependency: pass

@@ -1,35 +1,52 @@
+from typing import Dict, List, Optional
+
 from snakeguice import errors, providers, scopes
+from snakeguice.annotation import Annotation
+from snakeguice.interfaces import Interface, Provider, Scope
 
 _NOT_SET = object()
 
 
+class BinderErrorRecord:
+    def __init__(self, message: str, location: str, source: str) -> None:
+        self.message = message
+        self.location = location
+        self.source = source
+
+
 class Key:
-    def __init__(self, interface, annotation=None):
+    def __init__(self, interface: Interface, annotation: Annotation = None) -> None:
         self._interface = interface
         self._annotation = annotation
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self._interface, self._annotation))
 
-    def __eq__(self, other):
-        return (
-            self._interface == other._interface
-            and self._annotation == other._annotation
-        )
+    def __eq__(self, other: object) -> bool:
+        return hash(self) == hash(other)
 
-    def __ne__(self, other):
+    def __ne__(self, other: object) -> bool:
         return not self == other
 
 
+class Binding:
+    def __init__(
+        self, key: Key = None, provider: Provider = None, scope: Scope = None
+    ) -> None:
+        self.key = key
+        self.provider = provider
+        self.scope = scope
+
+
 class _EmptyBinder:
-    def get_binding(self, key):
+    def get_binding(self, key: Key) -> Optional[Binding]:
         return None
 
 
 class Binder:
-    def __init__(self, parent=None):
+    def __init__(self, parent=None) -> None:
         self._parent = parent or _EmptyBinder()
-        self._binding_map = {}
+        self._binding_map: Dict[Key, Binding] = {}
 
     def bind(
         self,
@@ -71,7 +88,7 @@ class Binder:
 
         self._binding_map[key] = binding
 
-    def get_binding(self, key):
+    def get_binding(self, key: Key) -> Optional[Binding]:
         return self._binding_map.get(key) or self._parent.get_binding(key)
 
     def create_child(self):
@@ -79,10 +96,10 @@ class Binder:
 
 
 class LazyBinder:
-    def __init__(self, parent=None):
+    def __init__(self, parent=None) -> None:
         self._parent = parent or _EmptyBinder()
-        self._binding_map = {}
-        self._errors = []
+        self._binding_map: Dict[Key, Binding] = {}
+        self._errors: List[BinderErrorRecord] = []
 
     def add_error(self, msg):
         import inspect
@@ -146,17 +163,3 @@ class LazyBinder:
 
     def create_child(self):
         return Binder(self)
-
-
-class Binding:
-    def __init__(self, key=None, provider=None, scope=None):
-        self.key = key
-        self.provider = provider
-        self.scope = scope
-
-
-class BinderErrorRecord:
-    def __init__(self, message, location, source):
-        self.message = message
-        self.location = location
-        self.source = source

@@ -1,7 +1,9 @@
 import os
 from configparser import SafeConfigParser
+from typing import Iterable, Tuple, Type
 
 from snakeguice.annotation import Annotation
+from snakeguice.interfaces import Binder
 
 
 class Config(Annotation):
@@ -9,11 +11,11 @@ class Config(Annotation):
 
 
 class ConfigParserLoader:
-    def __init__(self, filename):
+    def __init__(self, filename: str) -> None:  # TODO: pathlib
         self.filename = filename
         self.short_name = os.path.basename(filename)
 
-    def bind_configuration(self, binder):
+    def bind_configuration(self, binder: Binder) -> None:
         parser = SafeConfigParser()
         parser.read(self.filename)
         for section, option, value in _iterate_parser(parser):
@@ -21,7 +23,7 @@ class ConfigParserLoader:
             binder.bind(annotation, to_instance=value)
 
 
-def _iterate_parser(parser):
+def _iterate_parser(parser) -> Iterable[Tuple[str, str, Type]]:
     for section in parser.sections():
         for option in parser.options(section):
             value = parser.get(section, option)

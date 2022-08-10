@@ -11,7 +11,7 @@ class BaseController:
 
     @inject(template_dir=str)
     @annotate(template_dir='base template directory')
-    def __init__(self, template_dir):
+    def __init__(self, template_dir) -> None:
         self._template_dir = template_dir
 
     def _load_template(self, filename):

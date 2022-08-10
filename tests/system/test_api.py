@@ -35,7 +35,9 @@ def test_annotated_injector():
     class DomainObject:
         @inject
         @annotate(person0="good", person1="evil")
-        def __init__(self, person0: ch.Person, person1: ch.Person, person2: ch.Person):
+        def __init__(
+            self, person0: ch.Person, person1: ch.Person, person2: ch.Person
+        ) -> None:
             self.person0 = person0
             self.person1 = person1
             self.person2 = person2
@@ -57,7 +59,9 @@ def test_annotations():
     class DomainObject:
         @inject
         @annotate(hero="good", villian="evil")
-        def __init__(self, hero: ch.Person, villian: ch.Person, victim: ch.Person):
+        def __init__(
+            self, hero: ch.Person, villian: ch.Person, victim: ch.Person
+        ) -> None:
             self.hero = hero
             self.villian = villian
             self.victim = victim
@@ -134,7 +138,7 @@ def test_inject_provider_with_args():
 def test_inject_decorator():
     class DomainObject:
         @inject
-        def __init__(self, logger: ch.Logger):
+        def __init__(self, logger: ch.Logger) -> None:
             assert isinstance(logger, ch.ConcreteLogger)
 
         @inject

@@ -30,7 +30,7 @@ def inject(method):
 
 
 class annotate:
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         self.kwargs = kwargs
 
     def __call__(self, method):
@@ -43,7 +43,7 @@ class annotate:
 
 
 class provides:
-    def __init__(self, type):
+    def __init__(self, type) -> None:
         self._type = type
 
     def __call__(self, method):

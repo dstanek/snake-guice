@@ -10,7 +10,7 @@ from snakeguice.interfaces import Injector
 def create_simple_provider(cls):
     class DynamicSimpleProvider:
         @inject
-        def __init__(self, injector: Injector):
+        def __init__(self, injector: Injector) -> None:
             self._injector = injector
 
         def get(self):

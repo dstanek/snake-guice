@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import inspect
+from typing import Any, Dict
 
 import routes
 from webob import Request
@@ -14,12 +15,12 @@ def is_unbound_method(func):
 
 
 class RoutesBinder:
-    def __init__(self, mapper, annotation):
+    def __init__(self, mapper, annotation) -> None:
         self.mapper = mapper
         self._annotation = annotation
-        self.controller_map = {}
+        self.controller_map: Dict[Any, Any] = {}
 
-    def connect(self, *args, **kwargs):
+    def connect(self, *args, **kwargs) -> None:
         controller = kwargs.get("controller")
 
         if controller is None:
@@ -43,7 +44,7 @@ class RoutesModule(Module):
 
     annotation = None
 
-    def run_configure(self, binder):
+    def run_configure(self, binder) -> None:
         self._mapper = routes.Mapper()
         self.routes_binder = RoutesBinder(self._mapper, self.annotation)
         binder.bind(
@@ -53,7 +54,7 @@ class RoutesModule(Module):
         self.configure(self.routes_binder)
         self._mapper.create_regs([])
 
-    def configure(self, routes_binder):
+    def configure(self, routes_binder) -> None:
         raise NotImplementedError
 
 
@@ -69,7 +70,7 @@ class AutoRoutesModule(RoutesModule):
 
 
 class Application:
-    def __init__(self, injector):
+    def __init__(self, injector) -> None:
         self._injector = injector
 
     def __call__(self, environ, start_response):

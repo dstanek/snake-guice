@@ -12,7 +12,7 @@ def test_inject_init_with_invalid_type_annotations_fails():
 
         class SomeClass:
             @inject
-            def __init__(self, a):
+            def __init__(self, a) -> None:
                 pass
 
 
@@ -53,7 +53,7 @@ class Test_annotate_stores_annotations_on_methods:
     def setup(self):
         class Object:
             @annotate(a="_a_")
-            def __init__(self, a, b):
+            def __init__(self, a, b) -> None:
                 pass
 
             @annotate(x="_x_", y="_y_")
