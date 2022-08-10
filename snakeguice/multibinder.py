@@ -14,7 +14,7 @@ from snakeguice.interfaces import Injector
 
 
 class _MultiBinder:
-    def __init__(self, binder, interface):
+    def __init__(self, binder, interface) -> None:
         self._binder = binder
         self._interface = interface
         self._provider = self._get_or_create_provider()
@@ -56,7 +56,7 @@ class ListBinder(_MultiBinder):
             providers = []
 
             @inject
-            def __init__(self, injector: Injector):
+            def __init__(self, injector: Injector) -> None:
                 self._injector = injector
 
             @classmethod
@@ -81,7 +81,7 @@ class DictBinder(_MultiBinder):
             providers = {}
 
             @inject
-            def __init__(self, injector: Injector):
+            def __init__(self, injector: Injector) -> None:
                 self._injector = injector
 
             @classmethod

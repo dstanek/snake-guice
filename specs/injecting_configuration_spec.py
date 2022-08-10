@@ -12,7 +12,7 @@ def describe_injecting_configuration_with_the_default_adapter():
 
         @inject(ipaddress=Config('config.ini:webservice:ipaddress'),
                 port=Config('config.ini:webservice:port'))
-        def __init__(self, ipaddress, port):
+        def __init__(self, ipaddress, port) -> None:
             self.ipaddress = ipaddress
             self.port = port
 

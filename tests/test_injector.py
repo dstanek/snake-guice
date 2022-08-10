@@ -10,7 +10,7 @@ from . import cls_heirarchy as ch
 
 
 class FakeModule:
-    def __init__(self):
+    def __init__(self) -> None:
         self.binder = None
         self.num_calls = 0
 

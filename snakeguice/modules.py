@@ -1,7 +1,7 @@
 class ModuleAdapter:
     """Adapts the simple and standard module interfaces to a common one."""
 
-    def __init__(self, module, injector):
+    def __init__(self, module, injector) -> None:
         if hasattr(module, "set_injector"):
             module.set_injector(injector)
         self._module = module
@@ -16,7 +16,7 @@ class ModuleAdapter:
 class Module:
     """Base class for all standard modules."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._injector = None
 
     def install(self, binder, module):
@@ -42,7 +42,7 @@ class _PrivateModuleWrapper(Module):
     caused by the child injector calling run_configure.
     """
 
-    def __init__(self, module):
+    def __init__(self, module) -> None:
         self._module = module
         super(_PrivateModuleWrapper, self).__init__()
 

@@ -7,7 +7,7 @@ class HelloWorld:
 
     @inject(user_provider=UserProvider,
             request_data_provider=RequestDataProvider)
-    def __init__(self, user_provider, request_data_provider):
+    def __init__(self, user_provider, request_data_provider) -> None:
         self._user_provider = user_provider
         self._request_data_provider = request_data_provider
 

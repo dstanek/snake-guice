@@ -20,7 +20,7 @@ class Module:
 def describe_a_child_inheriting_an_injected_init():
     class Parent:
         @inject(value=OldData)
-        def __init__(self, value):
+        def __init__(self, value) -> None:
             self.value = value
 
     class Child(Parent):

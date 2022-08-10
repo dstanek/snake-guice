@@ -1,10 +1,12 @@
 """Interfaces used by snake-guice directly"""
 
-from typing import Any, Optional, Protocol, TypeVar
+from typing import Any, Optional, Protocol, Type, TypeVar
 
 T = TypeVar("T", covariant=True)
 
+Binder = Any
 Key = Any
+Interface = Type[Any]
 
 
 class Injector:

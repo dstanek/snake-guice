@@ -3,7 +3,7 @@
 
 
 class ParameterInterceptor:
-    def __init__(self, injector):
+    def __init__(self, injector) -> None:
         self._injector = injector
 
     def __call__(self, annotation=None, **kwargs):
