@@ -12,7 +12,7 @@ lint:
 	flake8 $(CODE_DIRS)
 	black --check --diff $(CODE_DIRS)
 	isort --check $(CODE_DIRS)
-	mypy $(CODE_DIRS)
+	mypy $(CODE_DIRS) --show-error-context
 
 .PHONY: fmt
 fmt:
