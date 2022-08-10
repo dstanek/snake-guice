@@ -5,6 +5,7 @@ Tests for the singleton scope.py
 """
 
 from snakeguice import Injector, annotate, inject, scopes
+from snakeguice.interfaces import Injector as InjectorI
 
 from . import cls_heirarchy as ch
 
@@ -87,9 +88,56 @@ class TestSingletonScope:
         assert obj.logger_a.hot_place is obj.place_a
         assert obj.logger_a.cold_place is obj.place_c
 
-    def test_simple_singleton(self):
-        class MyModule:
-            def configure(self, binder):
-                binder.bind(ch.Place, to=ch.Beach, in_scope=scopes.SINGLETON)
 
-        Injector(MyModule()).get_instance(self.SimpleClass)
+class TestSingetonScope:
+    class SimpleClass:
+        @inject
+        def __init__(self, place: ch.Place) -> None:
+            self.place = place
+
+    def test_simple_singleton_to(self) -> None:
+        SINGLETON = scopes._Singleton()
+
+        class MyModule:
+            def configure(self, binder) -> None:
+                binder.bind(ch.Place, to=ch.Beach, in_scope=SINGLETON)
+
+        injector = Injector([MyModule()])
+        obj0 = injector.get_instance(self.SimpleClass)
+        obj1 = injector.get_instance(self.SimpleClass)
+        assert obj0.place is obj1.place
+
+    def test_simple_singleton_to_provider(self) -> None:
+        SINGLETON = scopes._Singleton()
+
+        class PlaceProvider:
+            def get(self) -> ch.Place:
+                return ch.Beach()
+
+        class MyModule:
+            def configure(self, binder) -> None:
+                binder.bind(ch.Place, to_provider=PlaceProvider, in_scope=SINGLETON)
+
+        injector = Injector([MyModule()])
+        obj0 = injector.get_instance(self.SimpleClass)
+        obj1 = injector.get_instance(self.SimpleClass)
+        assert obj0.place is obj1.place
+
+    def test_simple_singleton_to_injectable_provider(self) -> None:
+        SINGLETON = scopes._Singleton()
+
+        class PlaceProvider:
+            def __init__(self, injector: InjectorI) -> None:
+                self._injector = injector
+
+            def get(self) -> ch.Place:
+                return self._injector.get_instance(ch.Beach)
+
+        class MyModule:
+            def configure(self, binder) -> None:
+                binder.bind(ch.Place, to_provider=PlaceProvider, in_scope=SINGLETON)
+
+        injector = Injector([MyModule()])
+        obj0 = injector.get_instance(self.SimpleClass)
+        obj1 = injector.get_instance(self.SimpleClass)
+        assert obj0.place is obj1.place

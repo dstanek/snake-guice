@@ -74,8 +74,6 @@ class Injector:
             if isinstance(binding.provider, type):
                 binding.provider = self.get_instance(binding.provider)
             provider = binding.scope.scope(key, binding.provider)
-            if isinstance(provider, type):
-                provider = self.get_instance(provider)
             return provider.get()
         else:
             instance = self.create_object(cls)
