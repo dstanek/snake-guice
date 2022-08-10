@@ -1,6 +1,7 @@
 import inspect
 
 from snakeguice._extractor import extract_params
+from snakeguice.annotation import UNANNOTATED
 from snakeguice.binder import Binder, Key
 from snakeguice.decorators import inject
 from snakeguice.interfaces import Injector as IInjector
@@ -55,7 +56,7 @@ class Injector:
             ModuleAdapter(module, self).configure(self._binder)
             provides_helper.bind_providers(module, self._binder)
 
-    def get_provider(self, cls, annotation=None):
+    def get_provider(self, cls, annotation=UNANNOTATED):
         injector = self
 
         class DynamicProvider:
@@ -64,7 +65,7 @@ class Injector:
 
         return DynamicProvider()
 
-    def get_instance(self, cls, annotation=None):
+    def get_instance(self, cls, annotation=UNANNOTATED):
         if cls is IInjector:  # TODO: i don't like this, but it works for now
             return self
 

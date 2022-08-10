@@ -1,7 +1,7 @@
 from typing import Dict, List, Optional
 
 from snakeguice import errors, providers, scopes
-from snakeguice.annotation import Annotation
+from snakeguice.annotation import UNANNOTATED, Annotation
 from snakeguice.interfaces import Interface, Provider, Scope
 
 _NOT_SET = object()
@@ -15,7 +15,9 @@ class BinderErrorRecord:
 
 
 class Key:
-    def __init__(self, interface: Interface, annotation: Annotation = None) -> None:
+    def __init__(
+        self, interface: Interface, annotation: Annotation = UNANNOTATED
+    ) -> None:
         self._interface = interface
         self._annotation = annotation
 
@@ -55,7 +57,7 @@ class Binder:
         to_provider=_NOT_SET,
         to_instance=_NOT_SET,
         in_scope=scopes.NO_SCOPE,
-        annotated_with=None,
+        annotated_with=UNANNOTATED,
     ):
         key = Key(interface=_class, annotation=annotated_with)
 
