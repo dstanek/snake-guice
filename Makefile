@@ -18,3 +18,7 @@ lint:
 fmt:
 	black $(CODE_DIRS)
 	isort $(CODE_DIRS)
+
+.PHONY: docs
+docs:
+	(cd docs; make html)
