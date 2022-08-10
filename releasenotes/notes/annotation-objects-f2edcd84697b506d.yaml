@@ -1,0 +1,8 @@
+---
+features:
+  - |
+    Annotations can now be any object
+
+    Previously instances of Annotations could only be strings. Any other
+    object passed in to the __init__ would be automatically converted to a
+    string.

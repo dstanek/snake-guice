@@ -2,10 +2,10 @@ class Annotation:
     """Base class for all annotations."""
 
     def __init__(self, value):
-        self._value = str(value)
+        self._value = value
 
     def __hash__(self):
-        return hash(self.__class__.__name__ + ":" + self._value)
+        return hash((self.__class__, self._value))
 
     def __eq__(self, other):
         return self.__hash__() == other.__hash__()
