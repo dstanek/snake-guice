@@ -1,11 +1,16 @@
+from typing import Any, Callable, Type, TypeVar
+
 from snakeguice import inject
 from snakeguice._extractor import extract_params
 from snakeguice.errors import AssistError
-from snakeguice.interfaces import Injector
+from snakeguice.interfaces import Factory, Injector, ProviderFactory
+
+T = TypeVar("T")
+F = TypeVar("F", bound=Callable[..., Any])
 
 
-def assisted_inject(*params):
-    def _assisted_inject(method):
+def assisted_inject(*params: str) -> Callable[[F], F]:
+    def _assisted_inject(method: F) -> F:
         if method.__name__ != "__init__":
             raise AssistError("assisted_inject can only be used on __init__s")
 
@@ -16,7 +21,7 @@ def assisted_inject(*params):
     return _assisted_inject
 
 
-def AssistProvider(cls):
+def AssistProvider(cls: Type[T]) -> Type[ProviderFactory[T]]:
     if not getattr(cls.__init__, "__guice_assisted__", None):
         raise AssistError(
             "AssistProvider can only by used on " "@assisted_inject-ed classes"
@@ -24,10 +29,10 @@ def AssistProvider(cls):
 
     class _AssistProvider:
         @inject
-        def __init__(self, injector: Injector):
+        def __init__(self, injector: Injector) -> None:
             self._injector = injector
 
-        def get(self):
+        def get(self) -> Factory[T]:
             return build_factory(self._injector, cls)
 
     return _AssistProvider

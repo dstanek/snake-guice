@@ -7,6 +7,7 @@ T = TypeVar("T", covariant=True)
 Binder = Any
 Key = Any
 Interface = Type[Any]
+Module = Any
 
 
 class Injector:
@@ -16,8 +17,18 @@ class Injector:
         ...
 
 
+class Factory(Protocol[T]):
+    def create(self, **kwargs: Any):
+        ...
+
+
 class Provider(Protocol[T]):
     def get(self) -> T:
+        ...
+
+
+class ProviderFactory(Protocol[T]):  # TODO: name sucks!
+    def get(self) -> Factory[T]:
         ...
 
 

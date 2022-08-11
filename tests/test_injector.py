@@ -5,6 +5,7 @@ injector module unit tests
 """
 
 from snakeguice import binder, create_injector, injector
+from snakeguice.interfaces import Binder
 
 from . import cls_heirarchy as ch
 
@@ -14,15 +15,15 @@ class FakeModule:
         self.binder = None
         self.num_calls = 0
 
-    def configure(self, binder):
+    def configure(self, binder: Binder) -> None:
         self.binder = binder
         self.num_calls += 1
 
-    def was_called(self):
-        return self.num_calls
+    def was_called(self) -> bool:
+        return bool(self.num_calls)
 
 
-def test_injector_single_module_init():
+def test_injector_single_module_init() -> None:
     """Create an Injector that accepts a single Module instance."""
 
     module = FakeModule()
@@ -31,7 +32,7 @@ def test_injector_single_module_init():
     assert isinstance(module.binder, binder.Binder)
 
 
-def test_injector_multi_module_init():
+def test_injector_multi_module_init() -> None:
     """Create an Injector that accepts any number of Module instances."""
 
     modules = [FakeModule(), FakeModule(), FakeModule()]
@@ -41,15 +42,15 @@ def test_injector_multi_module_init():
         assert isinstance(module.binder, binder.Binder)
 
 
-def test_create_child():
+def test_create_child() -> None:
     """Create an injector child."""
 
     class ParentModule:
-        def configure(self, binder):
+        def configure(self, binder: Binder) -> None:
             binder.bind(ch.Person, to=ch.EvilPerson)
 
     class ChildModule:
-        def configure(self, binder):
+        def configure(self, binder: Binder) -> None:
             binder.bind(ch.Person, annotated_with="good", to=ch.GoodPerson)
 
     inj = injector.Injector(ParentModule())
@@ -64,18 +65,18 @@ def test_create_child():
 
 
 class Test_using_create_injector_factory:
-    def setup(self):
+    def setup(self) -> None:
         class PeopleModule:
-            def configure(self, binder):
+            def configure(self, binder: Binder) -> None:
                 binder.bind(ch.Person, to=ch.EvilPerson)
 
         self.injector = create_injector([PeopleModule()])
         self.instance = self.injector.get_instance(ch.Person)
 
-    def test_an_injector_was_returned(self):
+    def test_an_injector_was_returned(self) -> None:
         assert isinstance(self.injector, injector.Injector)
 
-    def test_correct_instance_was_created(self):
+    def test_correct_instance_was_created(self) -> None:
         assert isinstance(self.instance, ch.EvilPerson)
 
 
@@ -85,14 +86,14 @@ class Test_using_create_injector_factory:
 
 
 class Test_using_get_provider:
-    def setup(self):
+    def setup(self) -> None:
         class PeopleModule:
-            def configure(self, binder):
+            def configure(self, binder: Binder) -> None:
                 binder.bind(ch.Person, to=ch.EvilPerson)
 
         self.injector = create_injector([PeopleModule()])
         self.provider = self.injector.get_provider(ch.Person)
         self.instance = self.provider.get()
 
-    def test_provider_provides_an_instance(self):
+    def test_provider_provides_an_instance(self) -> None:
         assert isinstance(self.instance, ch.EvilPerson)

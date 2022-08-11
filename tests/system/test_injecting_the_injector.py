@@ -1,5 +1,5 @@
 from snakeguice import create_injector, inject
-from snakeguice.interfaces import Injector
+from snakeguice.interfaces import Binder, Injector
 
 
 class ISomething:
@@ -15,16 +15,16 @@ class SomethingProvider:
     def __init__(self, injector: Injector) -> None:
         self.injector = injector
 
-    def get(self):
+    def get(self) -> ISomething:
         return self.injector.get_instance(Something)
 
 
 class Module:
-    def configure(self, binder):
+    def configure(self, binder: Binder) -> None:
         binder.bind(ISomething, to_provider=SomethingProvider)
 
 
-def test():
+def test() -> None:
     injector = create_injector([Module()])
     something = injector.get_instance(ISomething)
     assert isinstance(something, Something)

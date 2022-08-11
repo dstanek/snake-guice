@@ -1,5 +1,8 @@
 import inspect
 import sys
+from typing import Any, Callable, Type, TypeVar
+
+F = TypeVar("F", bound=Callable[..., Any])
 
 
 def _validate_method_args(method):
@@ -13,7 +16,7 @@ def _validate_method_args(method):
             )
 
 
-def enclosing_frame(frame=None, level=2):
+def enclosing_frame(frame=None, level: int = 2):
     """Get an enclosing frame that skips decorator code"""
     frame = frame or sys._getframe(level)
     while frame.f_globals.get("__name__") == __name__:
@@ -21,7 +24,7 @@ def enclosing_frame(frame=None, level=2):
     return frame
 
 
-def inject(method):
+def inject(method: F) -> F:
     _validate_method_args(method)
     if method.__name__ != "__init__":
         class_locals = enclosing_frame().f_locals
@@ -30,22 +33,22 @@ def inject(method):
 
 
 class annotate:
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **kwargs: str) -> None:
         self.kwargs = kwargs
 
-    def __call__(self, method):
+    def __call__(self, method: F) -> F:
         class_locals = enclosing_frame().f_locals
         if "__guice__" in class_locals:
             if method.__name__ in class_locals["__guice__"].methods:
                 raise Exception("annotate must be applied before inject")
-        method.__guice_annotations__ = self.kwargs
+        setattr(method, "__guice_annotations__", self.kwargs)
         return method
 
 
 class provides:
-    def __init__(self, type) -> None:
+    def __init__(self, type: Type[Any]) -> None:
         self._type = type
 
-    def __call__(self, method):
-        method.__guice_provides__ = self._type
+    def __call__(self, method: F) -> F:
+        setattr(method, "__guice_provides__", self._type)
         return method
