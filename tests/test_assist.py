@@ -2,11 +2,14 @@
 
 """Tests for the assisted injection feature."""
 
+from typing import Any, Type
+
 import pytest
 
 from snakeguice import annotate, create_injector, inject
 from snakeguice.assist import AssistProvider, assisted_inject
 from snakeguice.errors import AssistError
+from snakeguice.interfaces import Binder
 
 
 class IService:
@@ -51,25 +54,27 @@ class Manager:
 
 
 class Module:
-    def configure(self, binder):
+    def configure(self, binder: Binder) -> None:
         binder.bind(IWorkerFactory, to_provider=AssistProvider(Worker))
         binder.bind(IService, annotated_with="customer", to=CustomerService)
         binder.bind(IService, annotated_with="order", to=OrderService)
 
 
 class Test_partially_injecting_an_object:
-    def setup(self):
+    def setup(self) -> None:
         inj = create_injector([Module()])
         self.manager = inj.get_instance(Manager)
 
-    def test(self):
+    def test(self) -> None:
         assert isinstance(self.manager.worker, Worker)
         assert self.manager.worker.name == "awesome worker"
         assert self.manager.worker.date == "07/09/2010"
 
 
 class Base_AssistProvider_decorator_errors:
-    def test_that_an_exception_is_raised(self):
+    C: Type[Any]
+
+    def test_that_an_exception_is_raised(self) -> None:
         with pytest.raises(AssistError):
             AssistProvider(self.C)
 
@@ -77,7 +82,7 @@ class Base_AssistProvider_decorator_errors:
 class Test_creating_an_AssistProvider_from_an_inject(
     Base_AssistProvider_decorator_errors
 ):
-    def setup(self):
+    def setup(self) -> None:
         class C:
             @inject
             def __init__(self, x: object) -> None:
@@ -89,17 +94,17 @@ class Test_creating_an_AssistProvider_from_an_inject(
 class Test_creating_an_AssistProvider_from_an_uninjected_object(
     Base_AssistProvider_decorator_errors
 ):
-    def setup(self):
+    def setup(self) -> None:
         class C:
             pass
 
         self.C = C
 
 
-def test_using_assisted_inject_on_a_method():
+def test_using_assisted_inject_on_a_method() -> None:
     with pytest.raises(AssistError):
 
         class C:
             @assisted_inject("x")
-            def m(self, x: object):
+            def m(self, x: object) -> None:
                 pass

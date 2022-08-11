@@ -1,7 +1,8 @@
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional, Type
 
 from snakeguice import errors, providers, scopes
 from snakeguice.annotation import UNANNOTATED, Annotation
+from snakeguice.interfaces import Binder as BinderI
 from snakeguice.interfaces import Interface, Provider, Scope
 
 _NOT_SET = object()
@@ -46,13 +47,13 @@ class _EmptyBinder:
 
 
 class Binder:
-    def __init__(self, parent=None) -> None:
+    def __init__(self, parent: BinderI = None) -> None:
         self._parent = parent or _EmptyBinder()
         self._binding_map: Dict[Key, Binding] = {}
 
     def bind(
         self,
-        _class,
+        _class: Type[Any],
         to=_NOT_SET,
         to_provider=_NOT_SET,
         to_instance=_NOT_SET,
@@ -93,14 +94,14 @@ class Binder:
     def get_binding(self, key: Key) -> Optional[Binding]:
         return self._binding_map.get(key) or self._parent.get_binding(key)
 
-    def create_child(self):
+    def create_child(self) -> BinderI:
         return Binder(self)
 
 
 class LazyBinder:
     def __init__(self, parent=None) -> None:
         self._parent = parent or _EmptyBinder()
-        self._binding_map: Dict[Key, Binding] = {}
+        self._binding_map: dict[Key, Binding] = {}
         self._errors: List[BinderErrorRecord] = []
 
     def add_error(self, msg):
