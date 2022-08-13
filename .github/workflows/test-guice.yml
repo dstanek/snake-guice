@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.9", "3.8", "3.7"]
+        python-version: ["3.10", "3.9", "3.8"]
         poetry-version: [""]
         #poetry-version: ["1.1.14", "1.2.0b3"]
 
@@ -25,7 +25,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ~/.local
-          key: poetry-${{ matrix.poetry-version }}-0
+          key: poetry-${{ matrix.poetry-version }}-1
 
       - name: Install Poetry
         uses: snok/install-poetry@v1
@@ -35,12 +35,18 @@ jobs:
           virtualenvs-in-project: true
           installer-parallel: true
 
+      - name: Print Python version
+        run: python --version
+
+      - name: Print Poetry version
+        run: poetry --version
+
       - name: Setup dependency cache
         id: dep-cache
         uses: actions/cache@v2
         with:
           path: .venv
-          key: poetry-${{ hashFiles('**/poetry.lock') }}
+          key: poetry-${{ hashFiles('**/poetry.lock') }}-1
 
       - name: Install dependencies
         run: poetry install --no-interaction --no-root

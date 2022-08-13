@@ -24,7 +24,7 @@ classifiers = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.8"
 Sphinx = {version = "^5.1.1", optional = true, extras = ["docs"]}
 reno = {version = "^3.5.0", optional = true, extras = ["docs"]}
 myst-parser = {version = "^0.18.0", optional = true, extras = ["docs"]}
