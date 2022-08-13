@@ -1,19 +1,18 @@
-import sys
 from wsgiref.simple_server import make_server
+
+from examples.shared.modules.mako_module import MakoTemplateModule
+from examples.wsgiapp.modules import URLMapperModule
 from snakeguice import create_injector
 from snakeguice.extras.snakeweb import Application
 
-from scopes import WSGIRequestScopeMiddleware
-from modules import MainModule, URLMapperModule
 
+def main() -> None:
+    injector = create_injector([URLMapperModule(), MakoTemplateModule()])
+    app = Application(injector)
 
-def main(args):
-    injector = create_injector([MainModule(), URLMapperModule()])
-    application = Application(injector)
-
-    httpd = make_server('', 8000, application)
+    httpd = make_server("", 8080, app)
     httpd.serve_forever()
 
 
-if __name__ == '__main__':
-    main(sys.argv[1:])
+if __name__ == "__main__":
+    main()

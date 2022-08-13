@@ -1,4 +1,4 @@
-CODE_DIRS=snakeguice tests
+CODE_DIRS=snakeguice tests examples
 
 .PHONY: all
 all: fmt lint tests

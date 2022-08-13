@@ -1,10 +1,8 @@
-
 class User:
     """An object representing a user."""
 
 
 class UserProvider:
-
     def get(self):
         return User()
 
@@ -14,6 +12,5 @@ class RequestData:
 
 
 class RequestDataProvider:
-
     def get(self):
         return RequestData()

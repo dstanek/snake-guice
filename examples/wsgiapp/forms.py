@@ -1,5 +1,5 @@
 from formencode import Schema
-from formencode.validators import String, Email
+from formencode.validators import Email, String
 
 
 class MyForm(Schema):
