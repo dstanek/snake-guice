@@ -128,7 +128,7 @@ class LazyBinder:
         to_provider=_NOT_SET,
         to_instance=_NOT_SET,
         in_scope=scopes.NO_SCOPE,
-        annotated_with=None,
+        annotated_with=UNANNOTATED,
     ):
         key = Key(interface=_class, annotation=annotated_with)
 
