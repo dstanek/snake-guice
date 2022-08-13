@@ -1,47 +1,34 @@
-from os import path
-from mako.template import Template
-from webob import Response
 import formencode
-from snakeguice import inject, annotate
+from webob import Request, Response
 
-from forms import MyForm
+from examples.shared.interfaces import TemplateLoader
+from examples.wsgiapp.forms import MyForm
+from snakeguice import inject
 
 
 class BaseController:
-
-    @inject(template_dir=str)
-    @annotate(template_dir='base template directory')
-    def __init__(self, template_dir) -> None:
-        self._template_dir = template_dir
-
-    def _load_template(self, filename):
-        filename = path.join(self._template_dir, filename)
-        return Template(filename=filename)
+    @inject
+    def __init__(self, loader: TemplateLoader) -> None:
+        self._loader = loader
 
 
 class HomeController(BaseController):
-
-    def index(self, request):
-        kwargs = dict(name='', email='', errors={})
-        template = self._load_template('templates/index.mako')
+    def index(self, request: Request) -> Response:
+        kwargs = dict(name="", email="", errors={})
+        template = self._loader.load("index")
         return Response(template.render(**kwargs))
 
-    def form(self, request):
+    def form(self, request: Request) -> Response:
         errors = {}
         try:
             formdata = MyForm().to_python(request.POST)
-        except formencode.Invalid, e:
+        except formencode.Invalid as e:
             errors = e.unpack_errors()
+            formdata = request.POST
 
         if errors:
-            kwargs = dict(name=request.POST.get('name', ''),
-                          email=request.POST.get('email', ''), errors=errors)
-            template = self._load_template('templates/index.mako')
-            return Response(template.render(**kwargs))
+            template = self._loader.load("index")
         else:
-            name = request.POST.get('name', '')
-            email = request.POST.get('email', '')
-            past_experience = request.POST.get('past_experience') == 'on'
-            kwargs = dict(name=name, past_experience=past_experience)
-            template = self._load_template('templates/thanks.mako')
-            return Response(template.render(**kwargs))
+            template = self._loader.load("thanks")
+
+        return Response(template.render(**formdata, errors=errors))

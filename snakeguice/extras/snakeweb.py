@@ -7,6 +7,7 @@ import routes
 from webob import Request
 from webob.exc import HTTPNotFound
 
+from snakeguice.annotation import UNANNOTATED
 from snakeguice.modules import Module
 
 
@@ -42,7 +43,7 @@ class RoutesBinder:
 
 class RoutesModule(Module):
 
-    annotation = None
+    annotation = UNANNOTATED
 
     def run_configure(self, binder) -> None:
         self._mapper = routes.Mapper()

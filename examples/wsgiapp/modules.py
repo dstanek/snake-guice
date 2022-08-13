@@ -1,20 +1,13 @@
-from os import path
-from snakeguice.extras.snakeweb import RoutesModule
-
-from controllers import HomeController
-
-
-class MainModule:
-
-    def configure(self, binder):
-        app_dir = path.dirname(__file__)
-        binder.bind(str, annotated_with='base template directory',
-                    to_instance=app_dir)
+from examples.wsgiapp.controllers import HomeController
+from snakeguice.extras.snakeweb import RoutesBinder, RoutesModule
 
 
 class URLMapperModule(RoutesModule):
-
-    def configure(self, routes_binder):
-        routes_binder.connect('/form', controller=HomeController,
-                action='form', conditions=dict(method='POST'))
-        routes_binder.connect('/', controller=HomeController, action='index')
+    def configure(self, routes_binder: RoutesBinder) -> None:
+        routes_binder.connect(
+            "/form",
+            controller=HomeController,
+            action="form",
+            conditions=dict(method="POST"),
+        )
+        routes_binder.connect("/", controller=HomeController, action="index")
