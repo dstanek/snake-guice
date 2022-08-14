@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import inspect
+from types import MethodType
 from typing import Any, Dict
 
 import routes
@@ -62,9 +63,9 @@ class RoutesModule(Module):
 class AutoRoutesModule(RoutesModule):
     def configure(self, routes_binder):
         for route, controller in self.configured_routes.items():
-            if hasattr(controller, "im_class"):
+            if isinstance(controller, MethodType):
                 routes_binder.connect(
-                    route, controller=controller.im_class, action=controller.__name__
+                    route, controller=controller.__self__, action=controller.__name__
                 )
             else:
                 routes_binder.connect(route, controller=controller)
