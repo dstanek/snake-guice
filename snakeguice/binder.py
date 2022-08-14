@@ -101,7 +101,7 @@ class Binder:
 class LazyBinder:
     def __init__(self, parent=None) -> None:
         self._parent = parent or _EmptyBinder()
-        self._binding_map: dict[Key, Binding] = {}
+        self._binding_map: Dict[Key, Binding] = {}
         self._errors: List[BinderErrorRecord] = []
 
     def add_error(self, msg):
