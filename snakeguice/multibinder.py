@@ -1,4 +1,4 @@
-from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
+from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union, cast
 
 from snakeguice import providers
 from snakeguice.binder import Key
@@ -43,7 +43,8 @@ class _MultiBinder(Generic[T]):
                 to_provider=self._create_provider(),
             )
             binding = self._binder.get_binding(key)
-        return binding.provider
+        assert binding is not None
+        return cast(MultiProviderI[T], binding.provider)
 
     def _dsl_to_provider(
         self,
@@ -66,7 +67,7 @@ class _MultiBinder(Generic[T]):
             )
 
 
-class ListBinder(_MultiBinder):
+class ListBinder(_MultiBinder[T]):
     def add_binding(
         self,
         to: Any = None,
@@ -94,7 +95,7 @@ class ListBinder(_MultiBinder):
         return DynamicMultiBindingProvider
 
 
-class DictBinder(_MultiBinder):
+class DictBinder(_MultiBinder[T]):
     def add_binding(
         self,
         key: KeyI,

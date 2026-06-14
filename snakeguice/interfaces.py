@@ -1,10 +1,11 @@
 """Interfaces used by snake-guice directly"""
 
-from typing import Any, Protocol, Type, TypeVar
+from typing import Any, Protocol, Type, TypeVar, overload
 
 from snakeguice.annotation import UNANNOTATED, AnnotationLike
 
 T = TypeVar("T", covariant=True)
+U = TypeVar("U")
 
 Binder = Any
 Key = Any
@@ -15,10 +16,22 @@ Module = Any
 class Injector(Protocol):
     """An interface automatically bound to the current Injector instance."""
 
+    @overload
+    def get_instance(
+        self, cls: Type[U], annotation: AnnotationLike = UNANNOTATED
+    ) -> U: ...
+
+    @overload
     def get_instance(
         self, cls: Any, annotation: AnnotationLike = UNANNOTATED
     ) -> Any: ...
 
+    @overload
+    def get_provider(
+        self, cls: Type[U], annotation: AnnotationLike = UNANNOTATED
+    ) -> "Provider[U]": ...
+
+    @overload
     def get_provider(
         self, cls: Any, annotation: AnnotationLike = UNANNOTATED
     ) -> "Provider[Any]": ...

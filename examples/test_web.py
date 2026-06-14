@@ -88,7 +88,8 @@ from snakeguice import inject  # noqa: E402
 
 
 class Server:
-    pass
+    def start(self) -> None:
+        """got something!"""
 
 
 class WebServer(Server):

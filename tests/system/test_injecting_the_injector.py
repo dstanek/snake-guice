@@ -6,7 +6,7 @@ class ISomething:
     """An interface."""
 
 
-class Something:
+class Something(ISomething):
     """Something a little more concrete."""
 
 
@@ -29,5 +29,5 @@ def test() -> None:
     something = injector.get_instance(ISomething)
     assert isinstance(something, Something)
 
-    something = injector.get_instance(SomethingProvider)
-    assert something.injector is injector
+    provider = injector.get_instance(SomethingProvider)
+    assert provider.injector is injector

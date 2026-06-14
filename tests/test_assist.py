@@ -2,14 +2,14 @@
 
 """Tests for the assisted injection feature."""
 
-from typing import Any, Type
+from typing import Any, Type, cast
 
 import pytest
 
 from snakeguice import annotate, create_injector, inject
 from snakeguice.assist import AssistProvider, assisted_inject
 from snakeguice.errors import AssistError
-from snakeguice.interfaces import Binder
+from snakeguice.interfaces import Binder, Factory
 
 
 class IService:
@@ -112,7 +112,9 @@ def test_using_assisted_inject_on_a_method() -> None:
 
 def test_create_with_unexpected_kwarg_raises_useful_type_error() -> None:
     inj = create_injector([Module()])
-    factory = inj.get_instance(IWorkerFactory)
+    # the runtime binding is a dynamically generated Factory[Worker], whose
+    # create() accepts arbitrary kwargs and validates them itself
+    factory = cast(Factory[Worker], inj.get_instance(IWorkerFactory))
 
     with pytest.raises(TypeError) as exc_info:
         factory.create(name="awesome worker", date="07/09/2010", oops="surprise")

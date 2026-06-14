@@ -58,6 +58,16 @@ profile="black"
 skip_gitignore = true
 
 [tool.mypy]
+strict = true
 ignore_missing_imports = true
-disallow_untyped_defs = true
-disallow_incomplete_defs = true
+
+[[tool.mypy.overrides]]
+module = [
+    "examples.wsgiapp.forms",
+    "examples.cherrypy.controllers",
+    "examples.cherrypy.scopes",
+    "examples.shared.template_engines.mako_engine",
+]
+disallow_subclassing_any = false
+disallow_untyped_decorators = false
+warn_return_any = false

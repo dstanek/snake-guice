@@ -1,5 +1,5 @@
 import inspect
-from typing import Any, Callable, Type
+from typing import Any, Callable, Type, TypeVar, overload
 
 from snakeguice._extractor import extract_params
 from snakeguice.annotation import UNANNOTATED, AnnotationLike
@@ -9,6 +9,8 @@ from snakeguice.interfaces import Binder as BinderI
 from snakeguice.interfaces import Injector as IInjector
 from snakeguice.interfaces import Module, Provider
 from snakeguice.modules import ModuleAdapter
+
+U = TypeVar("U")
 
 
 class ProvidesBinderHelper:
@@ -63,6 +65,16 @@ class Injector:
             ModuleAdapter(module, self).configure(self._binder)
             provides_helper.bind_providers(module, self._binder)
 
+    @overload
+    def get_provider(
+        self, cls: Type[U], annotation: AnnotationLike = UNANNOTATED
+    ) -> Provider[U]: ...
+
+    @overload
+    def get_provider(
+        self, cls: Any, annotation: AnnotationLike = UNANNOTATED
+    ) -> Provider[Any]: ...
+
     def get_provider(
         self, cls: Any, annotation: AnnotationLike = UNANNOTATED
     ) -> Provider[Any]:
@@ -73,6 +85,16 @@ class Injector:
                 return injector.get_instance(cls, annotation)
 
         return DynamicProvider()
+
+    @overload
+    def get_instance(
+        self, cls: Type[U], annotation: AnnotationLike = UNANNOTATED
+    ) -> U: ...
+
+    @overload
+    def get_instance(
+        self, cls: Any, annotation: AnnotationLike = UNANNOTATED
+    ) -> Any: ...
 
     def get_instance(self, cls: Any, annotation: AnnotationLike = UNANNOTATED) -> Any:
         if cls is IInjector:  # TODO: i don't like this, but it works for now

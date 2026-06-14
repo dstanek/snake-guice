@@ -6,7 +6,7 @@ Examples of using the snakeguice API.
 
 # TODO: add a test proving call throughs work
 
-from typing import Any, Optional, Type
+from typing import Any, Optional, Type, cast
 
 import pytest
 
@@ -93,7 +93,7 @@ def test_injector_injecting_a_provider() -> None:
             binder.bind(ch.Person, to=SimpleProvider)
 
     injector = Injector(MyModule())
-    person_provider = injector.get_instance(ch.Person)
+    person_provider = cast(SimpleProvider, injector.get_instance(ch.Person))
     assert isinstance(person_provider.get(), ch.GoodPerson)
 
 
@@ -130,7 +130,7 @@ def test_inject_provider_with_args() -> None:
             binder.bind(ch.Person, to=PersonProvider)
 
     injector = Injector(MyModule())
-    person_provider = injector.get_instance(ch.Person)
+    person_provider = cast(PersonProvider, injector.get_instance(ch.Person))
     assert person_provider.get("good") == ch.GoodPerson
     assert person_provider.get("evil") == ch.EvilPerson
     assert person_provider.get("clueless") is None

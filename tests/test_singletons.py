@@ -88,8 +88,8 @@ class TestSingletonScope:
 
         obj = Injector(MyModule()).get_instance(self.DomainObject)
         self.assert_obj(obj)
-        assert obj.logger_a.hot_place is obj.place_a
-        assert obj.logger_a.cold_place is obj.place_c
+        assert obj.logger_a.hot_place is obj.place_a  # type: ignore[attr-defined]
+        assert obj.logger_a.cold_place is obj.place_c  # type: ignore[attr-defined]
 
 
 class TestSingetonScope:

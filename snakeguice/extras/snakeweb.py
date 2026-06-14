@@ -5,13 +5,15 @@ from types import MethodType
 from typing import Any, Callable, Dict
 
 import routes
-from webob import Request, Response  # noqa: F401
+from webob import Request, Response
 from webob.exc import HTTPNotFound
 
 from snakeguice.annotation import UNANNOTATED, Annotation
 from snakeguice.interfaces import Binder as BinderI
 from snakeguice.interfaces import Injector as InjectorI
 from snakeguice.modules import Module
+
+__all__ = ["Response"]
 
 
 def is_unbound_method(func: Any) -> bool:
