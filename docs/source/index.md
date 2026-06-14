@@ -21,5 +21,7 @@ assisted_injection
 private_modules
 parameter_interceptors
 what_to_inject
+patterns
 examples/index
+future
 ```
