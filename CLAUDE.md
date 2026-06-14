@@ -46,7 +46,8 @@ any `@inject`-decorated methods).
 `Module` subclass also gets `run_configure` (sets `_injector` first).
 `Module.install(binder, other)` composes modules. `PrivateModule` creates an
 isolated child injector and `expose()`s individual bindings to the parent
-binder (robot-legs pattern, see `specs/private_modules_spec.py`).
+binder (robot-legs pattern, see `tests/system/test_private_modules.py` and
+`docs/source/private_modules.md`).
 
 **Providers/scopes**: `providers.create_simple_provider(cls)` builds via
 `injector.create_object`; `create_instance_provider(obj)` returns a fixed
@@ -63,9 +64,8 @@ modules contribute to one `List[T]`/`Dict[str, T]` binding; `DictBinder` raises
 
 **Other**: `interceptors.ParameterInterceptor` injects a single named param into
 a method call. `config.ConfigParserLoader` binds `.ini` values as
-`Config("file:section:option")` (note: `docs/source/injecting_configuration.md`
-describes a different, unimplemented API — ignore it). `extras/snakeweb.py`
-wraps the `routes` library for WSGI. `binder.LazyBinder` is unused/dead code.
+`Config("file:section:option")`. `extras/snakeweb.py` wraps the `routes`
+library for WSGI. `binder.LazyBinder` is unused/dead code.
 
 ## Tests
 
