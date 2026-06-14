@@ -7,6 +7,10 @@ all: fmt lint tests
 tests:
 	uv run pytest -vv tests
 
+.PHONY: example-tests
+example-tests:
+	uv run pytest -vv examples
+
 .PHONY: lint
 lint:
 	uv run flake8 $(CODE_DIRS)
