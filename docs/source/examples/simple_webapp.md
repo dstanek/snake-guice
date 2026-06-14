@@ -1,109 +1,144 @@
 # WebApp Example
 
-HOWTO create a really simple web application using snake-guice
+This walks through a minimal WSGI web application wired up with snake-guice,
+using the `snakeguice.extras.snakeweb` helpers, which combine
+[Routes](https://routes.readthedocs.io/) (URL dispatch) and
+[WebOb](https://webob.org/) (request/response objects).
 
-**Experimental** features not available in the public release. The API is highly volitile.
+## Setup
 
-**Warning** this document is a brain dump and not necessarily organized properly.
-
-**Warning** this document assumes that you are using a UNIX variant and Python 2.5 or above - this will work for other platforms and/or older versions of Python, but the instructions would vary a little.
-
-## Basic Steps
-
-You must decide where you want your web application. For this tutorial I'll assume you'll be using `$HOME/src/mywebapp`.
+Install snake-guice along with Routes and WebOb:
 
 ```bash
-$ cd $HOME
-$ mkdir src
-$ cd src
+pip install snake-guice routes webob
 ```
 
-I'll be using [[http:// virtualenv]] to create an isolated environment for our webapp. We first need to download it. I prefer to get it directly from its Subversion trunk.
+## A Controller with an Injected Dependency
 
-```bash
-$ wget http://svn.colorstudy.com/virtualenv/trunk/virtualenv.py
-```
-
-New lets use virtualenv to create our environment and activate the environment.
-
-```bash
-$ python virtualenv.py mywebsite
-$ cd mywebsite
-$ . bin/activate
-```
-
-I really like using [[WebOb](http://pythonpaste.org/webob/)] and [[http:// Routes]] so I'm going to install them now along with snake-guice.
-
-```bash
-$ easy_install webob routes snake-guice
-```
-
-The actual source files for the webapp will be stord in a src directory. So we'll create that now.
-```bash
-$ mkdir src
-$ cd src
-```
-
-We now need to create the controller class that will actually handle to request. Create a file named `controllers.py` and paste in the following code:
+The point of using snake-guice here is that controllers don't have to build
+their own dependencies - they just declare what they need. Create
+`controllers.py`:
 
 ```python
-from webob import Response
+from webob import Request, Response
+
+from snakeguice import inject
 
 
-class EntryController:
+class Greeter:
+    def greet(self, name: str) -> str:
+        return f"Hello, {name}!"
 
-    def index(self, request):
-        return Response('This is your default action. '
-                'You may show a list of entries here.')
 
-    def show(self, request, id):
-        return Response('You are looking at entry #%s.' % id)
+class GreeterController:
+    @inject
+    def __init__(self, greeter: Greeter) -> None:
+        self._greeter = greeter
 
-    def new(self, request):
-        return Response('In a more fully featured example you would be '
-                        'adding a new record to the database.')
-
-    def update(self, request, id):
-        return Response('In a more fully featured example you would be '
-                        'updating record #%s in the database.' % id)
+    def index(self, request: Request) -> Response:
+        name = request.params.get("name", "world")
+        return Response(self._greeter.greet(name))
 ```
 
-Lets wire up the `EntryController` using snake-guice. Create a file named `app.py` and paste in the following code:
+Because `Greeter` isn't explicitly bound to anything, snake-guice will
+construct it directly the first time a `GreeterController` is created - see
+[Guice Basics](../guicebasics.md) for why that "implicit binding" works. In a
+real application you'd bind `Greeter` to an interface so it can be swapped out
+(for testing, or for a different greeting strategy) without touching
+`GreeterController`.
+
+## Wiring Up Routes
+
+`AutoRoutesModule` maps URL paths to controller classes. Create `app.py`:
+
 ```python
 from wsgiref.simple_server import make_server
 
-from controllers import EntryController
-from snakeguice import Injector
-from snakeguice.extras.modules.snakeroutes import (
-        RoutesBinder, RoutesModule, Application)
+from snakeguice import create_injector
+from snakeguice.extras.snakeweb import AutoRoutesModule, Application
+
+from controllers import GreeterController
 
 
-class Module(RoutesModule):
-
-    def configure_mapper(self, binder):
-        binder.connect('/entries', controller=EntryController, action='index')
-        binder.connect('/entries/new', controller=EntryController, action='new')
-        binder.connect('/entry/:id/:action', controller=EntryController)
+class AppModule(AutoRoutesModule):
+    configured_routes = {
+        "/": GreeterController,
+    }
 
 
-injector = Injector(Module())
-app = Application(injector)
+def main() -> None:
+    injector = create_injector([AppModule()])
+    app = Application(injector)
 
-httpd = make_server('', 8000, app)
-print "Serving on port 8000..."
-httpd.serve_forever()
+    httpd = make_server("", 8000, app)
+    print("Serving on port 8000...")
+    httpd.serve_forever()
+
+
+if __name__ == "__main__":
+    main()
 ```
 
-Trying running it now:
+A route mapped to a class via `configured_routes` dispatches to that class's
+`index` action. `Application` resolves the controller with
+`injector.get_instance(GreeterController)` for every request, so `Greeter` is
+injected fresh each time.
+
+## Running It
+
 ```bash
 $ python app.py
+Serving on port 8000...
 ```
 
-You now have a web server listening on port 8000. Trying hitting one of the following URLs in you web browser:
-  * http://localhost:8000/entries
-  * http://localhost:8000/entries/new
-  * http://localhost:8000/entry/123/show
-  * http://localhost:8000/entry/123/update
+Then visit:
 
-## Other Notes
-There is some support for virtual hosting using the annotation property of your binder. This is still a bit complicated so I'll have to document it later. The general idea is that you would be able to serve multiple sites, each with a separate mapper, from within the same process.
+* http://localhost:8000/ - "Hello, world!"
+* http://localhost:8000/?name=Ada - "Hello, Ada!"
+
+## Adding More Routes
+
+`AutoRoutesModule.configured_routes` maps each path to a controller class,
+dispatching to that class's `index` action:
+
+```python
+class AppModule(AutoRoutesModule):
+    configured_routes = {
+        "/": GreeterController,
+        "/about": AboutController,
+    }
+```
+
+For routes that need more control - URL segments like `:name`, custom HTTP
+method conditions, etc. - override `configure()` instead of using
+`configured_routes`, and call `routes_binder.connect(...)` directly (it accepts
+the same arguments as
+[`routes.Mapper.connect`](https://routes.readthedocs.io/)). Matched URL
+segments are passed to the action as keyword arguments:
+
+```python
+from snakeguice.extras.snakeweb import RoutesBinder, RoutesModule
+
+
+class GreeterController:
+    @inject
+    def __init__(self, greeter: Greeter) -> None:
+        self._greeter = greeter
+
+    def index(self, request: Request) -> Response:
+        name = request.params.get("name", "world")
+        return Response(self._greeter.greet(name))
+
+    def show(self, request: Request, name: str) -> Response:
+        return Response(self._greeter.greet(name))
+
+
+class AppModule(RoutesModule):
+    def configure(self, routes_binder: RoutesBinder) -> None:
+        routes_binder.connect("/", controller=GreeterController, action="index")
+        routes_binder.connect(
+            "/greet/:name", controller=GreeterController, action="show"
+        )
+```
+
+`/greet/Ada` now dispatches to `GreeterController.show(request, name="Ada")`.

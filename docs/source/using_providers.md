@@ -1,85 +1,125 @@
 # Using Providers with snake-guice
 
-## Introduction 
+## Introduction
 
-This shows a simple example where you might want to use a Provider to grab an instance to a class at runtime.  The provider itself can be injected by snake-guice.  When a method requires use of an instance from the provider, it can automatically be given to it as an argument.
+Most bindings just point an interface at an implementation class
+(`binder.bind(IEngine, to=SmallBlockEngine)`) and let snake-guice construct it.
+Sometimes that isn't enough - you need to compute, look up, or otherwise build
+a value yourself. That's what a `Provider` is for.
 
-
-## Non-Example
-
-This example is taken from test\_decorators.
-
-SomeClass has an injected provider property, and a method that expects the provided instance as an attribute to its method.  We want a specific instance of Something to be provided to the get\_some\_status method in SomeClass.
+A provider is any object with a `get()` method that returns the instance. This
+contract is defined as `snakeguice.interfaces.Provider`:
 
 ```python
-    from snakeguice import injector
-    from snakeguice.providers import InstanceProvider
-
-    class Something:
-        def __init__(self, status):
-            self.status = status
-
-    class SomeClass:
-        some_provider = inject(InstanceProvider)
-
-        @provide(p=some_provider)
-        def get_some_status(self, p):
-            assert type(p) == Something
-            assert p.status == 'something:provided'
-            return p.status
-
-    class Modules:
-        def configure(self, binder):
-            provided = InstanceProvider(Something('something:provided'))
-            binder.bind(InstanceProvider, to_instance=provided)
-
-    inj = injector.Injector(Modules())
-    some_class = inj.get_instance(SomeClass)
-    status = some_class.get_some_status()
-
-    assert isinstance(some_class, SomeClass)
-    assert status == 'something:provided'
+class Provider(Protocol[T]):
+    def get(self) -> T: ...
 ```
 
-## Session Provider Example
-
-There are times that you might want to use a Provider for a session service.  For example, your web app might use a Controller that hangs around for the life of the application.  Action methods within the controller probably need to dispatch based on request/user data.  The provider would do its magic look up the session relevant to the current context and return it for a class to use.
-
-The session provider itself might do something like this, however ugly:
+Bind to a provider with `to_provider=` instead of `to=`:
 
 ```python
+binder.bind(IEngine, to_provider=TurboEngineProvider)
+```
+
+## A Simple Provider
+
+A provider class just needs a `get()` method. snake-guice will instantiate the
+provider class itself (so it can be injected too) before calling `get()`:
+
+```python
+class TurboEngineProvider:
+    def get(self) -> IEngine:
+        engine = SmallBlockEngine()
+        engine.add_turbo()
+        return engine
+
+
+class AutoModule:
+    def configure(self, binder):
+        binder.bind(IEngine, to_provider=TurboEngineProvider)
+```
+
+Whenever something needs an `IEngine`, snake-guice creates a
+`TurboEngineProvider` and calls `.get()` on it.
+
+## Injectable Providers
+
+Because the provider class is itself created with `get_instance`, it can have
+its own `@inject`-decorated `__init__` and depend on other bindings - including
+the `Injector` itself. This is handy when the value you want to provide depends
+on some runtime context:
+
+```python
+from snakeguice.interfaces import Injector
+
+
 class SessionProvider:
-   def get(self):
-       pass
+    @inject
+    def __init__(self, injector: Injector) -> None:
+        self._injector = injector
 
-class MySessionProvider:
-   def __init__(self, _globals):
-      self._globals = _globals
+    def get(self) -> Session:
+        request_context = self._injector.get_instance(RequestContext)
+        return request_context.session
 
-   def get(self):
-      app_context = self._globals['app.current_context']
-      session_store = app_context['session']
-      return session
+
+class WebModule:
+    def configure(self, binder):
+        binder.bind(Session, to_provider=SessionProvider)
 ```
 
-The nice thing about the provider pattern is that the lookup into globals or whatever other trickery your app server needs is encapsulated in one place.
+Every class that has a `Session` injected will go through `SessionProvider`,
+which resolves the session for the current request via whatever
+`RequestContext` binding is active.
 
-Theoretically, multiple applications on a server could be using slightly different variations of the session provider.  Your controller would contain an instance of a SessionProvider, which conforms to the `ProviderInterface`.  The DI framework (snake-guice) handles giving the controller the proper `SessionProvider`.
+## `@provides`: Factory Methods on a Module
 
-Your controller then looks like this:
+For simple cases, writing a whole provider class is more ceremony than the
+value deserves. A module method decorated with `@provides(SomeType)` is
+collected automatically and used as a factory for `SomeType`. Combine it with
+`@inject` to pull in dependencies:
 
 ```python
-class Controller:
-   session_provider = inject(SessionProvider)
+from snakeguice import inject, provides
 
-   @provide(session=session_provider)
-   def GET(self, session=Provided):
-       if session.is_signed_in:
-           return Template('index.htm')
-       else:
-           return Template('index_guest.htm')
+
+class AutoModule:
+    def configure(self, binder):
+        binder.bind(IEngine, to=SmallBlockEngine)
+
+    @provides(IDashboard)
+    @inject
+    def provide_dashboard(self, engine: IEngine) -> IDashboard:
+        return Dashboard(redline=engine.max_rpm)
 ```
 
-The GET method of the controller now has the contextually relevant session provided to it, upon which it can make decisions.
+No explicit `binder.bind(IDashboard, ...)` call is needed - the `@provides`
+decorator takes care of it when the module is installed.
 
-To wire everything up, you'll need to coordinate building the Injector, wiring the SessionProvider, and spinning up the `Controller` in the app server.
+## Deferred Resolution with `get_provider`
+
+`Injector.get_instance(cls)` resolves immediately. If you're holding onto the
+injector and want to defer resolution - say, to get a fresh instance each time,
+or to avoid building something until it's actually needed - use
+`get_provider()`:
+
+```python
+provider = injector.get_provider(IEngine)
+...
+engine = provider.get()  # resolved now, not when get_provider() was called
+```
+
+`get_provider()` returns a small wrapper whose `.get()` just calls
+`injector.get_instance(cls, annotation)`, so it honors the same bindings and
+scopes as a normal lookup.
+
+## Providers and Scopes
+
+A binding's scope wraps whatever provider it points to. With the default
+`scopes.NO_SCOPE`, `.get()` runs every time the binding is resolved. With
+`scopes.SINGLETON`, the provider's `.get()` runs once and the result is cached
+for the lifetime of the injector:
+
+```python
+binder.bind(IEngine, to_provider=TurboEngineProvider, in_scope=scopes.SINGLETON)
+```

@@ -97,29 +97,46 @@ Um what? How did snake-guice know to create a Car when there was no explicit bin
 
 ### Multiple Bindings Using Annotations
 
-In the previous example we bound SmallBlockEngine to IEngine when constructing our car. What happens when we need to inject multiple doors into our car? We definitely need both a left and a right door. Consider this code::
+In the previous example we bound SmallBlockEngine to IEngine when constructing our car. What happens when we need to inject multiple doors into our car? We definitely need both a left and a right door. Both doors share the same interface, so a plain type-based binding can't tell them apart. Consider this code:
 
 ```python
+from snakeguice import inject, annotate
+
+
+class IDoor:
+    """This will be used as the interface when creating a binding."""
+
+
+class LeftDoor:
+    """Implementation of the driver's side door."""
+
+
+class RightDoor:
+    """Implementation of the passenger's side door."""
+
+
 class Car:
     """An implementation of a car."""
 
-    @inject(engine=IEngine, left_door=IDoor, right_door=IDoor)
+    @inject
     @annotate(left_door="left", right_door="right")
-    def __init__(self, engine, left_door, right_door):
+    def __init__(self, engine: IEngine, left_door: IDoor, right_door: IDoor):
         self.engine = engine
+        self.left_door = left_door
+        self.right_door = right_door
 ```
 
-We needed to tell snake-guice how to differentiate the instances of door. We do this by annotating the method.
+We needed to tell snake-guice how to differentiate the two `IDoor` parameters. We do this by annotating the `__init__` method with `@annotate`. Decorators apply bottom-up, so `@annotate` is listed *below* `@inject` - it attaches the annotation metadata first, then `@inject` validates the (now-annotated) signature.
 
 The module for this car would look like:
 
 ```python
-class AutoModule(object):
+class AutoModule:
 
     def configure(self, binder):
         binder.bind(IEngine, to=SmallBlockEngine)
-        binder.bind(IDoor, annotated_with='left', to=LeftDoor)
-        binder.bind(IDoor, annotated_with='right', to=RightDoor)
+        binder.bind(IDoor, annotated_with="left", to=LeftDoor)
+        binder.bind(IDoor, annotated_with="right", to=RightDoor)
 ```
 
 The combination of an interface and an annotation make a unique key in the binder. Each key can only have a single implementation bound to it.

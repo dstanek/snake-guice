@@ -1,131 +1,76 @@
-# Experimental: Injecting Configuration
-**Experimental** features not available in the public release. The API is highly volitile.
+# Injecting Configuration
 
-**Warning** this document is a brain dump and not necessarily organized properly.
+Objects often need a bit of configuration data when they're created - a
+database connection needs credentials, a logger needs a filename and log
+level. snake-guice can load values from an `.ini`-style file and bind them so
+they can be injected like anything else.
 
-## Introduction
+## Loading a Config File
 
-Often objects will need a bit of configuration data injected when they are created. Consider a database connection needing credentials or a logger needing a filename and log level. You want to make this as easy as possible for the operations folks that will deploy your application. Even if you play that role too. Luckily snake-guice provides facilities to make this very easy.
-
-The example we'll walk through is a simple Logger class. No real implementation will be shown. Just enough to explain how to configure the instances.
-
-## Getting started with simple injection
-
-Assuming the default configuration format, which will be explained later, your class definition would look like:
-```python
-from snakeguice import inject, Injected, Config
-
-class MyLogger:
-
-    @inject(filename=Config('app.cfg:logger:filename'),
-            loglevel=Config('app.cfg:logger:loglevel'))
-    def __init__(self, filename,loglevel):
-        pass
-```
-
-The injector is smart enough to know that needs to find filename and loglevel in a configration file. The string passed to Config is a fully qualified path to the config entry.
-
-At this point the injector doesn't know where it can file app.cfg. We can do that by creating a new module:
-```python
-from snakeguice.modules import ConfigModule
-
-class MyConfigModule(ConfigModule):
-
-    paths = ['/path/to/config/dir']
-```
-
-To hook it all up just pass an instance of MyConfigModule to the injector.
-
-## Configuration format
-The default configuration implementation is Python's [ConfigParser](http://docs.python.org/library/configparser.html).
-
-The fully qualified path to the config entry is really just a ':' delimited string. It must contain two parts: a filename and an option. It can also contain any number of sections. In no section in specified then 'default' is assumed.
-
-Examples:
-  1. 'app.cfg:entry' - file: app.cfg, section=default, entry=entry
-  1. 'app.cfg:section:entry' - file: app.cfg, section=section, entry=entry
-  1. 'app.cfg:section:sub:entry' - file: app.cfg, section=setion, subsection=sub, entry=entry
-
-## Using a different config format
-
-Not everyone can or wants to use the ConfigParser format. To use your own custom implementation you need to specify it in your module.
+`ConfigParserLoader` reads a file with Python's
+[`ConfigParser`](https://docs.python.org/3/library/configparser.html) and
+binds every `section`/`option` pair it finds. Call it from a module's
+`configure()`:
 
 ```python
-from snakeguice.modules import ConfigModule
-from snakeguice.interfaces import Config
+from snakeguice import config
+from snakeguice.interfaces import Binder
 
-from myapp import MyConfigAdapter
 
-class MyConfigModule(ConfigModule):
-
-    paths = ['/path/to/config/dir']
-
-    def configure(self, binder):
-        binder.bind(Config, to=MyConfigAdapter)
+class ConfigModule:
+    def configure(self, binder: Binder) -> None:
+        config.ConfigParserLoader("app.ini").bind_configuration(binder)
 ```
 
-The instance of MyConfigAdapter is injected so it also has it's dependencies resolved. The ConfigAdapter interface is really simple. It just needs a lookup method that takes a (LDAP, ConfigObj, etc.) The format of the string is dependent on the ConfigAdapter implementation used.
+Given an `app.ini` like:
+
+```ini
+[db]
+dsn = sqlite:///app.db
+```
+
+every value becomes available under a `Config` annotation keyed by
+`"<filename>:<section>:<option>"` - here, `Config("app.ini:db:dsn")`. Note that
+the filename used in the key is just the basename (`os.path.basename`), even
+if you pass a longer path to `ConfigParserLoader`.
+
+## Reading a Value
+
+A `Config(...)` instance can be used directly as a type annotation. Since
+`Config` is an `Annotation`, two `Config("app.ini:db:dsn")` instances compare
+equal, so this lines up with the binding created above:
 
 ```python
-class MyConfigAdapter:
+from snakeguice import inject
 
-    def lookup(self, config_entry):
-        pass
+
+class Database:
+    @inject
+    def __init__(self, dsn: config.Config("app.ini:db:dsn")) -> None:
+        self.dsn = dsn
 ```
 
-It is also possible to use more than one configuration file format within an application. For this you just bind using annotations. For example:
-```python
-from snakeguice import inject, Injected, Config
-
-class MyLogger:
-
-    @inject(filename=Config('app.cfg:logger:filename'),
-            loglevel=Config('app.cfg:logger:loglevel'))
-    def __init__(self, filename, loglevel):
-        pass
-
-class ThirdPartyStuff:
-
-    @inject(port=Config('stupid.java.properties.file.entry', annotation='custom')
-    def __init__(self, port):
-        pass
-```
-
-In this case I have a class that needs to get it's configuration from a properties files. The MyLogger instances still use the default implementation of ConfigAdapter. To tell the injector about the custom ConfigAdapter you simply:
-```python
-from snakeguice.modules import ConfigModule
-from snakeguice.interfaces import Config
-
-from myapp import CustomConfigAdapter
-
-class MyConfigModule(ConfigModule):
-
-    paths = ['/path/to/config/dir']
-
-    def configure(self, binder):
-        binder.bind(Config, to=CustomConfigAdapter, annotated_with='custom')
-```
-
-## Configuration objects
-
-Sometimes a subsystem will need to have a large number of configuration options. This can make the initializer very ugly. To get around this in the components I write I use a configuration class that can be passed into the API. Then I create a custom ConfigAdapter to create the config object.
+You can also fetch a value directly from the injector without an injectable
+class:
 
 ```python
-class MyConfigAdapter:
-
-    def lookup(self, config_entry):
-        """Use the filename passed in to load a config object."""
-        return MySuperSpecialConfig()
-
-class MyAPI:
-
-    @inject(config=Config('app.cfg'))
-    def __init__(self, config):
-        pass
+injector = create_injector([ConfigModule()])
+dsn = injector.get_instance(config.Config("app.ini:db:dsn"))
 ```
 
-## Dynamic configuration files
+All values come back as `str`, exactly as `ConfigParser` returns them -
+snake-guice does no type conversion, so convert (`int(...)`, `Path(...)`, etc.)
+yourself where it matters.
 
-TODO: explain using providers to inject dynamic config values
+## Multiple Config Files
 
-TODO: explain injecting descriptors
+`ConfigParserLoader` can be called more than once, for as many files as you
+need - each binds its values under its own `<filename>:...` keys, so there's
+no collision between files:
+
+```python
+class ConfigModule:
+    def configure(self, binder: Binder) -> None:
+        config.ConfigParserLoader("app.ini").bind_configuration(binder)
+        config.ConfigParserLoader("logging.ini").bind_configuration(binder)
+```
