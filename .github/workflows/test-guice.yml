@@ -9,48 +9,24 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.9", "3.8"]
-        poetry-version: [""]
-        #poetry-version: ["1.1.14", "1.2.0b3"]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
-      - name: Setup Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
         with:
           python-version: ${{ matrix.python-version }}
+          enable-cache: true
 
-      - name: Cache Poetry install
-        uses: actions/cache@v2
-        with:
-          path: ~/.local
-          key: poetry-${{ matrix.poetry-version }}-1
-
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: ${{ matrix.poetry-version }}
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-          installer-parallel: true
-
-      - name: Print Python version
-        run: python --version
-
-      - name: Print Poetry version
-        run: poetry --version
-
-      - name: Setup dependency cache
-        id: dep-cache
-        uses: actions/cache@v2
-        with:
-          path: .venv
-          key: poetry-${{ hashFiles('**/poetry.lock') }}-1
+      - name: Print uv and Python versions
+        run: |
+          uv --version
+          uv run python --version
 
       - name: Install dependencies
-        run: poetry install --no-interaction --no-root
-        if: steps.dep-cache.outputs.cache-hit != 'true'
+        run: uv sync --all-extras
 
       - name: Run linting and tests
-        run: poetry run make lint tests
+        run: uv run make lint tests

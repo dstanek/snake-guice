@@ -5,20 +5,20 @@ all: fmt lint tests
 
 .PHONY: tests
 tests:
-	pytest -vv tests
+	uv run pytest -vv tests
 
 .PHONY: lint
 lint:
-	flake8 $(CODE_DIRS)
-	black --check --diff $(CODE_DIRS)
-	isort --check $(CODE_DIRS)
-	mypy $(CODE_DIRS) --show-error-context
+	uv run flake8 $(CODE_DIRS)
+	uv run black --check --diff $(CODE_DIRS)
+	uv run isort --check $(CODE_DIRS)
+	uv run mypy $(CODE_DIRS) --show-error-context
 
 .PHONY: fmt
 fmt:
-	black $(CODE_DIRS)
-	isort $(CODE_DIRS)
+	uv run black $(CODE_DIRS)
+	uv run isort $(CODE_DIRS)
 
 .PHONY: docs
 docs:
-	(cd docs; make html)
+	(cd docs; uv run --extra docs make html)

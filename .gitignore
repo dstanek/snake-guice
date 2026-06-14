@@ -27,3 +27,6 @@ pip-log.txt
 
 #Translations
 *.mo
+
+# uv
+.venv/

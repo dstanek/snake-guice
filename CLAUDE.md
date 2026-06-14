@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 snake-guice is a small Python dependency-injection framework modeled on
 [Google Guice](https://github.com/google/guice) (pre-1.0/alpha API). Single
-package `snakeguice`, Poetry-managed, Python `^3.10`. VCS is Jujutsu (jj),
+package `snakeguice`, uv-managed, Python `>=3.10`. VCS is Jujutsu (jj),
 colocated with git.
 
 ## Code Style
@@ -14,12 +14,12 @@ colocated with git.
 
 ## Commands
 
-- `poetry install` — install deps
+- `uv sync` — install deps
 - `make all` — fmt + lint + tests (what CI runs)
 - `make tests` — `pytest -vv tests`
 - `make lint` — flake8, black --check, isort --check, mypy
 - `make fmt` — black + isort (auto-fix)
-- Single test: `pytest tests/test_injector.py::test_create_child -vv`
+- Single test: `uv run pytest tests/test_injector.py::test_create_child -vv`
 
 ## Architecture
 
