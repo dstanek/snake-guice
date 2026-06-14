@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional, Type, Union
 
 from snakeguice import errors, providers, scopes
-from snakeguice.annotation import UNANNOTATED, Annotation
+from snakeguice.annotation import UNANNOTATED, AnnotationLike
 from snakeguice.interfaces import Binder as BinderI
 from snakeguice.interfaces import Interface, Provider, Scope
 
@@ -17,7 +17,7 @@ class BinderErrorRecord:
 
 class Key:
     def __init__(
-        self, interface: Interface, annotation: Annotation = UNANNOTATED
+        self, interface: Interface, annotation: AnnotationLike = UNANNOTATED
     ) -> None:
         self._interface = interface
         self._annotation = annotation
@@ -61,7 +61,7 @@ class Binder:
         to_provider: Any = _NOT_SET,
         to_instance: Any = _NOT_SET,
         in_scope: Scope = scopes.NO_SCOPE,
-        annotated_with: Annotation = UNANNOTATED,
+        annotated_with: AnnotationLike = UNANNOTATED,
     ) -> None:
         key = Key(interface=_class, annotation=annotated_with)
 
@@ -133,7 +133,7 @@ class LazyBinder:
         to_provider: Any = _NOT_SET,
         to_instance: Any = _NOT_SET,
         in_scope: Scope = scopes.NO_SCOPE,
-        annotated_with: Annotation = UNANNOTATED,
+        annotated_with: AnnotationLike = UNANNOTATED,
     ) -> None:
         key = Key(interface=_class, annotation=annotated_with)
 

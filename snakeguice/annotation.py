@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Union
 
 
 class Annotation:
@@ -18,3 +18,8 @@ class Annotation:
 
 
 UNANNOTATED = Annotation(None)
+
+# Bindings are most commonly disambiguated with a plain string (e.g.
+# `annotated_with="left"`), but an `Annotation` subclass instance (e.g.
+# `config.Config(...)`, or `UNANNOTATED` itself) works too.
+AnnotationLike = Union[Annotation, str]

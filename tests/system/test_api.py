@@ -214,6 +214,15 @@ class TestMethodInterceptors:
         with pytest.raises(TypeError):
             self.interceptor(a=ch.Person, b=ch.Logger)
 
+    def test_default_annotation_resolves_the_unannotated_binding(self) -> None:
+        class DomainObject:
+            @self.interceptor(person=ch.Person)
+            def intercept_me(self, person: Any) -> None:
+                assert isinstance(person, ch.EvilPerson)
+
+        obj = self.injector.get_instance(DomainObject)
+        obj.intercept_me()
+
 
 class TestProvidesDecorator:
     def setup_method(self) -> None:

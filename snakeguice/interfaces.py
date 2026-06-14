@@ -2,6 +2,8 @@
 
 from typing import Any, Protocol, Type, TypeVar
 
+from snakeguice.annotation import UNANNOTATED, AnnotationLike
+
 T = TypeVar("T", covariant=True)
 
 Binder = Any
@@ -13,9 +15,13 @@ Module = Any
 class Injector(Protocol):
     """An interface automatically bound to the current Injector instance."""
 
-    def get_instance(self, cls: Any, annotation: Any = None) -> Any: ...
+    def get_instance(
+        self, cls: Any, annotation: AnnotationLike = UNANNOTATED
+    ) -> Any: ...
 
-    def get_provider(self, cls: Any, annotation: Any = None) -> "Provider[Any]": ...
+    def get_provider(
+        self, cls: Any, annotation: AnnotationLike = UNANNOTATED
+    ) -> "Provider[Any]": ...
 
     def create_object(self, cls: Any) -> Any: ...
 

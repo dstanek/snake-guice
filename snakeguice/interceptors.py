@@ -1,7 +1,8 @@
 """ """
 
-from typing import Any, Callable, Optional, TypeVar, cast
+from typing import Any, Callable, TypeVar, cast
 
+from snakeguice.annotation import UNANNOTATED, AnnotationLike
 from snakeguice.interfaces import Injector as InjectorI
 
 F = TypeVar("F", bound=Callable[..., Any])
@@ -12,7 +13,7 @@ class ParameterInterceptor:
         self._injector = injector
 
     def __call__(
-        self, annotation: Optional[Any] = None, **kwargs: Any
+        self, annotation: AnnotationLike = UNANNOTATED, **kwargs: Any
     ) -> Callable[[F], F]:
         if len(kwargs) != 1:
             raise TypeError("ParameterInterceptor expects exactly one name=Type kwarg")

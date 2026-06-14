@@ -3,18 +3,15 @@
 Every `binder.bind()` call in a normal module adds to one shared binder. That's
 fine until two modules each need their *own* binding for the same interface -
 each binder only allows one binding per `(interface, annotation)` key, so the
-second call raises `BindingError`.
-
-This is the classic "robot legs" problem: a left and a right leg both need a
-foot, but they need *different* feet. `PrivateModule` solves it by giving each
-module its own isolated binder, and a way to publish just the bindings it
-wants the rest of the application to see.
+second call raises `BindingError`. This is sometimes called the "robot legs"
+problem, after the classic Guice example - but it shows up in ordinary
+applications too.
 
 ## The Problem
 
-Imagine two car doors, each with its own lock mechanism. Both need an `ILock`,
-but the left door needs a `LeftLock` and the right door needs a `RightLock`.
-Binding `ILock` directly in two modules doesn't work:
+Say an application talks to both a primary database and a read replica. Each
+connection needs its own `IConnectionConfig` (different host, credentials,
+etc.), but both modules binding `IConnectionConfig` directly collides:
 
 ```python
 from snakeguice import create_injector
@@ -22,41 +19,48 @@ from snakeguice.errors import BindingError
 from snakeguice.interfaces import Binder
 
 
-class ILock:
-    """Interface for a door lock mechanism."""
+class IConnectionConfig:
+    """Interface for a database connection configuration."""
 
 
-class LeftLock(ILock):
-    pass
+class PrimaryConfig(IConnectionConfig):
+    host = "db-primary.internal"
 
 
-class RightLock(ILock):
-    pass
+class ReplicaConfig(IConnectionConfig):
+    host = "db-replica.internal"
 
 
-class LeftDoorModule:
+class PrimaryModule:
     def configure(self, binder: Binder) -> None:
-        binder.bind(ILock, to=LeftLock)
+        binder.bind(IConnectionConfig, to=PrimaryConfig)
 
 
-class RightDoorModule:
+class ReplicaModule:
     def configure(self, binder: Binder) -> None:
-        binder.bind(ILock, to=RightLock)
+        binder.bind(IConnectionConfig, to=ReplicaConfig)
 
 
 try:
-    create_injector([LeftDoorModule(), RightDoorModule()])
+    create_injector([PrimaryModule(), ReplicaModule()])
 except BindingError as e:
-    print(e)  # baseclass <class 'ILock'> already bound
+    print(e)  # baseclass <class 'IConnectionConfig'> already bound
 ```
+
+Annotating the two `IConnectionConfig` bindings (`"primary"` /
+`"replica"`) would avoid the collision, but then *every* class that depends on
+`IConnectionConfig` - including `Database` below - would need
+`@annotate` to say which one it wants, even though each `Database` instance
+only ever uses one.
 
 ## Isolating Bindings with `PrivateModule`
 
 `snakeguice.modules.PrivateModule` is a `Module` whose `configure(binder)`
 receives a *private* binder, backed by its own child injector. Bindings made
-there - like `ILock` - aren't visible to the parent binder or to other
-modules, so two `PrivateModule`s can each bind `ILock` to a different
-implementation without colliding.
+there - like `IConnectionConfig` - aren't visible to the parent binder or to
+other modules, so two `PrivateModule`s can each bind `IConnectionConfig` to a
+different implementation without colliding, and `Database` doesn't need to
+know which one it got.
 
 To make a binding visible outside the private module, call
 `self.expose(binder, interface, annotation)`. This adds a binding to the
@@ -67,66 +71,70 @@ from snakeguice import annotate, inject
 from snakeguice.modules import Module, PrivateModule
 
 
-class IDoor:
-    """Interface for a car door."""
+class IDatabase:
+    """Interface for a database connection."""
 
 
-class Door(IDoor):
+class Database(IDatabase):
     @inject
-    def __init__(self, lock: ILock) -> None:
-        self.lock = lock
+    def __init__(self, config: IConnectionConfig) -> None:
+        self.config = config
 
 
-class LeftDoorModule(PrivateModule):
+class PrimaryDatabaseModule(PrivateModule):
     def configure(self, binder: Binder) -> None:
-        binder.bind(ILock, to=LeftLock)
-        binder.bind(IDoor, annotated_with="left", to=Door)
-        self.expose(binder, IDoor, "left")
+        binder.bind(IConnectionConfig, to=PrimaryConfig)
+        binder.bind(IDatabase, annotated_with="primary", to=Database)
+        self.expose(binder, IDatabase, "primary")
 
 
-class RightDoorModule(PrivateModule):
+class ReplicaDatabaseModule(PrivateModule):
     def configure(self, binder: Binder) -> None:
-        binder.bind(ILock, to=RightLock)
-        binder.bind(IDoor, annotated_with="right", to=Door)
-        self.expose(binder, IDoor, "right")
+        binder.bind(IConnectionConfig, to=ReplicaConfig)
+        binder.bind(IDatabase, annotated_with="replica", to=Database)
+        self.expose(binder, IDatabase, "replica")
 
 
-class Car:
+class UserRepository:
     @inject
-    @annotate(left_door="left", right_door="right")
-    def __init__(self, left_door: IDoor, right_door: IDoor) -> None:
-        self.left_door = left_door
-        self.right_door = right_door
+    @annotate(primary="primary", replica="replica")
+    def __init__(self, primary: IDatabase, replica: IDatabase) -> None:
+        self.primary = primary
+        self.replica = replica
 
 
-class CarModule(Module):
+class AppModule(Module):
     def configure(self, binder: Binder) -> None:
-        self.install(binder, LeftDoorModule())
-        self.install(binder, RightDoorModule())
+        self.install(binder, PrimaryDatabaseModule())
+        self.install(binder, ReplicaDatabaseModule())
 
 
-injector = create_injector([CarModule()])
-car = injector.get_instance(Car)
+injector = create_injector([AppModule()])
+repo = injector.get_instance(UserRepository)
 
-assert isinstance(car.left_door.lock, LeftLock)
-assert isinstance(car.right_door.lock, RightLock)
+assert isinstance(repo.primary.config, PrimaryConfig)
+assert isinstance(repo.replica.config, ReplicaConfig)
 ```
 
-`ILock` is bound twice - once per private module - with no conflict, because
-each `PrivateModule` has its own binder. Only `IDoor` (annotated `"left"` and
-`"right"`) is exposed to `CarModule`'s binder, which is where `Car` resolves
-it.
+`IConnectionConfig` is bound twice - once per private module - with no
+conflict, because each `PrivateModule` has its own binder. Only `IDatabase`
+(annotated `"primary"` and `"replica"`) is exposed to `AppModule`'s binder,
+which is where `UserRepository` resolves it. `Database` itself depends on the
+unannotated `IConnectionConfig` and never has to care which database it ended
+up talking to.
 
 ```{warning}
 The binding passed to `expose(binder, interface, annotation)` must also exist
 in the private module *under that same `(interface, annotation)` key* - here,
-`binder.bind(IDoor, annotated_with="left", to=Door)` inside `LeftDoorModule`.
+`binder.bind(IDatabase, annotated_with="primary", to=Database)` inside
+`PrimaryDatabaseModule`.
 
 `expose()` adds a provider to the *parent* binder that calls
 `private_injector.get_instance(interface, annotation)`. If the private binder
 doesn't have its own binding for that exact key, the lookup falls through to
 the parent binder - where it finds the very provider `expose()` just added,
-and calls it again, infinitely. Binding the same `(interface, annotation)` key
-inside the private module (as `LeftDoorModule` does for `(IDoor, "left")`)
-ensures the lookup is satisfied locally.
+and calls it again, infinitely (`RecursionError`). Binding the same
+`(interface, annotation)` key inside the private module (as
+`PrimaryDatabaseModule` does for `(IDatabase, "primary")`) ensures the lookup
+is satisfied locally.
 ```

@@ -1,6 +1,6 @@
 from typing import Any, Optional
 
-from snakeguice.annotation import Annotation
+from snakeguice.annotation import UNANNOTATED, AnnotationLike
 from snakeguice.interfaces import Binder as BinderI
 from snakeguice.interfaces import Injector as InjectorI
 from snakeguice.interfaces import Interface
@@ -66,7 +66,7 @@ class PrivateModule(Module):
         self,
         binder: BinderI,
         interface: Interface,
-        annotation: Optional[Annotation] = None,
+        annotation: AnnotationLike = UNANNOTATED,
     ) -> None:
         """Expose the child injector to the parent inject for a binding."""
         private_module = self
