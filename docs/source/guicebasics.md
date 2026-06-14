@@ -23,21 +23,20 @@ binding
 binder
 : the object containing a collection of bindings. snake-guice uses the binder to find bindings whenever it needs to create an object. This is also what you will use to notify snake-guice about your bindings.
 
-module:: a
+module
+: an object with a `configure(binder)` method that wires up bindings. One or more modules are passed to `Injector`/`create_injector` to bootstrap an application. See the [User Guide](userguide.md) for `Module` subclasses and composing modules with `install()`.
 
-scope::
+scope
+: controls how long an instance produced by a binding lives. The default, `NO_SCOPE`, builds a fresh instance for every resolution; `SINGLETON` builds it once and reuses it. See [Scopes](userguide.md) in the User Guide.
 
-provider::
+provider
+: an object with a `get()` method that returns an instance. Bind to one with `to_provider=` when a plain `to=` binding can't express how to build the value. See [Using Providers](using_providers.md).
 
-annotation::
+annotation
+: a label attached to a binding (`annotated_with=`) or a constructor parameter (`@annotate`) that disambiguates multiple bindings of the same interface. An interface plus its annotation form a unique `Key` - see "Multiple Bindings Using Annotations" below.
 
-dependency::
-
-### Injectors
-
-### Modules and Binders
-
-Note: please excuse our mess - the docs are not pretty and may be inconsistent while we're hacking away at them
+dependency
+: something a class needs but doesn't construct itself - a type-annotated parameter on an `@inject`-decorated method, supplied by the injector when the object is created.
 
 ### Simple Example
 Dependencies must be declared in order for SG to create your object.
