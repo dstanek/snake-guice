@@ -38,7 +38,9 @@ class Session:
 
 
 class WebSession:
-    logger = inject(Logger)
+    @inject
+    def __init__(self, logger: Logger) -> None:
+        self.logger = logger
 
 
 ###############################################################
@@ -58,8 +60,9 @@ from snakeguice import inject  # noqa: E402
 
 
 class Handler:
-
-    session = inject(Session)
+    @inject
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def handle(self, request: Any) -> None:
         """got something!"""
@@ -93,13 +96,14 @@ class Server:
 
 
 class WebServer(Server):
-
-    handler = inject(Handler)
+    @inject
+    def __init__(self, handler: Handler) -> None:
+        self.handler = handler
 
     def start(self) -> None:
         fake_requests = (1, 2, 3)
         for request in fake_requests:
-            self.handler.handle(request)  # type: ignore[call-arg,arg-type]
+            self.handler.handle(request)
 
 
 ###############################################################
@@ -118,10 +122,10 @@ from snakeguice.interfaces import Binder  # noqa: E402
 
 class MyAppModule:
     def configure(self, binder: Binder) -> None:
-        binder.bind(Server).to(WebServer)
-        binder.bind(Handler).to(HTTPHandler)
-        binder.bind(Session).to(WebSession)
-        binder.bind(Logger).to(FileLogger)
+        binder.bind(Server, to=WebServer)
+        binder.bind(Handler, to=HTTPHandler)
+        binder.bind(Session, to=WebSession)
+        binder.bind(Logger, to=FileLogger)
 
 
 ###############################################################
