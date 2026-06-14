@@ -4,8 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 snake-guice is a small Python dependency-injection framework modeled on
 [Google Guice](https://github.com/google/guice) (pre-1.0/alpha API). Single
-package `snakeguice`, Poetry-managed, Python `^3.8`. VCS is Jujutsu (jj),
+package `snakeguice`, Poetry-managed, Python `^3.10`. VCS is Jujutsu (jj),
 colocated with git.
+
+## Code Style
+
+- Always write concise code.
+- Advanced patterns are ok.
 
 ## Commands
 
