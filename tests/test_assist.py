@@ -42,7 +42,7 @@ class IWorkerFactory:
     """An interface to create Worker instances."""
 
     def create(self, name: str, date: str) -> Worker:
-        ...
+        raise NotImplementedError
 
 
 class Manager:
@@ -61,7 +61,7 @@ class Module:
 
 
 class Test_partially_injecting_an_object:
-    def setup(self) -> None:
+    def setup_method(self) -> None:
         inj = create_injector([Module()])
         self.manager = inj.get_instance(Manager)
 
@@ -82,7 +82,7 @@ class Base_AssistProvider_decorator_errors:
 class Test_creating_an_AssistProvider_from_an_inject(
     Base_AssistProvider_decorator_errors
 ):
-    def setup(self) -> None:
+    def setup_method(self) -> None:
         class C:
             @inject
             def __init__(self, x: object) -> None:
@@ -94,7 +94,7 @@ class Test_creating_an_AssistProvider_from_an_inject(
 class Test_creating_an_AssistProvider_from_an_uninjected_object(
     Base_AssistProvider_decorator_errors
 ):
-    def setup(self) -> None:
+    def setup_method(self) -> None:
         class C:
             pass
 

@@ -50,7 +50,7 @@ def test_inject_methods_with_invalid_type_annotations_fails1() -> None:
 
 
 class Test_annotate_stores_annotations_on_methods:
-    def setup(self) -> None:
+    def setup_method(self) -> None:
         class Object:
             @annotate(a="_a_")
             def __init__(self, a: object, b: object) -> None:

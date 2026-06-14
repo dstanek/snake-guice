@@ -100,7 +100,7 @@ class BaseMultibinder:
 
 
 class TestUsingListBinder(BaseMultibinder):
-    def setup(self) -> None:
+    def setup_method(self) -> None:
         injector = create_injector([ListCandyModule(), ListChipsModule()])
         self.snack_machine = injector.get_instance(ListSnackMachine)
 
@@ -110,7 +110,7 @@ class TestUsingListBinder(BaseMultibinder):
 
 
 class TestUsingDictBinder(BaseMultibinder):
-    def setup(self) -> None:
+    def setup_method(self) -> None:
         injector = create_injector([DictCandyModule(), DictChipsModule()])
         self.snack_machine = injector.get_instance(DictSnackMachine)
 

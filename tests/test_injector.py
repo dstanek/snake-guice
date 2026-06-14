@@ -65,7 +65,7 @@ def test_create_child() -> None:
 
 
 class Test_using_create_injector_factory:
-    def setup(self) -> None:
+    def setup_method(self) -> None:
         class PeopleModule:
             def configure(self, binder: Binder) -> None:
                 binder.bind(ch.Person, to=ch.EvilPerson)
@@ -86,7 +86,7 @@ class Test_using_create_injector_factory:
 
 
 class Test_using_get_provider:
-    def setup(self) -> None:
+    def setup_method(self) -> None:
         class PeopleModule:
             def configure(self, binder: Binder) -> None:
                 binder.bind(ch.Person, to=ch.EvilPerson)

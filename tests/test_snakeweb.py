@@ -28,7 +28,7 @@ class TestRoutesModuleSetup(TestCase):
 
 
 class TestRoutesModuleIsAbstract:
-    def setup(self) -> None:
+    def setup_method(self) -> None:
         self.module = snakeweb.RoutesModule()
 
     def test_configure_mapper_is_not_implemented(self) -> None:
@@ -37,7 +37,7 @@ class TestRoutesModuleIsAbstract:
 
 
 class BaseTestRoutesBinder:
-    def setup(self) -> None:
+    def setup_method(self) -> None:
         self.routes_mapper = Mock()
         self.annotation = Mock()
         self.binder = snakeweb.RoutesBinder(self.routes_mapper, self.annotation)
@@ -50,8 +50,8 @@ class TestRoutesBinderConnectWithInvalidControllers(BaseTestRoutesBinder):
 
 
 class TestWhenCallingRoutesBinder(BaseTestRoutesBinder):
-    def setup(self) -> None:
-        super(TestWhenCallingRoutesBinder, self).setup()
+    def setup_method(self) -> None:
+        super(TestWhenCallingRoutesBinder, self).setup_method()
         self.controller = object
         self.args = (Mock(), Mock())
         self.kwargs = dict(a=Mock(), controller=object)

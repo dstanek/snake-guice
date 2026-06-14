@@ -7,7 +7,7 @@ class FakeProvider:
 
 
 class Test_the_NoScope_scope:
-    def setup(self) -> None:
+    def setup_method(self) -> None:
         self.provider = FakeProvider()
         self.scope = _NoScope()
 
@@ -16,7 +16,7 @@ class Test_the_NoScope_scope:
 
 
 class Test_the_Singleton_scope:
-    def setup(self) -> None:
+    def setup_method(self) -> None:
         self.key = "key"
         self.provider = FakeProvider()
         self.scope = _Singleton()

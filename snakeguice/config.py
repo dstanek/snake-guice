@@ -1,5 +1,5 @@
 import os
-from configparser import SafeConfigParser
+from configparser import ConfigParser
 from typing import Iterable, Tuple, Type
 
 from snakeguice.annotation import Annotation
@@ -16,7 +16,7 @@ class ConfigParserLoader:
         self.short_name = os.path.basename(filename)
 
     def bind_configuration(self, binder: Binder) -> None:
-        parser = SafeConfigParser()
+        parser = ConfigParser()
         parser.read(self.filename)
         for section, option, value in _iterate_parser(parser):
             annotation = Config("%s:%s:%s" % (self.short_name, section, option))

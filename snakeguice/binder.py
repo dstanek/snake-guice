@@ -34,7 +34,10 @@ class Key:
 
 class Binding:
     def __init__(
-        self, key: Key = None, provider: Provider = None, scope: Scope = None
+        self,
+        key: Optional[Key] = None,
+        provider: Optional[Provider[Any]] = None,
+        scope: Optional[Scope] = None,
     ) -> None:
         self.key = key
         self.provider = provider

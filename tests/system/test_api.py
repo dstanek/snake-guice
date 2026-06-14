@@ -162,7 +162,7 @@ def test_inject_decorator() -> None:
 
 
 class TestMethodInterceptors:
-    def setup(self) -> None:
+    def setup_method(self) -> None:
         class MyModule:
             def configure(self, binder: Binder) -> None:
                 binder.bind(ch.Person, to=ch.EvilPerson)
@@ -207,10 +207,10 @@ class TestMethodInterceptors:
 
 
 class TestProvidesDecorator:
-    def setup(self) -> None:
+    def setup_method(self) -> None:
         class Person:
             def get_home_location(self) -> ch.Place:
-                ...
+                raise NotImplementedError
 
         class HappyPerson(Person):
             def get_home_location(self) -> ch.Place:
