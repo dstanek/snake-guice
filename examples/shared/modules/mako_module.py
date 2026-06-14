@@ -4,5 +4,5 @@ from snakeguice.interfaces import Binder
 
 
 class MakoTemplateModule:
-    def configure(self, binder: Binder):
+    def configure(self, binder: Binder) -> None:
         binder.bind(TemplateLoader, to=MakoTemplateLoader)

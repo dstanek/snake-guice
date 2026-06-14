@@ -2,28 +2,31 @@
 
 from wsgiref.simple_server import make_server
 
+from webob import Request, Response
+
 from snakeguice import create_injector
 from snakeguice.extras import snakeweb
+from snakeguice.interfaces import Binder
 from snakeguice.modules import Module
 
 
 class HWController:
-    def index(self, request):
+    def index(self, request: Request) -> Response:
         return snakeweb.Response(
             f"Hello, World!<br>I see you are from: {request.remote_addr}"
         )
 
-    def hello_name(self, request, name):
+    def hello_name(self, request: Request, name: str) -> Response:
         return snakeweb.Response(f"Hello, {name}!")
 
 
 class HWModule(Module):
-    def configure(self, binder):
+    def configure(self, binder: Binder) -> None:
         self.install(binder, HWRoutes())
 
 
 class HWRoutes(snakeweb.RoutesModule):
-    def configure(self, routes_binder):
+    def configure(self, routes_binder: snakeweb.RoutesBinder) -> None:
         routes_binder.connect("/", controller=HWController)
         routes_binder.connect("/:name", controller=HWController, action="hello_name")
 

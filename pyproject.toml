@@ -59,3 +59,5 @@ skip_gitignore = true
 
 [tool.mypy]
 ignore_missing_imports = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true

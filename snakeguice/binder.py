@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, List, Optional, Type, Union
 
 from snakeguice import errors, providers, scopes
 from snakeguice.annotation import UNANNOTATED, Annotation
@@ -36,7 +36,7 @@ class Binding:
     def __init__(
         self,
         key: Optional[Key] = None,
-        provider: Optional[Provider[Any]] = None,
+        provider: Optional[Union[Provider[Any], Type[Provider[Any]]]] = None,
         scope: Optional[Scope] = None,
     ) -> None:
         self.key = key
@@ -57,12 +57,12 @@ class Binder:
     def bind(
         self,
         _class: Type[Any],
-        to=_NOT_SET,
-        to_provider=_NOT_SET,
-        to_instance=_NOT_SET,
-        in_scope=scopes.NO_SCOPE,
-        annotated_with=UNANNOTATED,
-    ):
+        to: Any = _NOT_SET,
+        to_provider: Any = _NOT_SET,
+        to_instance: Any = _NOT_SET,
+        in_scope: Scope = scopes.NO_SCOPE,
+        annotated_with: Annotation = UNANNOTATED,
+    ) -> None:
         key = Key(interface=_class, annotation=annotated_with)
 
         binding = Binding()
@@ -102,12 +102,12 @@ class Binder:
 
 
 class LazyBinder:
-    def __init__(self, parent=None) -> None:
+    def __init__(self, parent: BinderI = None) -> None:
         self._parent = parent or _EmptyBinder()
         self._binding_map: Dict[Key, Binding] = {}
         self._errors: List[BinderErrorRecord] = []
 
-    def add_error(self, msg):
+    def add_error(self, msg: str) -> None:
         import inspect
 
         frame_rec = inspect.stack()[2]
@@ -115,24 +115,26 @@ class LazyBinder:
         location = "File {0}, line {1}, in {2}".format(
             frame_rec[1], frame_rec[2], frame_rec[3]
         )
-        source = frame_rec[4][frame_rec[5]].strip()
+        code_context, index = frame_rec.code_context, frame_rec.index
+        assert code_context is not None and index is not None
+        source = code_context[index].strip()
         self._errors.append(
             BinderErrorRecord(message=msg, location=location, source=source)
         )
 
     @property
-    def errors(self):
+    def errors(self) -> List[BinderErrorRecord]:
         return self._errors
 
     def bind(
         self,
-        _class,
-        to=_NOT_SET,
-        to_provider=_NOT_SET,
-        to_instance=_NOT_SET,
-        in_scope=scopes.NO_SCOPE,
-        annotated_with=UNANNOTATED,
-    ):
+        _class: Type[Any],
+        to: Any = _NOT_SET,
+        to_provider: Any = _NOT_SET,
+        to_instance: Any = _NOT_SET,
+        in_scope: Scope = scopes.NO_SCOPE,
+        annotated_with: Annotation = UNANNOTATED,
+    ) -> None:
         key = Key(interface=_class, annotation=annotated_with)
 
         binding = Binding()
@@ -164,8 +166,8 @@ class LazyBinder:
 
         self._binding_map[key] = binding
 
-    def get_binding(self, key):
+    def get_binding(self, key: Key) -> Optional[Binding]:
         return self._binding_map.get(key) or self._parent.get_binding(key)
 
-    def create_child(self):
+    def create_child(self) -> BinderI:
         return Binder(self)

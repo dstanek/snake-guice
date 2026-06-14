@@ -38,7 +38,7 @@ def AssistProvider(cls: Type[T]) -> Type[ProviderFactory[T]]:
     return _AssistProvider
 
 
-def build_factory(injector, cls):
+def build_factory(injector: Injector, cls: Type[T]) -> Factory[T]:
     assisted_params: set[str] = getattr(cls.__init__, "__guice_assisted__", set())
 
     providers = {}
@@ -50,7 +50,7 @@ def build_factory(injector, cls):
     class DynamicFactory:
         # TODO: this really should be based on some provided interface to get the
         #       benefits or optional static typing
-        def create(self, **kwargs):
+        def create(self, **kwargs: Any) -> T:
             extra = set(kwargs.keys()) - assisted_params
             if extra:
                 raise TypeError(

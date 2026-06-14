@@ -1,11 +1,12 @@
 import inspect
 import sys
-from typing import Any, Callable, Type, TypeVar
+from types import FrameType
+from typing import Any, Callable, Optional, Type, TypeVar
 
 F = TypeVar("F", bound=Callable[..., Any])
 
 
-def _validate_method_args(method):
+def _validate_method_args(method: Callable[..., Any]) -> None:
     """Validate decorator args when used to decorate a method."""
     sig = inspect.signature(method)
     for param in sig.parameters.values():
@@ -16,10 +17,11 @@ def _validate_method_args(method):
             )
 
 
-def enclosing_frame(frame=None, level: int = 2):
+def enclosing_frame(frame: Optional[FrameType] = None, level: int = 2) -> FrameType:
     """Get an enclosing frame that skips decorator code"""
     frame = frame or sys._getframe(level)
     while frame.f_globals.get("__name__") == __name__:
+        assert frame.f_back is not None
         frame = frame.f_back
     return frame
 

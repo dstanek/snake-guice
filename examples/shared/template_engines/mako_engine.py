@@ -10,5 +10,5 @@ class MakoTemplateLoader:
         template_path = Path(__file__) / "../../../templates"
         self._lookup = TemplateLookup(directories=[template_path])
 
-    def load(self, name) -> Template:
+    def load(self, name: str) -> Template:
         return self._lookup.get_template(f"{name}.mako")

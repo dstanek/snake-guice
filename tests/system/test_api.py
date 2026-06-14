@@ -6,7 +6,7 @@ Examples of using the snakeguice API.
 
 # TODO: add a test proving call throughs work
 
-from typing import Optional, Type
+from typing import Any, Optional, Type
 
 import pytest
 
@@ -111,7 +111,7 @@ def test_injector_injecting_from_a_provider() -> None:
     assert isinstance(person, ch.GoodPerson)
 
 
-def Xtest_collision():
+def Xtest_collision() -> None:
     """TODO: figure out what to do with this"""
 
 
@@ -175,7 +175,7 @@ class TestMethodInterceptors:
     def test_noargs(self) -> None:
         class DomainObject:
             @self.interceptor(person=ch.Person, annotation="evil")
-            def intercept_me(self, person):
+            def intercept_me(self, person: Any) -> None:
                 assert isinstance(person, ch.EvilPerson)
 
         obj = self.injector.get_instance(DomainObject)
@@ -184,7 +184,13 @@ class TestMethodInterceptors:
     def test_args(self) -> None:
         class DomainObject:
             @self.interceptor(person=ch.Person, annotation="evil")
-            def intercept_me(self, arg0, kwarg0=None, kwarg1=None, person=None) -> None:
+            def intercept_me(
+                self,
+                arg0: Any,
+                kwarg0: Any = None,
+                kwarg1: Any = None,
+                person: Any = None,
+            ) -> None:
                 assert arg0 == 0
                 assert kwarg0 == 1
                 assert kwarg1 is None
@@ -197,7 +203,7 @@ class TestMethodInterceptors:
         class DomainObject:
             @self.interceptor(person0=ch.Person, annotation="good")
             @self.interceptor(person1=ch.Person, annotation="evil")
-            def intercept_me(self, person0, person1) -> None:
+            def intercept_me(self, person0: Any, person1: Any) -> None:
                 assert isinstance(person0, ch.GoodPerson)
                 assert isinstance(person1, ch.EvilPerson)
 

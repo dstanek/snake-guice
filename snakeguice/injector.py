@@ -1,15 +1,18 @@
 import inspect
+from typing import Any, Callable, Type
 
 from snakeguice._extractor import extract_params
 from snakeguice.annotation import UNANNOTATED
 from snakeguice.binder import Binder, Key
 from snakeguice.decorators import inject
+from snakeguice.interfaces import Binder as BinderI
 from snakeguice.interfaces import Injector as IInjector
+from snakeguice.interfaces import Module, Provider
 from snakeguice.modules import ModuleAdapter
 
 
 class ProvidesBinderHelper:
-    def bind_providers(self, module, binder):
+    def bind_providers(self, module: Module, binder: BinderI) -> None:
         members = [m for m in inspect.getmembers(module) if inspect.ismethod(m[1])]
         for name, method in members:
             if hasattr(method, "__guice_provides__"):
@@ -17,13 +20,15 @@ class ProvidesBinderHelper:
                 provider = self._build_provider(module, type, method)
                 binder.bind(type, to_provider=provider)
 
-    def _build_provider(self, module, type, method):
+    def _build_provider(
+        self, module: Module, type: Type[Any], method: Callable[..., Any]
+    ) -> Type[Any]:
         class GenericProvider:
             @inject
             def __init__(self, injector: IInjector) -> None:
                 self._injector = injector
 
-            def get(self):
+            def get(self) -> Any:
                 kwargs = {}
                 for param in extract_params(method):
                     kwargs[param.name] = self._injector.get_instance(
@@ -35,7 +40,9 @@ class ProvidesBinderHelper:
 
 
 class Injector:
-    def __init__(self, modules=None, binder=None, stage=None) -> None:
+    def __init__(
+        self, modules: Any = None, binder: BinderI = None, stage: Any = None
+    ) -> None:
         if modules is None:
             modules = []
         elif not hasattr(modules, "__iter__"):
@@ -50,22 +57,22 @@ class Injector:
 
         self.add_modules(modules)
 
-    def add_modules(self, modules):
+    def add_modules(self, modules: Any) -> None:
         provides_helper = ProvidesBinderHelper()
         for module in modules:
             ModuleAdapter(module, self).configure(self._binder)
             provides_helper.bind_providers(module, self._binder)
 
-    def get_provider(self, cls, annotation=UNANNOTATED):
+    def get_provider(self, cls: Any, annotation: Any = UNANNOTATED) -> Provider[Any]:
         injector = self
 
         class DynamicProvider:
-            def get(self):
+            def get(self) -> Any:
                 return injector.get_instance(cls, annotation)
 
         return DynamicProvider()
 
-    def get_instance(self, cls, annotation=UNANNOTATED):
+    def get_instance(self, cls: Any, annotation: Any = UNANNOTATED) -> Any:
         if cls is IInjector:  # TODO: i don't like this, but it works for now
             return self
 
@@ -81,7 +88,7 @@ class Injector:
             instance = self.create_object(cls)
             return self.inject_members(instance)
 
-    def create_child(self, modules):
+    def create_child(self, modules: Any) -> "Injector":
         """Create a new injector that inherits the state from this injector.
 
         All bindings are inherited. In the future this may become closer to
@@ -90,13 +97,13 @@ class Injector:
         binder = self._binder.create_child()
         return Injector(modules, binder=binder, stage=self._stage)
 
-    def create_object(self, cls):
+    def create_object(self, cls: Type[Any]) -> Any:
         kwargs = {}
         for param in extract_params(cls.__init__):
             kwargs[param.name] = self.get_instance(param.dtype, param.annotation)
         return cls(**kwargs)
 
-    def inject_members(self, instance):
+    def inject_members(self, instance: Any) -> Any:
         # this may be a little slow; done twice
         for method_name in getattr(instance.__class__, "__guice_methods__", []):
             kwargs = {}
@@ -107,6 +114,6 @@ class Injector:
         return instance
 
 
-def create_injector(modules):
+def create_injector(modules: Any) -> Injector:
     """Factory for creating Injector instances."""
     return Injector(modules)

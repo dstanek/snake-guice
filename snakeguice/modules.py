@@ -1,12 +1,21 @@
+from typing import Any, Optional
+
+from snakeguice.annotation import Annotation
+from snakeguice.interfaces import Binder as BinderI
+from snakeguice.interfaces import Injector as InjectorI
+from snakeguice.interfaces import Interface
+from snakeguice.interfaces import Module as ModuleI
+
+
 class ModuleAdapter:
     """Adapts the simple and standard module interfaces to a common one."""
 
-    def __init__(self, module, injector) -> None:
+    def __init__(self, module: ModuleI, injector: Optional[InjectorI]) -> None:
         if hasattr(module, "set_injector"):
             module.set_injector(injector)
         self._module = module
 
-    def configure(self, binder):
+    def configure(self, binder: BinderI) -> None:
         if hasattr(self._module, "run_configure"):
             self._module.run_configure(binder)
         else:
@@ -17,23 +26,23 @@ class Module:
     """Base class for all standard modules."""
 
     def __init__(self) -> None:
-        self._injector = None
+        self._injector: Optional[InjectorI] = None
 
-    def install(self, binder, module):
+    def install(self, binder: BinderI, module: ModuleI) -> None:
         """Add another module's bindings to a binder."""
         ModuleAdapter(module, self._injector).configure(binder)
 
-    def run_configure(self, binder):
+    def run_configure(self, binder: BinderI) -> None:
         """A hook for intercepting the configure method. Allows different
         module implementations to change the binder passed to configure.
         """
         self.configure(binder)
 
-    def configure(self, binder):
+    def configure(self, binder: BinderI) -> None:
         """A subclass should override this to configure a binder."""
         raise NotImplementedError
 
-    def set_injector(self, injector):
+    def set_injector(self, injector: InjectorI) -> None:
         self._injector = injector
 
 
@@ -42,23 +51,28 @@ class _PrivateModuleWrapper(Module):
     caused by the child injector calling run_configure.
     """
 
-    def __init__(self, module) -> None:
+    def __init__(self, module: ModuleI) -> None:
         self._module = module
         super(_PrivateModuleWrapper, self).__init__()
 
-    def configure(self, binder):
+    def configure(self, binder: BinderI) -> None:
         self._module.configure(binder)
 
 
 class PrivateModule(Module):
     """Module that uses a child injector to isolate bindings."""
 
-    def expose(self, binder, interface, annotation=None):
+    def expose(
+        self,
+        binder: BinderI,
+        interface: Interface,
+        annotation: Optional[Annotation] = None,
+    ) -> None:
         """Expose the child injector to the parent inject for a binding."""
         private_module = self
 
         class Provider:
-            def get(self):
+            def get(self) -> Any:
                 return private_module.private_injector.get_instance(
                     interface, annotation
                 )
@@ -67,7 +81,8 @@ class PrivateModule(Module):
             interface, annotated_with=annotation, to_provider=Provider
         )
 
-    def run_configure(self, binder):
+    def run_configure(self, binder: BinderI) -> None:
         self.original_binder = binder
         private_module = _PrivateModuleWrapper(self)
+        assert self._injector is not None
         self.private_injector = self._injector.create_child(private_module)

@@ -1,6 +1,6 @@
 """Interfaces used by snake-guice directly"""
 
-from typing import Any, Optional, Protocol, Type, TypeVar
+from typing import Any, Protocol, Type, TypeVar
 
 T = TypeVar("T", covariant=True)
 
@@ -10,14 +10,20 @@ Interface = Type[Any]
 Module = Any
 
 
-class Injector:
+class Injector(Protocol):
     """An interface automatically bound to the current Injector instance."""
 
-    def get_instance(self, cls: Any, annotation: Optional[Any] = None): ...
+    def get_instance(self, cls: Any, annotation: Any = None) -> Any: ...
+
+    def get_provider(self, cls: Any, annotation: Any = None) -> "Provider[Any]": ...
+
+    def create_object(self, cls: Any) -> Any: ...
+
+    def create_child(self, modules: Any) -> "Injector": ...
 
 
 class Factory(Protocol[T]):
-    def create(self, **kwargs: Any): ...
+    def create(self, **kwargs: Any) -> T: ...
 
 
 class Provider(Protocol[T]):

@@ -2,7 +2,7 @@
 
 # pylint: disable-msg=C0111
 
-from typing import Dict
+from typing import Any, Dict
 
 from snakeguice import providers
 from snakeguice.interfaces import Key, Provider
@@ -16,8 +16,8 @@ class _NoScope:
     """
 
     def scope(
-        self, key: Key, unscoped_provider: Provider
-    ):  # pylint: disable-msg=R0201,
+        self, key: Key, unscoped_provider: Provider[Any]
+    ) -> Provider[Any]:  # pylint: disable-msg=R0201,
         return unscoped_provider
 
 
@@ -27,9 +27,9 @@ class _Singleton:
     """
 
     def __init__(self) -> None:
-        self._cached_provider_map: Dict[Key, Provider] = {}
+        self._cached_provider_map: Dict[Key, Provider[Any]] = {}
 
-    def scope(self, key: Key, provider: Provider):
+    def scope(self, key: Key, provider: Provider[Any]) -> Provider[Any]:
         cached_provider = self._cached_provider_map.get(key)
         if not cached_provider:
             instance = provider.get()

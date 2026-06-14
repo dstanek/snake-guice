@@ -93,7 +93,7 @@ class TestWhenAutoConfiguringRoutes(TestCase):
                 "/foo": self.controller.bar,
             }
 
-            def configure(self, routes_binder):
+            def configure(self, routes_binder: snakeweb.RoutesBinder) -> None:
                 # User don't have to override this. It's just a type-safe way
                 # to inject a Mock.
                 super().configure(mock_routes_binder)

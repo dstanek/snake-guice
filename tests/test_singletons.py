@@ -4,7 +4,10 @@
 Tests for the singleton scope.py
 """
 
+from typing import Any
+
 from snakeguice import Injector, annotate, inject, scopes
+from snakeguice.interfaces import Binder as BinderI
 from snakeguice.interfaces import Injector as InjectorI
 
 from . import cls_heirarchy as ch
@@ -45,7 +48,7 @@ class TestSingletonScope:
         def __init__(self, place: ch.Place) -> None:
             self.place = place
 
-    def assert_obj(self, obj) -> None:
+    def assert_obj(self, obj: Any) -> None:
         assert obj.logger_a is obj.logger_b
         assert obj.logger_b is obj.logger_c
         assert obj.place_a is obj.place_b
@@ -54,7 +57,7 @@ class TestSingletonScope:
 
     def test_to_instance(self) -> None:
         class MyModule:
-            def configure(self, binder):
+            def configure(self, binder: BinderI) -> None:
                 binder.bind(ch.Logger, to_instance=ch.ConcreteLogger())
                 binder.bind(ch.Place, annotated_with="hot", to_instance=ch.Beach())
                 binder.bind(ch.Place, annotated_with="cold", to_instance=ch.Glacier())
@@ -62,13 +65,13 @@ class TestSingletonScope:
         obj = Injector(MyModule()).get_instance(self.DomainObject)
         self.assert_obj(obj)
 
-    def _test_inject_into_singleton(self):
+    def _test_inject_into_singleton(self) -> None:
         class MyLogger:
-            hot_place = inject(ch.Place, annotation="hot")
-            cold_place = inject(ch.Place, annotation="cold")
+            hot_place = inject(ch.Place, annotation="hot")  # type: ignore[call-arg]
+            cold_place = inject(ch.Place, annotation="cold")  # type: ignore[call-arg]
 
         class MyModule:
-            def configure(self, binder):
+            def configure(self, binder: BinderI) -> None:
                 binder.bind(ch.Logger, to=MyLogger, in_scope=scopes.SINGLETON)
                 binder.bind(
                     ch.Place,
@@ -99,7 +102,7 @@ class TestSingetonScope:
         SINGLETON = scopes._Singleton()
 
         class MyModule:
-            def configure(self, binder) -> None:
+            def configure(self, binder: BinderI) -> None:
                 binder.bind(ch.Place, to=ch.Beach, in_scope=SINGLETON)
 
         injector = Injector([MyModule()])
@@ -115,7 +118,7 @@ class TestSingetonScope:
                 return ch.Beach()
 
         class MyModule:
-            def configure(self, binder) -> None:
+            def configure(self, binder: BinderI) -> None:
                 binder.bind(ch.Place, to_provider=PlaceProvider, in_scope=SINGLETON)
 
         injector = Injector([MyModule()])
@@ -134,7 +137,7 @@ class TestSingetonScope:
                 return self._injector.get_instance(ch.Beach)
 
         class MyModule:
-            def configure(self, binder) -> None:
+            def configure(self, binder: BinderI) -> None:
                 binder.bind(ch.Place, to_provider=PlaceProvider, in_scope=SINGLETON)
 
         injector = Injector([MyModule()])

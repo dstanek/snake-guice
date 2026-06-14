@@ -50,6 +50,8 @@ class WebSession:
 # Defines handlers that are used for each request.
 ###############################################################
 
+from typing import Any  # noqa: E402
+
 from snakeguice import inject  # noqa: E402
 
 # from session import Session -- not needed in this example
@@ -59,7 +61,7 @@ class Handler:
 
     session = inject(Session)
 
-    def handle(self, request) -> None:
+    def handle(self, request: Any) -> None:
         """got something!"""
 
 
@@ -93,10 +95,10 @@ class WebServer(Server):
 
     handler = inject(Handler)
 
-    def start(self):
+    def start(self) -> None:
         fake_requests = (1, 2, 3)
         for request in fake_requests:
-            self.handler.handle(request)
+            self.handler.handle(request)  # type: ignore[call-arg,arg-type]
 
 
 ###############################################################
@@ -110,9 +112,11 @@ class WebServer(Server):
 
 # from handlers import Handler, HTTPHandler -- not needed in this example
 
+from snakeguice.interfaces import Binder  # noqa: E402
+
 
 class MyAppModule:
-    def configure(self, binder):
+    def configure(self, binder: Binder) -> None:
         binder.bind(Server).to(WebServer)
         binder.bind(Handler).to(HTTPHandler)
         binder.bind(Session).to(WebSession)
@@ -155,7 +159,7 @@ class Application:
 
 
 # the actualy executed test
-def test_run():
+def test_run() -> None:
     app = Application()
     server = app.server
 

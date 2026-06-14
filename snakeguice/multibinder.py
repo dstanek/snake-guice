@@ -1,4 +1,4 @@
-from typing import Any, Dict, Generic, List, Optional, Type, TypeVar
+from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
 
 from snakeguice import providers
 from snakeguice.binder import Key
@@ -22,7 +22,7 @@ T = TypeVar("T", bound=type)
 
 class MultiProviderI(ProviderI[T]):
     @classmethod
-    def add_provider(cls, *args: Any): ...
+    def add_provider(cls, *args: Any) -> None: ...
 
 
 class _MultiBinder(Generic[T]):
@@ -31,7 +31,7 @@ class _MultiBinder(Generic[T]):
         self._interface = interface
         self._provider = self._get_or_create_provider()
 
-    def _create_provider(self):  # TODO: do this the right way!
+    def _create_provider(self) -> Any:  # TODO: do this the right way!
         pass
 
     def _get_or_create_provider(self) -> MultiProviderI[T]:
@@ -45,7 +45,12 @@ class _MultiBinder(Generic[T]):
             binding = self._binder.get_binding(key)
         return binding.provider
 
-    def _dsl_to_provider(self, to, to_provider: Optional[ProviderI[T]], to_instance):
+    def _dsl_to_provider(
+        self,
+        to: Any,
+        to_provider: Optional[Union[ProviderI[T], Type[ProviderI[T]]]],
+        to_instance: Any,
+    ) -> Any:
         if to:
             # TODO: add some validation
             return providers.create_simple_provider(to)
@@ -63,8 +68,11 @@ class _MultiBinder(Generic[T]):
 
 class ListBinder(_MultiBinder):
     def add_binding(
-        self, to=None, to_provider: Optional[ProviderI[T]] = None, to_instance=None
-    ):
+        self,
+        to: Any = None,
+        to_provider: Optional[Union[ProviderI[T], Type[ProviderI[T]]]] = None,
+        to_instance: Any = None,
+    ) -> None:
         provider = self._dsl_to_provider(to, to_provider, to_instance)
         self._provider.add_provider(provider)
 
@@ -77,7 +85,7 @@ class ListBinder(_MultiBinder):
                 self._injector = injector
 
             @classmethod
-            def add_provider(cls, provider: ProviderI[T]):
+            def add_provider(cls, provider: ProviderI[T]) -> None:
                 cls.providers.append(provider)
 
             def get(self) -> List[T]:
@@ -90,10 +98,10 @@ class DictBinder(_MultiBinder):
     def add_binding(
         self,
         key: KeyI,
-        to=None,
-        to_provider: Optional[ProviderI[T]] = None,
-        to_instance=None,
-    ):
+        to: Any = None,
+        to_provider: Optional[Union[ProviderI[T], Type[ProviderI[T]]]] = None,
+        to_instance: Any = None,
+    ) -> None:
         provider = self._dsl_to_provider(to, to_provider, to_instance)
         self._provider.add_provider(key, provider)
 
@@ -108,7 +116,7 @@ class DictBinder(_MultiBinder):
                 self._injector = injector
 
             @classmethod
-            def add_provider(cls, key, provider):
+            def add_provider(cls, key: str, provider: ProviderI[T]) -> None:
                 if key in cls.providers:
                     msg = "duplicate binding for %r in %s found" % (
                         key,
@@ -117,7 +125,7 @@ class DictBinder(_MultiBinder):
                     raise MultiBindingError(msg)
                 cls.providers[key] = provider
 
-            def get(self):
+            def get(self) -> Dict[str, Any]:
                 return dict(
                     [
                         (k, self._injector.get_instance(p).get())

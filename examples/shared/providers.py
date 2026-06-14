@@ -3,7 +3,7 @@ class User:
 
 
 class UserProvider:
-    def get(self):
+    def get(self) -> User:
         return User()
 
 
@@ -12,5 +12,5 @@ class RequestData:
 
 
 class RequestDataProvider:
-    def get(self):
+    def get(self) -> RequestData:
         return RequestData()

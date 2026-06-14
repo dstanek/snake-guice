@@ -1,7 +1,10 @@
+from typing import Any
+
+
 class Annotation:
     """Base class for all annotations."""
 
-    def __init__(self, value) -> None:
+    def __init__(self, value: Any) -> None:
         self._value = value
 
     def __hash__(self) -> int:
