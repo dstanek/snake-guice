@@ -16,6 +16,10 @@ userguide
 extending
 injecting_configuration
 using_providers
+multibinder
+assisted_injection
+private_modules
+parameter_interceptors
 what_to_inject
 examples/index
 ```
