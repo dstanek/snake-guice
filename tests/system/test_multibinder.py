@@ -1,6 +1,9 @@
 from typing import Any, Dict, List
 
+import pytest
+
 from snakeguice import create_injector, inject, providers
+from snakeguice.errors import MultiBindingError
 from snakeguice.interfaces import Binder
 from snakeguice.multibinder import DictBinder, ListBinder
 
@@ -118,3 +121,17 @@ class TestUsingDictBinder(BaseMultibinder):
         for k, v in self.snack_machine.snacks.items():
             assert k == v.__class__.__name__.lower()
             assert v.__class__ in SNACK_CLASSES
+
+
+class DuplicateKeyModule:
+    def configure(self, binder: Binder) -> None:
+        dictbinder = DictBinder(binder, Dict[str, ISnack])
+        dictbinder.add_binding("twix", to=Twix)
+        dictbinder.add_binding("twix", to=Snickers)
+
+
+def test_dict_binder_raises_multi_binding_error_on_duplicate_key() -> None:
+    with pytest.raises(MultiBindingError) as exc_info:
+        create_injector([DuplicateKeyModule()])
+
+    assert "twix" in str(exc_info.value)

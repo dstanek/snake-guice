@@ -111,9 +111,9 @@ class DictBinder(_MultiBinder):
             @classmethod
             def add_provider(cls, key, provider):
                 if key in cls.providers:
-                    msg = "duplicate binding for %r in Dict(%s) found" % (
+                    msg = "duplicate binding for %r in %s found" % (
                         key,
-                        binder_self.interface.__class__.__name__,
+                        binder_self._interface,
                     )
                     raise MultiBindingError(msg)
                 cls.providers[key] = provider

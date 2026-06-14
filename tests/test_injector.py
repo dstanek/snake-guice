@@ -4,7 +4,7 @@
 injector module unit tests
 """
 
-from snakeguice import binder, create_injector, injector
+from snakeguice import binder, create_injector, inject, injector
 from snakeguice.interfaces import Binder
 
 from . import cls_heirarchy as ch
@@ -62,6 +62,39 @@ def test_create_child() -> None:
     assert isinstance(person, ch.EvilPerson)
     person = child_inj.get_instance(ch.Person, "good")
     assert isinstance(person, ch.GoodPerson)
+
+
+def test_create_child_does_not_leak_overrides_back_to_parent() -> None:
+    """Resolving an inherited binding via a child must not affect the parent.
+
+    A child injector resolving an unscoped binding inherited from its parent
+    used to cache a provider tied to the child, so the parent's later
+    resolution of that same binding would incorrectly use the child's
+    overridden dependencies.
+    """
+
+    class Wearer:
+        @inject
+        def __init__(self, place: ch.Place) -> None:
+            self.place = place
+
+    class ParentModule:
+        def configure(self, binder: Binder) -> None:
+            binder.bind(Wearer, to=Wearer)
+            binder.bind(ch.Place, to=ch.Beach)
+
+    class ChildModule:
+        def configure(self, binder: Binder) -> None:
+            binder.bind(ch.Place, to=ch.Glacier)
+
+    parent = create_injector([ParentModule()])
+    child = parent.create_child(ChildModule())
+
+    child_wearer = child.get_instance(Wearer)
+    parent_wearer = parent.get_instance(Wearer)
+
+    assert isinstance(child_wearer.place, ch.Glacier)
+    assert isinstance(parent_wearer.place, ch.Beach)
 
 
 class Test_using_create_injector_factory:

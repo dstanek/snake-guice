@@ -51,11 +51,11 @@ def build_factory(injector, cls):
         # TODO: this really should be based on some provided interface to get the
         #       benefits or optional static typing
         def create(self, **kwargs):
-            if set(kwargs.keys()) - assisted_params:
+            extra = set(kwargs.keys()) - assisted_params
+            if extra:
                 raise TypeError(
-                    "TODO: error message here about too many values %r %r",
-                    kwargs,
-                    assisted_params,
+                    "create() got unexpected keyword argument(s) %r; "
+                    "expected a subset of %r" % (extra, assisted_params)
                 )
 
             for name, provider in providers.items():

@@ -3,7 +3,9 @@ from unittest import TestCase
 from unittest.mock import Mock, patch
 
 import pytest
+from webob import Request, Response
 
+from snakeguice import create_injector
 from snakeguice.extras import snakeweb
 
 
@@ -21,10 +23,12 @@ class TestRoutesModuleSetup(TestCase):
         self.module.run_configure(binder=self.binder)
 
     def test_configure_is_called_with_a_mapper(self) -> None:
-        assert self.module.configure.calls("()", snakeweb.RoutesBinder)
+        self.module.configure.assert_called_once()
+        (routes_binder,), _ = self.module.configure.call_args
+        assert isinstance(routes_binder, snakeweb.RoutesBinder)
 
     def test_real_routes_mapper_was_created(self) -> None:
-        assert self.mock_routes.Mapper.calls()
+        self.mock_routes.Mapper.assert_called_once()
 
 
 class TestRoutesModuleIsAbstract:
@@ -104,3 +108,25 @@ class TestWhenAutoConfiguringRoutes(TestCase):
         self.mock_routes_binder.connect.assert_any_call(
             "/foo", controller=self.controller, action="bar"
         )
+
+
+class TestApplication:
+    def setup_method(self) -> None:
+        class GreeterController:
+            def index(self, request: Request) -> Response:
+                return Response("hello world")
+
+        class GreeterModule(snakeweb.AutoRoutesModule):
+            configured_routes = {"/": GreeterController}
+
+        injector = create_injector([GreeterModule()])
+        self.app = snakeweb.Application(injector)
+
+    def test_matched_route_returns_the_controllers_response(self) -> None:
+        response = Request.blank("/").get_response(self.app)
+        assert response.status_int == 200
+        assert response.text == "hello world"
+
+    def test_unmatched_route_returns_404(self) -> None:
+        response = Request.blank("/nope").get_response(self.app)
+        assert response.status_int == 404

@@ -8,19 +8,18 @@ Examples of using the snakeguice API.
 
 from typing import Optional, Type
 
+import pytest
+
 from snakeguice import Injector, ParameterInterceptor, annotate, inject, provides
 from snakeguice.interfaces import Binder
 
 from .. import cls_heirarchy as ch
 
 
-class given_an_injector:
-    def when_asking_for_a_class_not_bound_by_a_module(self) -> None:
-        injector = Injector([])
-        self.person = injector.get_instance(ch.Person)
-
-    def then_an_instance_of_it_is_implicitly_bound(self) -> None:
-        assert isinstance(self.person, ch.Person)
+def test_unbound_class_is_implicitly_instantiated() -> None:
+    injector = Injector([])
+    person = injector.get_instance(ch.Person)
+    assert isinstance(person, ch.Person)
 
 
 def test_injector_simple() -> None:
@@ -204,6 +203,10 @@ class TestMethodInterceptors:
 
         obj = self.injector.get_instance(DomainObject)
         obj.intercept_me()
+
+    def test_more_than_one_kwarg_raises_type_error(self) -> None:
+        with pytest.raises(TypeError):
+            self.interceptor(a=ch.Person, b=ch.Logger)
 
 
 class TestProvidesDecorator:

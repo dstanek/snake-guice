@@ -108,3 +108,15 @@ def test_using_assisted_inject_on_a_method() -> None:
             @assisted_inject("x")
             def m(self, x: object) -> None:
                 pass
+
+
+def test_create_with_unexpected_kwarg_raises_useful_type_error() -> None:
+    inj = create_injector([Module()])
+    factory = inj.get_instance(IWorkerFactory)
+
+    with pytest.raises(TypeError) as exc_info:
+        factory.create(name="awesome worker", date="07/09/2010", oops="surprise")
+
+    message = str(exc_info.value)
+    assert "oops" in message
+    assert "%r" not in message
