@@ -1,5 +1,4 @@
-"""
-"""
+""" """
 
 
 class ParameterInterceptor:
@@ -9,7 +8,7 @@ class ParameterInterceptor:
     def __call__(self, annotation=None, **kwargs):
         if len(kwargs) != 1:
             raise TypeError("ParameterInterceptor expects exactly one name=Type kwarg")
-        (param_name, param_type) = next(iter(kwargs.items()))
+        param_name, param_type = next(iter(kwargs.items()))
 
         def callback(method):
             def _callback(*args, **kwargs):

@@ -22,8 +22,7 @@ T = TypeVar("T", bound=type)
 
 class MultiProviderI(ProviderI[T]):
     @classmethod
-    def add_provider(cls, *args: Any):
-        ...
+    def add_provider(cls, *args: Any): ...
 
 
 class _MultiBinder(Generic[T]):
