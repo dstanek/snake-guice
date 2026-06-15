@@ -1,5 +1,5 @@
-import os
 from configparser import ConfigParser
+from pathlib import Path
 from typing import Iterable
 
 from snakeguice.annotation import Annotation
@@ -11,9 +11,9 @@ class Config(Annotation):
 
 
 class ConfigParserLoader:
-    def __init__(self, filename: str) -> None:  # TODO: pathlib
+    def __init__(self, filename: str) -> None:
         self.filename = filename
-        self.short_name = os.path.basename(filename)
+        self.short_name = Path(filename).name
 
     def bind_configuration(self, binder: Binder) -> None:
         parser = ConfigParser()
