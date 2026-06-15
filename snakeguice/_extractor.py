@@ -1,13 +1,17 @@
-from collections import namedtuple
-from typing import Any, Callable, Iterable
+import inspect
+from typing import Any, Callable, Iterable, NamedTuple
 
-from snakeguice.annotation import UNANNOTATED
+from snakeguice.annotation import UNANNOTATED, AnnotationLike
 
-Param = namedtuple("Param", ["name", "dtype", "annotation"])  # TODO: type me
+
+class Param(NamedTuple):
+    name: str
+    dtype: Any
+    annotation: AnnotationLike
 
 
 def extract_params(method: Callable[..., Any]) -> Iterable[Param]:
-    types = getattr(method, "__annotations__", {})
+    types = inspect.get_annotations(method)
     annotations = getattr(method, "__guice_annotations__", {})
     for name, dtype in types.items():
         if name == "return":
