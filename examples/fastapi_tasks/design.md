@@ -55,11 +55,14 @@ cross-cutting concern and one per layer of the call graph: `get_databases` →
 `get_metrics` → `get_task_listeners` → `get_task_repository` →
 `get_task_service`.
 
-`fastapi_snakeguice/deps.py` has **3**: `get_injector`, `get_task_service`,
-and `get_metrics` (the latter only because `/stats` needs `MetricsCollector`
-directly). The rest of the graph — `TaskRepository`, `TaskService`,
-`TaskListener`s, `Session`s, `Clock` — is resolved by `injector.get_instance`
-without any FastAPI-facing code, regardless of how deep it gets.
+`fastapi_snakeguice/deps.py` has **1**: `from_injector(cls)`, a generic
+`Depends()`-producing helper that resolves any type via
+`request.app.state.injector.get_instance(cls)`. Routes use it inline -
+`service: TaskService = from_injector(TaskService)`,
+`metrics: MetricsCollector = from_injector(MetricsCollector)`. The rest of the
+graph — `TaskRepository`, `TaskService`, `TaskListener`s, `Session`s, `Clock` —
+is resolved by `injector.get_instance` without any FastAPI-facing code,
+regardless of how deep it gets.
 
 That gap widens with each new cross-cutting concern. Adding a third listener
 (say, a `NotificationListener` that depends on some `NotificationService`):
@@ -70,8 +73,8 @@ That gap widens with each new cross-cutting concern. Adding a third listener
 - **snake-guice**: add the class with `@inject`, add (or extend) a `Module`
   that binds its dependencies and calls
   `ListBinder(binder, List[TaskListener]).add_binding(to=NotificationListener)`,
-  and install that module in `AppModule.configure`. `deps.py`, `routes.py`,
-  and `service.py` are untouched — still 3 functions.
+  and install that module in `AppModule.configure`. `deps.py` and `routes.py`
+  are untouched entirely.
 
 ## What was left out
 

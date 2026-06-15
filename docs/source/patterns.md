@@ -322,9 +322,9 @@ Full explanation: [Using Providers — Deferred Resolution with
 `get_provider`](using_providers.md#deferred-resolution-with-get_provider).
 
 **Not used directly in `examples/fastapi_tasks`** - `deps.py`'s
-`get_task_service`/`get_metrics` call `injector.get_instance(...)`
-immediately, since FastAPI's own `Depends()` already provides per-request
-deferral (`fastapi_snakeguice/deps.py`).
+`from_injector(cls)` calls `injector.get_instance(cls)` immediately inside its
+`resolve` callback, since FastAPI's own `Depends()` already provides
+per-request deferral (`fastapi_snakeguice/deps.py`).
 
 ## Swapping implementations for tests
 
