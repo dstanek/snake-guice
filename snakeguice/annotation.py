@@ -1,17 +1,18 @@
+from dataclasses import dataclass
 from typing import Any
 
 
+@dataclass(frozen=True, slots=True, eq=False)
 class Annotation:
     """Base class for all annotations."""
 
-    def __init__(self, value: Any) -> None:
-        self._value = value
+    value: Any
 
     def __hash__(self) -> int:
-        return hash((self.__class__, self._value))
+        return hash((self.__class__, self.value))
 
     def __eq__(self, other: object) -> bool:
-        return self.__hash__() == other.__hash__()
+        return hash(self) == hash(other)
 
     def __ne__(self, other: object) -> bool:
         return not self == other

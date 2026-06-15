@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Any
 
 from snakeguice import errors, providers, scopes
@@ -8,40 +9,24 @@ from snakeguice.interfaces import Interface, Provider, Scope
 _NOT_SET = object()
 
 
+@dataclass
 class BinderErrorRecord:
-    def __init__(self, message: str, location: str, source: str) -> None:
-        self.message = message
-        self.location = location
-        self.source = source
+    message: str
+    location: str
+    source: str
 
 
+@dataclass(frozen=True, slots=True)
 class Key:
-    def __init__(
-        self, interface: Interface, annotation: AnnotationLike = UNANNOTATED
-    ) -> None:
-        self._interface = interface
-        self._annotation = annotation
-
-    def __hash__(self) -> int:
-        return hash((self._interface, self._annotation))
-
-    def __eq__(self, other: object) -> bool:
-        return hash(self) == hash(other)
-
-    def __ne__(self, other: object) -> bool:
-        return not self == other
+    interface: Interface
+    annotation: AnnotationLike = UNANNOTATED
 
 
+@dataclass(slots=True)
 class Binding:
-    def __init__(
-        self,
-        key: Key | None = None,
-        provider: Provider[Any] | type[Provider[Any]] | None = None,
-        scope: Scope | None = None,
-    ) -> None:
-        self.key = key
-        self.provider = provider
-        self.scope = scope
+    key: Key | None = None
+    provider: Provider[Any] | type[Provider[Any]] | None = None
+    scope: Scope | None = None
 
 
 class _EmptyBinder:
