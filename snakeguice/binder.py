@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any
 
 from snakeguice import errors, providers, scopes
 from snakeguice.annotation import UNANNOTATED, AnnotationLike
@@ -35,9 +35,9 @@ class Key:
 class Binding:
     def __init__(
         self,
-        key: Optional[Key] = None,
-        provider: Optional[Union[Provider[Any], Type[Provider[Any]]]] = None,
-        scope: Optional[Scope] = None,
+        key: Key | None = None,
+        provider: Provider[Any] | type[Provider[Any]] | None = None,
+        scope: Scope | None = None,
     ) -> None:
         self.key = key
         self.provider = provider
@@ -45,18 +45,18 @@ class Binding:
 
 
 class _EmptyBinder:
-    def get_binding(self, key: Key) -> Optional[Binding]:
+    def get_binding(self, key: Key) -> Binding | None:
         return None
 
 
 class Binder:
-    def __init__(self, parent: BinderI = None) -> None:
+    def __init__(self, parent: BinderI | None = None) -> None:
         self._parent = parent or _EmptyBinder()
-        self._binding_map: Dict[Key, Binding] = {}
+        self._binding_map: dict[Key, Binding] = {}
 
     def bind(
         self,
-        _class: Type[Any],
+        _class: type[Any],
         to: Any = _NOT_SET,
         to_provider: Any = _NOT_SET,
         to_instance: Any = _NOT_SET,
@@ -94,7 +94,7 @@ class Binder:
 
         self._binding_map[key] = binding
 
-    def get_binding(self, key: Key) -> Optional[Binding]:
+    def get_binding(self, key: Key) -> Binding | None:
         return self._binding_map.get(key) or self._parent.get_binding(key)
 
     def create_child(self) -> BinderI:
@@ -102,10 +102,10 @@ class Binder:
 
 
 class LazyBinder:
-    def __init__(self, parent: BinderI = None) -> None:
+    def __init__(self, parent: BinderI | None = None) -> None:
         self._parent = parent or _EmptyBinder()
-        self._binding_map: Dict[Key, Binding] = {}
-        self._errors: List[BinderErrorRecord] = []
+        self._binding_map: dict[Key, Binding] = {}
+        self._errors: list[BinderErrorRecord] = []
 
     def add_error(self, msg: str) -> None:
         import inspect
@@ -121,12 +121,12 @@ class LazyBinder:
         )
 
     @property
-    def errors(self) -> List[BinderErrorRecord]:
+    def errors(self) -> list[BinderErrorRecord]:
         return self._errors
 
     def bind(
         self,
-        _class: Type[Any],
+        _class: type[Any],
         to: Any = _NOT_SET,
         to_provider: Any = _NOT_SET,
         to_instance: Any = _NOT_SET,
@@ -162,7 +162,7 @@ class LazyBinder:
 
         self._binding_map[key] = binding
 
-    def get_binding(self, key: Key) -> Optional[Binding]:
+    def get_binding(self, key: Key) -> Binding | None:
         return self._binding_map.get(key) or self._parent.get_binding(key)
 
     def create_child(self) -> BinderI:

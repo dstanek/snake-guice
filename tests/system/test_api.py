@@ -6,7 +6,7 @@ Examples of using the snakeguice API.
 
 # TODO: add a test proving call throughs work
 
-from typing import Any, Optional, Type, cast
+from typing import Any, cast
 
 import pytest
 
@@ -117,7 +117,7 @@ def Xtest_collision() -> None:
 
 def test_inject_provider_with_args() -> None:
     class PersonProvider:
-        def get(self, typ: str) -> Optional[Type[ch.Person]]:
+        def get(self, typ: str) -> type[ch.Person] | None:
             if typ == "good":
                 return ch.GoodPerson
             elif typ == "evil":

@@ -1,5 +1,5 @@
 import inspect
-from typing import Any, Callable, Type, TypeVar, overload
+from typing import Any, Callable, TypeVar, overload
 
 from snakeguice._extractor import extract_params
 from snakeguice.annotation import UNANNOTATED, AnnotationLike
@@ -23,8 +23,8 @@ class ProvidesBinderHelper:
                 binder.bind(type, to_provider=provider)
 
     def _build_provider(
-        self, module: Module, type: Type[Any], method: Callable[..., Any]
-    ) -> Type[Any]:
+        self, module: Module, type: type[Any], method: Callable[..., Any]
+    ) -> type[Any]:
         class GenericProvider:
             @inject
             def __init__(self, injector: IInjector) -> None:
@@ -43,7 +43,7 @@ class ProvidesBinderHelper:
 
 class Injector:
     def __init__(
-        self, modules: Any = None, binder: BinderI = None, stage: Any = None
+        self, modules: Any = None, binder: BinderI | None = None, stage: Any = None
     ) -> None:
         if modules is None:
             modules = []
@@ -67,7 +67,7 @@ class Injector:
 
     @overload
     def get_provider(
-        self, cls: Type[U], annotation: AnnotationLike = UNANNOTATED
+        self, cls: type[U], annotation: AnnotationLike = UNANNOTATED
     ) -> Provider[U]: ...
 
     @overload
@@ -88,7 +88,7 @@ class Injector:
 
     @overload
     def get_instance(
-        self, cls: Type[U], annotation: AnnotationLike = UNANNOTATED
+        self, cls: type[U], annotation: AnnotationLike = UNANNOTATED
     ) -> U: ...
 
     @overload
@@ -121,7 +121,7 @@ class Injector:
         binder = self._binder.create_child()
         return Injector(modules, binder=binder, stage=self._stage)
 
-    def create_object(self, cls: Type[Any]) -> Any:
+    def create_object(self, cls: type[Any]) -> Any:
         kwargs = {}
         for param in extract_params(cls.__init__):
             kwargs[param.name] = self.get_instance(param.dtype, param.annotation)

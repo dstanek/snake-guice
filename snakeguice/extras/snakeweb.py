@@ -2,7 +2,7 @@
 
 import inspect
 from types import MethodType
-from typing import Any, Callable, Dict
+from typing import Any, Callable
 
 import routes
 from webob import Request, Response
@@ -24,7 +24,7 @@ class RoutesBinder:
     def __init__(self, mapper: Any, annotation: Annotation) -> None:
         self.mapper = mapper
         self._annotation = annotation
-        self.controller_map: Dict[Any, Any] = {}
+        self.controller_map: dict[Any, Any] = {}
 
     def connect(self, *args: Any, **kwargs: Any) -> None:
         controller = kwargs.get("controller")
@@ -37,7 +37,7 @@ class RoutesBinder:
         kwargs["controller"] = key
         self.mapper.connect(*args, **kwargs)
 
-    def match(self, url: str, environ: Dict[str, Any]) -> Any:
+    def match(self, url: str, environ: dict[str, Any]) -> Any:
         # TODO: i have a patch that makes this suck less - i need to submit it
         old_environ, self.mapper.environ = self.mapper.environ, environ
         try:
@@ -65,7 +65,7 @@ class RoutesModule(Module):
 
 
 class AutoRoutesModule(RoutesModule):
-    configured_routes: Dict[Any, Any]
+    configured_routes: dict[Any, Any]
 
     def configure(self, routes_binder: RoutesBinder) -> None:
         for route, controller in self.configured_routes.items():
@@ -82,7 +82,7 @@ class Application:
         self._injector = injector
 
     def __call__(
-        self, environ: Dict[str, Any], start_response: Callable[..., Any]
+        self, environ: dict[str, Any], start_response: Callable[..., Any]
     ) -> Any:
         request = Request(environ)
 

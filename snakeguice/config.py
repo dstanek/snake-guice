@@ -1,6 +1,6 @@
 import os
 from configparser import ConfigParser
-from typing import Iterable, Tuple
+from typing import Iterable
 
 from snakeguice.annotation import Annotation
 from snakeguice.interfaces import Binder
@@ -23,7 +23,7 @@ class ConfigParserLoader:
             binder.bind(annotation, to_instance=value)
 
 
-def _iterate_parser(parser: ConfigParser) -> Iterable[Tuple[str, str, str]]:
+def _iterate_parser(parser: ConfigParser) -> Iterable[tuple[str, str, str]]:
     for section in parser.sections():
         for option in parser.options(section):
             value = parser.get(section, option)

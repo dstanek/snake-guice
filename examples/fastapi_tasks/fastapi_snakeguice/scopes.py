@@ -8,7 +8,7 @@ singleton state.
 """
 
 from contextvars import ContextVar
-from typing import Any, Dict, Optional, TypeVar
+from typing import Any, TypeVar
 
 from sqlalchemy.orm import Session
 
@@ -17,19 +17,19 @@ from snakeguice.providers import create_instance_provider
 
 T = TypeVar("T")
 
-_request_cache: ContextVar[Optional[Dict[Key, Any]]] = ContextVar(
+_request_cache: ContextVar[dict[Key, Any] | None] = ContextVar(
     "fastapi_request_cache", default=None
 )
 
 
-def reset_request_scope() -> Dict[Key, Any]:
+def reset_request_scope() -> dict[Key, Any]:
     """Start a fresh per-request cache. Call once per incoming request."""
-    cache: Dict[Key, Any] = {}
+    cache: dict[Key, Any] = {}
     _request_cache.set(cache)
     return cache
 
 
-def close_request_sessions(cache: Dict[Key, Any]) -> None:
+def close_request_sessions(cache: dict[Key, Any]) -> None:
     """Commit (or roll back) and close any sessions cached during a request."""
     for value in cache.values():
         if isinstance(value, Session):
@@ -78,7 +78,7 @@ class PerAppSingleton:
     """
 
     def __init__(self) -> None:
-        self._cache: Dict[Key, Any] = {}
+        self._cache: dict[Key, Any] = {}
 
     def scope(self, key: Key, provider: Provider[T]) -> Provider[T]:
         if key not in self._cache:

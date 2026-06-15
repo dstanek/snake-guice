@@ -1,7 +1,7 @@
 import inspect
 import sys
 from types import FrameType
-from typing import Any, Callable, Optional, Type, TypeVar
+from typing import Any, Callable, TypeVar
 
 F = TypeVar("F", bound=Callable[..., Any])
 
@@ -17,7 +17,7 @@ def _validate_method_args(method: Callable[..., Any]) -> None:
             )
 
 
-def enclosing_frame(frame: Optional[FrameType] = None, level: int = 2) -> FrameType:
+def enclosing_frame(frame: FrameType | None = None, level: int = 2) -> FrameType:
     """Get an enclosing frame that skips decorator code"""
     frame = frame or sys._getframe(level)
     while frame.f_globals.get("__name__") == __name__:
@@ -48,7 +48,7 @@ class annotate:
 
 
 class provides:
-    def __init__(self, type: Type[Any]) -> None:
+    def __init__(self, type: type[Any]) -> None:
         self._type = type
 
     def __call__(self, method: F) -> F:

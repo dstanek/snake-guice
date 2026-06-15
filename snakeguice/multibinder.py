@@ -1,4 +1,4 @@
-from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union, cast
+from typing import Any, Generic, TypeVar, cast
 
 from snakeguice import providers
 from snakeguice.binder import Key
@@ -49,7 +49,7 @@ class _MultiBinder(Generic[T]):
     def _dsl_to_provider(
         self,
         to: Any,
-        to_provider: Optional[Union[ProviderI[T], Type[ProviderI[T]]]],
+        to_provider: ProviderI[T] | type[ProviderI[T]] | None,
         to_instance: Any,
     ) -> Any:
         if to:
@@ -71,15 +71,15 @@ class ListBinder(_MultiBinder[T]):
     def add_binding(
         self,
         to: Any = None,
-        to_provider: Optional[Union[ProviderI[T], Type[ProviderI[T]]]] = None,
+        to_provider: ProviderI[T] | type[ProviderI[T]] | None = None,
         to_instance: Any = None,
     ) -> None:
         provider = self._dsl_to_provider(to, to_provider, to_instance)
         self._provider.add_provider(provider)
 
-    def _create_provider(self) -> Type[ProviderI[List[T]]]:
+    def _create_provider(self) -> type[ProviderI[list[T]]]:
         class DynamicMultiBindingProvider:
-            providers: List[ProviderI[T]] = []
+            providers: list[ProviderI[T]] = []
 
             @inject
             def __init__(self, injector: InjectorI) -> None:
@@ -89,7 +89,7 @@ class ListBinder(_MultiBinder[T]):
             def add_provider(cls, provider: ProviderI[T]) -> None:
                 cls.providers.append(provider)
 
-            def get(self) -> List[T]:
+            def get(self) -> list[T]:
                 return [self._injector.get_instance(p).get() for p in self.providers]
 
         return DynamicMultiBindingProvider
@@ -100,17 +100,17 @@ class DictBinder(_MultiBinder[T]):
         self,
         key: KeyI,
         to: Any = None,
-        to_provider: Optional[Union[ProviderI[T], Type[ProviderI[T]]]] = None,
+        to_provider: ProviderI[T] | type[ProviderI[T]] | None = None,
         to_instance: Any = None,
     ) -> None:
         provider = self._dsl_to_provider(to, to_provider, to_instance)
         self._provider.add_provider(key, provider)
 
-    def _create_provider(self) -> Type[ProviderI[Dict[str, T]]]:
+    def _create_provider(self) -> type[ProviderI[dict[str, T]]]:
         binder_self = self
 
         class DynamicMultiBindingProvider:
-            providers: Dict[str, ProviderI[T]] = {}
+            providers: dict[str, ProviderI[T]] = {}
 
             @inject
             def __init__(self, injector: InjectorI) -> None:
@@ -125,7 +125,7 @@ class DictBinder(_MultiBinder[T]):
                     )
                 cls.providers[key] = provider
 
-            def get(self) -> Dict[str, Any]:
+            def get(self) -> dict[str, Any]:
                 return dict(
                     [
                         (k, self._injector.get_instance(p).get())

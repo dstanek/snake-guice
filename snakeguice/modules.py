@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 from snakeguice.annotation import UNANNOTATED, AnnotationLike
 from snakeguice.interfaces import Binder as BinderI
@@ -10,7 +10,7 @@ from snakeguice.interfaces import Module as ModuleI
 class ModuleAdapter:
     """Adapts the simple and standard module interfaces to a common one."""
 
-    def __init__(self, module: ModuleI, injector: Optional[InjectorI]) -> None:
+    def __init__(self, module: ModuleI, injector: InjectorI | None) -> None:
         if hasattr(module, "set_injector"):
             module.set_injector(injector)
         self._module = module
@@ -26,7 +26,7 @@ class Module:
     """Base class for all standard modules."""
 
     def __init__(self) -> None:
-        self._injector: Optional[InjectorI] = None
+        self._injector: InjectorI | None = None
 
     def install(self, binder: BinderI, module: ModuleI) -> None:
         """Add another module's bindings to a binder."""
