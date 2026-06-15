@@ -19,7 +19,7 @@ class ConfigParserLoader:
         parser = ConfigParser()
         parser.read(self.filename)
         for section, option, value in _iterate_parser(parser):
-            annotation = Config("%s:%s:%s" % (self.short_name, section, option))
+            annotation = Config(f"{self.short_name}:{section}:{option}")
             binder.bind(annotation, to_instance=value)
 
 

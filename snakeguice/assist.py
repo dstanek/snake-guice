@@ -54,8 +54,8 @@ def build_factory(injector: Injector, cls: Type[T]) -> Factory[T]:
             extra = set(kwargs.keys()) - assisted_params
             if extra:
                 raise TypeError(
-                    "create() got unexpected keyword argument(s) %r; "
-                    "expected a subset of %r" % (extra, assisted_params)
+                    f"create() got unexpected keyword argument(s) {extra!r}; "
+                    f"expected a subset of {assisted_params!r}"
                 )
 
             for name, provider in providers.items():

@@ -63,7 +63,7 @@ class _MultiBinder(Generic[T]):
             return providers.create_instance_provider(to_instance)
         else:
             raise MultiBindingError(
-                "incorrect arguments to %s.add_binding" % self.__class__.__name__
+                f"incorrect arguments to {self.__class__.__name__}.add_binding"
             )
 
 
@@ -119,11 +119,10 @@ class DictBinder(_MultiBinder[T]):
             @classmethod
             def add_provider(cls, key: str, provider: ProviderI[T]) -> None:
                 if key in cls.providers:
-                    msg = "duplicate binding for %r in %s found" % (
-                        key,
-                        binder_self._interface,
+                    raise MultiBindingError(
+                        f"duplicate binding for {key!r} in "
+                        f"{binder_self._interface} found"
                     )
-                    raise MultiBindingError(msg)
                 cls.providers[key] = provider
 
             def get(self) -> Dict[str, Any]:

@@ -70,7 +70,7 @@ class Binder:
         binding.scope = in_scope
 
         if key in self._binding_map:
-            raise errors.BindingError("baseclass %r already bound" % _class)
+            raise errors.BindingError(f"baseclass {_class!r} already bound")
 
         if to is not _NOT_SET:
             if not isinstance(to, type):
@@ -112,9 +112,7 @@ class LazyBinder:
 
         frame_rec = inspect.stack()[2]
 
-        location = "File {0}, line {1}, in {2}".format(
-            frame_rec[1], frame_rec[2], frame_rec[3]
-        )
+        location = f"File {frame_rec[1]}, line {frame_rec[2]}, in {frame_rec[3]}"
         code_context, index = frame_rec.code_context, frame_rec.index
         assert code_context is not None and index is not None
         source = code_context[index].strip()
@@ -142,7 +140,7 @@ class LazyBinder:
         binding.scope = in_scope
 
         if key in self._binding_map:
-            self.add_error("baseclass %r already bound" % _class)
+            self.add_error(f"baseclass {_class!r} already bound")
 
         if to is not _NOT_SET:
             if not isinstance(to, type):
@@ -157,9 +155,7 @@ class LazyBinder:
 
         elif to_instance is not _NOT_SET:
             if not isinstance(to_instance, object):
-                self.add_error(
-                    "to_instance requires an instance of a " "new-style class"
-                )
+                self.add_error("to_instance requires an instance of a new-style class")
 
             provider = to_instance
             binding.provider = providers.create_instance_provider(provider)
