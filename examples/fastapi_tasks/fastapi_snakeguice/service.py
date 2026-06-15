@@ -1,7 +1,5 @@
 """Task use cases: validation, 404s, and listener notification."""
 
-from typing import List
-
 from fastapi import HTTPException
 
 from examples.fastapi_tasks.fastapi_snakeguice.listeners import TaskListener
@@ -13,7 +11,7 @@ from snakeguice import inject
 class TaskService:
     @inject
     def __init__(
-        self, repository: TaskRepository, listeners: List[TaskListener]
+        self, repository: TaskRepository, listeners: list[TaskListener]
     ) -> None:
         self._repository = repository
         self._listeners = listeners

@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any
 
 import pytest
 
@@ -40,7 +40,7 @@ class ListCandyModule:
     """One to two modules adding to the multibinder."""
 
     def configure(self, binder: Binder) -> None:
-        listbinder = ListBinder(binder, List[ISnack])
+        listbinder = ListBinder(binder, list[ISnack])
         listbinder.add_binding(to=Twix)
         provider = providers.create_simple_provider(Snickers)
         listbinder.add_binding(to_provider=provider)
@@ -51,7 +51,7 @@ class ListChipsModule:
     """One to two modules adding to the multibinder."""
 
     def configure(self, binder: Binder) -> None:
-        listbinder = ListBinder(binder, List[ISnack])
+        listbinder = ListBinder(binder, list[ISnack])
         listbinder.add_binding(to=Lays)
         provider = providers.create_simple_provider(Tostitos)
         listbinder.add_binding(to_provider=provider)
@@ -60,7 +60,7 @@ class ListChipsModule:
 
 class ListSnackMachine:
     @inject
-    def __init__(self, snacks: List[ISnack]) -> None:
+    def __init__(self, snacks: list[ISnack]) -> None:
         self.snacks = snacks
 
 
@@ -68,7 +68,7 @@ class DictCandyModule:
     """One to two modules adding to the multibinder."""
 
     def configure(self, binder: Binder) -> None:
-        dictbinder = DictBinder(binder, Dict[str, ISnack])
+        dictbinder = DictBinder(binder, dict[str, ISnack])
         dictbinder.add_binding("twix", to=Twix)
         provider = providers.create_simple_provider(Snickers)
         dictbinder.add_binding("snickers", to_provider=provider)
@@ -79,7 +79,7 @@ class DictChipsModule:
     """One to two modules adding to the multibinder."""
 
     def configure(self, binder: Binder) -> None:
-        dictbinder = DictBinder(binder, Dict[str, ISnack])
+        dictbinder = DictBinder(binder, dict[str, ISnack])
         dictbinder.add_binding("lays", to=Lays)
         provider = providers.create_simple_provider(Tostitos)
         dictbinder.add_binding("tostitos", to_provider=provider)
@@ -88,7 +88,7 @@ class DictChipsModule:
 
 class DictSnackMachine:
     @inject
-    def __init__(self, snacks: Dict[str, ISnack]) -> None:
+    def __init__(self, snacks: dict[str, ISnack]) -> None:
         self.snacks = snacks
 
 
@@ -125,7 +125,7 @@ class TestUsingDictBinder(BaseMultibinder):
 
 class DuplicateKeyModule:
     def configure(self, binder: Binder) -> None:
-        dictbinder = DictBinder(binder, Dict[str, ISnack])
+        dictbinder = DictBinder(binder, dict[str, ISnack])
         dictbinder.add_binding("twix", to=Twix)
         dictbinder.add_binding("twix", to=Snickers)
 

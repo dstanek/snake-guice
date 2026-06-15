@@ -10,7 +10,6 @@ contribute a `TaskListener` to the shared `List[TaskListener]` binding via
 """
 
 import logging
-from typing import List
 
 from sqlalchemy.orm import Session
 
@@ -86,7 +85,7 @@ class AuditModule(Module):
             logging.Logger,
             to_instance=logging.getLogger("fastapi_snakeguice.tasks"),
         )
-        ListBinder(binder, List[TaskListener]).add_binding(to=AuditLogListener)
+        ListBinder(binder, list[TaskListener]).add_binding(to=AuditLogListener)
 
 
 class MetricsModule(Module):
@@ -99,7 +98,7 @@ class MetricsModule(Module):
         # so scopes.SINGLETON's process-global cache can't leak counters
         # between apps/tests.
         binder.bind(MetricsCollector, to=MetricsCollector, in_scope=self._scope)
-        ListBinder(binder, List[TaskListener]).add_binding(to=MetricsListener)
+        ListBinder(binder, list[TaskListener]).add_binding(to=MetricsListener)
 
 
 class AppModule(Module):
