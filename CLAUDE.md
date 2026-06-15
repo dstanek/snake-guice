@@ -62,10 +62,17 @@ modules contribute to one `List[T]`/`Dict[str, T]` binding; `DictBinder` raises
 `__init__` params supplied at call time instead of injected;
 `AssistProvider(cls)` builds a `.create(**kwargs)` factory for the rest.
 
+**Configuration errors** (`binder.py`): `Binder.bind()` never raises directly -
+problems (duplicate `Key`, invalid `to=`/`to_instance=`) are recorded via
+`add_error()` as `BinderErrorRecord`s. After running every module,
+`Injector.__init__` calls `binder.raise_if_errors()`, which raises one
+`CreationError` (a `BindingError` subclass) with a numbered list of every
+problem and its source location.
+
 **Other**: `interceptors.ParameterInterceptor` injects a single named param into
 a method call. `config.ConfigParserLoader` binds `.ini` values as
 `Config("file:section:option")`. `extras/snakeweb.py` wraps the `routes`
-library for WSGI. `binder.LazyBinder` is unused/dead code.
+library for WSGI.
 
 ## Tests
 

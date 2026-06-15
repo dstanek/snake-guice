@@ -3,9 +3,10 @@
 Every `binder.bind()` call in a normal module adds to one shared binder. That's
 fine until two modules each need their *own* binding for the same interface -
 each binder only allows one binding per `(interface, annotation)` key, so the
-second call raises `BindingError`. This is sometimes called the "robot legs"
-problem, after the classic Guice example - but it shows up in ordinary
-applications too.
+second call is recorded as a configuration error and `create_injector()` raises
+`BindingError` (specifically `CreationError`) once every module has run. This
+is sometimes called the "robot legs" problem, after the classic Guice example -
+but it shows up in ordinary applications too.
 
 ## The Problem
 
@@ -44,7 +45,12 @@ class ReplicaModule:
 try:
     create_injector([PrimaryModule(), ReplicaModule()])
 except BindingError as e:
-    print(e)  # baseclass <class 'IConnectionConfig'> already bound
+    print(e)
+    # 1 error while creating an injector:
+    #
+    # 1) baseclass <class 'IConnectionConfig'> already bound
+    #   at File path/to/module.py, line 17, in configure
+    #       binder.bind(IConnectionConfig, to=ReplicaConfig)
 ```
 
 Annotating the two `IConnectionConfig` bindings (`"primary"` /

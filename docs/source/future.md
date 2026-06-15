@@ -26,10 +26,11 @@ injector-creation time.
 
 Guice's `Modules.override(prodModule).with(testModule)` lets a test replace
 just the bindings it cares about while keeping the rest of the production
-wiring. snake-guice's `Binder` raises `BindingError` the second time the same
-`(interface, annotation)` is bound in the same binder - there's no "last one
-wins" or override mechanism. The closest options today are writing a complete
-alternate module (see [Swapping Implementations in
+wiring. snake-guice's `Binder` records an error the second time the same
+`(interface, annotation)` is bound in the same binder, raised as
+`CreationError` (a `BindingError` subclass) once the injector is created -
+there's no "last one wins" or override mechanism. The closest options today
+are writing a complete alternate module (see [Swapping Implementations in
 Tests](userguide.md#why-it-matters-swapping-implementations-in-tests)) or
 `create_child()` (overrides apply only to resolutions made through the child
 injector, not the parent's).

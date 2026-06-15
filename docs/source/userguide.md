@@ -130,7 +130,10 @@ plus two optional modifiers:
 | `in_scope=scope` | control instance lifetime (see [Scopes](#scopes) below) |
 
 Each `(interface, annotation)` pair - a `Key` - can only be bound once per
-binder. Binding the same key twice raises `BindingError`.
+binder. Binding the same key twice is recorded as a configuration error and,
+along with any other problems found while configuring the injector, raised as
+a single `CreationError` (a `BindingError` subclass) once `create_injector()`
+finishes running every module.
 
 ## Child Injectors
 
