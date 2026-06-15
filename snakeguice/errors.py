@@ -9,6 +9,10 @@ class BindingError(SnakeGuiceError):
     """Raised when an issue in the binding rules is found."""
 
 
+class CreationError(BindingError):
+    """Raised when configuration errors are found while creating an injector."""
+
+
 class AssistError(SnakeGuiceError):
     """Raised when an issue with assisted injection is found."""
 
