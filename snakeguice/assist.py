@@ -24,7 +24,7 @@ def assisted_inject(*params: str) -> Callable[[F], F]:
 def AssistProvider(cls: Type[T]) -> Type[ProviderFactory[T]]:
     if not getattr(cls.__init__, "__guice_assisted__", None):
         raise AssistError(
-            "AssistProvider can only by used on " "@assisted_inject-ed classes"
+            "AssistProvider can only by used on @assisted_inject-ed classes"
         )
 
     class _AssistProvider:

@@ -43,7 +43,6 @@ class RoutesBinder:
 
 
 class RoutesModule(Module):
-
     annotation = UNANNOTATED
 
     def run_configure(self, binder: BinderI) -> None:

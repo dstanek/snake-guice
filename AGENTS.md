@@ -17,8 +17,8 @@ colocated with git.
 - `uv sync` — install deps
 - `make all` — fmt + lint + tests (what CI runs)
 - `make tests` — `pytest -vv tests`
-- `make lint` — flake8, black --check, isort --check, mypy
-- `make fmt` — black + isort (auto-fix)
+- `make lint` — ruff check, ruff format --check, mypy
+- `make fmt` — ruff check --fix + ruff format (auto-fix)
 - Single test: `uv run pytest tests/test_injector.py::test_create_child -vv`
 
 ## Architecture

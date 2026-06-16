@@ -15,9 +15,7 @@ class _NoScope:
     a module.
     """
 
-    def scope(
-        self, key: Key, unscoped_provider: Provider[Any]
-    ) -> Provider[Any]:  # pylint: disable-msg=R0201,
+    def scope(self, key: Key, unscoped_provider: Provider[Any]) -> Provider[Any]:  # pylint: disable-msg=R0201,
         return unscoped_provider
 
 
