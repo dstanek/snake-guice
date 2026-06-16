@@ -25,9 +25,9 @@ class Key:
 
 @dataclass(slots=True)
 class Binding:
-    key: Key | None = None
-    provider: Provider[Any] | type[Provider[Any]] | None = None
-    scope: Scope | None = None
+    key: Key
+    provider: Provider[Any] | type[Provider[Any]]
+    scope: Scope
 
 
 class _EmptyBinder:
@@ -83,12 +83,9 @@ class Binder:
     ) -> None:
         key = Key(interface=_class, annotation=annotated_with)
 
-        binding = Binding()
-        binding.key = key
-        binding.scope = in_scope
-
         if key in self._binding_map:
             self.add_error(f"baseclass {_class!r} already bound")
+            return
 
         supplied = sum(x is not _NOT_SET for x in (to, to_provider, to_instance))
         if supplied > 1:
@@ -96,32 +93,36 @@ class Binder:
                 f"multiple binding targets supplied for {_class!r}; "
                 "use exactly one of to=, to_provider=, or to_instance="
             )
+            return
         elif to is not _NOT_SET:
             if not isinstance(to, type):
                 self.add_error("'to' requires a new-style class")
+                return
 
-            binding.provider = providers.create_simple_provider(to)
+            provider = providers.create_simple_provider(to)
 
         elif to_provider is not _NOT_SET:
             # TODO: add some validation
             provider = to_provider
-            binding.provider = provider
 
         elif to_instance is not _NOT_SET:
-            if not isinstance(to_instance, object):
+            if isinstance(_class, type) and not isinstance(to_instance, _class):
                 self.add_error(
-                    "'to_instance' requires an instance of a new-style class"
+                    f"'to_instance' value {to_instance!r} is not an"
+                    f" instance of {_class!r}"
                 )
+                return
 
-            provider = to_instance
-            binding.provider = providers.create_instance_provider(provider)
+            provider = providers.create_instance_provider(to_instance)
 
         else:
             self.add_error(
                 f"no binding target supplied for {_class!r}; "
                 "use to=, to_provider=, or to_instance="
             )
+            return
 
+        binding = Binding(key=key, provider=provider, scope=in_scope)
         self._binding_map[key] = binding
 
     def get_own_binding(self, key: Key) -> Binding | None:
