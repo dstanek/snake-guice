@@ -2,7 +2,7 @@
 
 Two independent concerns (audit logging, metrics) both hook into the same
 lifecycle events on `Task`. `AuditModule` and `MetricsModule` each contribute
-one of these to the shared `List[TaskListener]` binding via `ListBinder`.
+one of these to the shared `list[TaskListener]` binding via `ListBinder`.
 """
 
 import logging

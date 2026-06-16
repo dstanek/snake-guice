@@ -170,7 +170,7 @@ cache.
 ```python
 class PerAppSingleton:
     def __init__(self) -> None:
-        self._cache: Dict[Key, Any] = {}
+        self._cache: dict[Key, Any] = {}
 
     def scope(self, key: Key, provider: Provider[T]) -> Provider[T]:
         if key not in self._cache:
@@ -232,23 +232,23 @@ and `MetricsModule` (`fastapi_snakeguice/modules.py`).
 ## Multibindings (`ListBinder` / `DictBinder`)
 
 Let several independent modules each contribute one implementation to a
-shared `List[T]` or `Dict[str, T]`, without any of them knowing about the
+shared `list[T]` or `dict[str, T]`, without any of them knowing about the
 others.
 
 ```python
 class EngineModule:
     def configure(self, binder: Binder) -> None:
-        ListBinder(binder, List[IWarningLight]).add_binding(to=CheckEngineLight)
+        ListBinder(binder, list[IWarningLight]).add_binding(to=CheckEngineLight)
 ```
 
 Full explanation: [Multibindings](multibinder.md).
 
 **In `examples/fastapi_tasks`:** `AuditModule` and `MetricsModule` each
-contribute one `TaskListener` to a shared `List[TaskListener]` via
+contribute one `TaskListener` to a shared `list[TaskListener]` via
 `ListBinder` - `TaskService` just sees the combined list
 (`fastapi_snakeguice/modules.py`). `DictBinder` isn't used in this example; see
 [Multibindings — `DictBinder`](multibinder.md#dictbinder) for a runnable
-`Dict[str, T]` example.
+`dict[str, T]` example.
 
 ## Assisted injection (`@assisted_inject` + `AssistProvider`)
 

@@ -81,7 +81,7 @@ rewritten as an explicit provider class bound with
 `binder.bind(SomeType, annotated_with=..., to_provider=..., in_scope=...)`
 instead.
 
-## Generic container bindings beyond `List[T]` / `Dict[str, T]`
+## Generic container bindings beyond `list[T]` / `dict[str, T]`
 
 [`ListBinder`/`DictBinder`](multibinder.md) are the only multibinding shapes.
 There's no `Set[T]`, no `Optional[T]` ("bind this if available"), and no way to

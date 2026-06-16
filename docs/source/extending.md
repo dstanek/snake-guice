@@ -35,7 +35,7 @@ where you want one instance per request rather than one for the whole
 process:
 
 ```python
-from typing import Any, Dict
+from typing import Any
 
 from snakeguice import providers
 from snakeguice.interfaces import Key, Provider
@@ -45,7 +45,7 @@ class RequestScope:
     """Caches one instance per Key until reset() is called."""
 
     def __init__(self) -> None:
-        self._cache: Dict[Key, Provider[Any]] = {}
+        self._cache: dict[Key, Provider[Any]] = {}
 
     def scope(self, key: Key, provider: Provider[Any]) -> Provider[Any]:
         cached = self._cache.get(key)

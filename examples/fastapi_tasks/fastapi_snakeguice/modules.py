@@ -4,7 +4,7 @@
 own a `Database` and expose an annotated `Session` (the "robot legs" pattern
 from `docs/source/private_modules.md`). `ClockModule` binds a stateless,
 process-wide-safe `SINGLETON` `Clock`. `AuditModule`/`MetricsModule` each
-contribute a `TaskListener` to the shared `List[TaskListener]` binding via
+contribute a `TaskListener` to the shared `list[TaskListener]` binding via
 `ListBinder`, and `MetricsModule` gives `MetricsCollector` its own
 `PerAppSingleton` cache.
 """
