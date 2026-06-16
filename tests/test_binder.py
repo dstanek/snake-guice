@@ -97,6 +97,30 @@ def test_bind_without_target_is_recorded_as_error() -> None:
     assert "no binding target" in binder.errors[0].message
 
 
+def test_to_and_to_instance_together_is_recorded_as_error() -> None:
+    binder = Binder()
+    binder.bind(ch.Person, to=ch.EvilPerson, to_instance=ch.EvilPerson())
+
+    assert len(binder.errors) == 1
+    assert "multiple binding targets" in binder.errors[0].message
+
+
+def test_to_and_to_provider_together_is_recorded_as_error() -> None:
+    binder = Binder()
+    binder.bind(ch.Person, to=ch.EvilPerson, to_provider=ch.EvilPerson)
+
+    assert len(binder.errors) == 1
+    assert "multiple binding targets" in binder.errors[0].message
+
+
+def test_to_provider_and_to_instance_together_is_recorded_as_error() -> None:
+    binder = Binder()
+    binder.bind(ch.Person, to_provider=ch.EvilPerson, to_instance=ch.EvilPerson())
+
+    assert len(binder.errors) == 1
+    assert "multiple binding targets" in binder.errors[0].message
+
+
 def test_create_injector_raises_creation_error_on_duplicate_binding() -> None:
     class PrimaryModule:
         def configure(self, binder: BinderI) -> None:

@@ -90,7 +90,15 @@ class Binder:
         if key in self._binding_map:
             self.add_error(f"baseclass {_class!r} already bound")
 
-        if to is not _NOT_SET:
+        supplied = sum(
+            x is not _NOT_SET for x in (to, to_provider, to_instance)
+        )
+        if supplied > 1:
+            self.add_error(
+                f"multiple binding targets supplied for {_class!r}; "
+                "use exactly one of to=, to_provider=, or to_instance="
+            )
+        elif to is not _NOT_SET:
             if not isinstance(to, type):
                 self.add_error("'to' requires a new-style class")
 
