@@ -59,7 +59,7 @@ def test_multiple_errors_are_numbered() -> None:
 
 def test_invalid_to_argument_is_recorded() -> None:
     binder = Binder()
-    binder.bind(ch.Person, to=ch.EvilPerson())
+    binder.bind(ch.Person, to=ch.EvilPerson())  # type: ignore[call-overload]
 
     assert len(binder.errors) == 1
     assert "'to' requires a new-style class" in binder.errors[0].message
@@ -91,7 +91,7 @@ def test_create_child_has_its_own_errors() -> None:
 
 def test_bind_without_target_is_recorded_as_error() -> None:
     binder = Binder()
-    binder.bind(ch.Person)  # no to / to_provider / to_instance
+    binder.bind(ch.Person)  # type: ignore[call-overload]  # no to / to_provider / to_instance
 
     assert len(binder.errors) == 1
     assert "no binding target" in binder.errors[0].message
@@ -99,7 +99,7 @@ def test_bind_without_target_is_recorded_as_error() -> None:
 
 def test_to_and_to_instance_together_is_recorded_as_error() -> None:
     binder = Binder()
-    binder.bind(ch.Person, to=ch.EvilPerson, to_instance=ch.EvilPerson())
+    binder.bind(ch.Person, to=ch.EvilPerson, to_instance=ch.EvilPerson())  # type: ignore[call-overload]
 
     assert len(binder.errors) == 1
     assert "multiple binding targets" in binder.errors[0].message
@@ -107,7 +107,7 @@ def test_to_and_to_instance_together_is_recorded_as_error() -> None:
 
 def test_to_and_to_provider_together_is_recorded_as_error() -> None:
     binder = Binder()
-    binder.bind(ch.Person, to=ch.EvilPerson, to_provider=ch.EvilPerson)
+    binder.bind(ch.Person, to=ch.EvilPerson, to_provider=ch.EvilPerson)  # type: ignore[call-overload]
 
     assert len(binder.errors) == 1
     assert "multiple binding targets" in binder.errors[0].message
@@ -115,7 +115,7 @@ def test_to_and_to_provider_together_is_recorded_as_error() -> None:
 
 def test_to_provider_and_to_instance_together_is_recorded_as_error() -> None:
     binder = Binder()
-    binder.bind(ch.Person, to_provider=ch.EvilPerson, to_instance=ch.EvilPerson())
+    binder.bind(ch.Person, to_provider=ch.EvilPerson, to_instance=ch.EvilPerson())  # type: ignore[call-overload]
 
     assert len(binder.errors) == 1
     assert "multiple binding targets" in binder.errors[0].message

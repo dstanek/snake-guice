@@ -1,6 +1,6 @@
 import inspect
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, TypeVar, overload
 
 from snakeguice import errors, providers, scopes
 from snakeguice.annotation import UNANNOTATED, AnnotationLike
@@ -8,6 +8,7 @@ from snakeguice.interfaces import Binder as BinderI
 from snakeguice.interfaces import Interface, Provider, Scope
 
 _NOT_SET = object()
+_T = TypeVar("_T")
 
 
 @dataclass
@@ -72,9 +73,50 @@ class Binder:
             lines.append("")
         raise errors.CreationError("\n".join(lines))
 
+    @overload
     def bind(
         self,
-        _class: type[Any],
+        _class: type[_T],
+        *,
+        to: type[Any],
+        in_scope: Scope = ...,
+        annotated_with: AnnotationLike = ...,
+    ) -> None: ...
+
+    @overload
+    def bind(
+        self,
+        _class: type[_T],
+        *,
+        to_provider: type[Provider[_T]] | Provider[_T],
+        in_scope: Scope = ...,
+        annotated_with: AnnotationLike = ...,
+    ) -> None: ...
+
+    @overload
+    def bind(
+        self,
+        _class: type[_T],
+        *,
+        to_instance: _T,
+        in_scope: Scope = ...,
+        annotated_with: AnnotationLike = ...,
+    ) -> None: ...
+
+    @overload
+    def bind(
+        self,
+        _class: AnnotationLike,
+        *,
+        to_instance: Any,
+        in_scope: Scope = ...,
+        annotated_with: AnnotationLike = ...,
+    ) -> None: ...
+
+    def bind(
+        self,
+        _class: Any,
+        *,
         to: Any = _NOT_SET,
         to_provider: Any = _NOT_SET,
         to_instance: Any = _NOT_SET,
