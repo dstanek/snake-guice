@@ -65,32 +65,6 @@ class TestSingletonScope:
         obj = Injector(MyModule()).get_instance(self.DomainObject)
         self.assert_obj(obj)
 
-    def _test_inject_into_singleton(self) -> None:
-        class MyLogger:
-            hot_place = inject(ch.Place, annotation="hot")  # type: ignore[call-arg]
-            cold_place = inject(ch.Place, annotation="cold")  # type: ignore[call-arg]
-
-        class MyModule:
-            def configure(self, binder: BinderI) -> None:
-                binder.bind(ch.Logger, to=MyLogger, in_scope=scopes.SINGLETON)
-                binder.bind(
-                    ch.Place,
-                    annotated_with="hot",
-                    to=ch.Beach,
-                    to_scope=scopes.SINGLETON,
-                )
-                binder.bind(
-                    ch.Place,
-                    annotated_with="cold",
-                    to=ch.Glacier,
-                    to_scope=scopes.SINGLETON,
-                )
-
-        obj = Injector(MyModule()).get_instance(self.DomainObject)
-        self.assert_obj(obj)
-        assert obj.logger_a.hot_place is obj.place_a  # type: ignore[attr-defined]
-        assert obj.logger_a.cold_place is obj.place_c  # type: ignore[attr-defined]
-
 
 class TestSingetonScope:
     class SimpleClass:
