@@ -110,6 +110,12 @@ class Binder:
             provider = to_instance
             binding.provider = providers.create_instance_provider(provider)
 
+        else:
+            self.add_error(
+                f"no binding target supplied for {_class!r}; "
+                "use to=, to_provider=, or to_instance="
+            )
+
         self._binding_map[key] = binding
 
     def get_own_binding(self, key: Key) -> Binding | None:

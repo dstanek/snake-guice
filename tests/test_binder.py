@@ -89,6 +89,14 @@ def test_create_child_has_its_own_errors() -> None:
     assert child.errors == []
 
 
+def test_bind_without_target_is_recorded_as_error() -> None:
+    binder = Binder()
+    binder.bind(ch.Person)  # no to / to_provider / to_instance
+
+    assert len(binder.errors) == 1
+    assert "no binding target" in binder.errors[0].message
+
+
 def test_create_injector_raises_creation_error_on_duplicate_binding() -> None:
     class PrimaryModule:
         def configure(self, binder: BinderI) -> None:
