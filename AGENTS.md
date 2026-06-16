@@ -17,7 +17,7 @@ colocated with git.
 - `uv sync` — install deps
 - `make all` — fmt + lint + tests (what CI runs)
 - `make tests` — `pytest -vv tests`
-- `make lint` — ruff check, ruff format --check, mypy
+- `make lint` — ruff check, ruff format --check, mypy, basedpyright (snakeguice only)
 - `make fmt` — ruff check --fix + ruff format (auto-fix)
 - Single test: `uv run pytest tests/test_injector.py::test_create_child -vv`
 

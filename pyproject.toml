@@ -33,6 +33,7 @@ docs = [
 dev = [
     "pytest>=9.1.0",
     "ruff>=0.11.0",
+    "basedpyright>=1.29.0",
     "Routes>=2.5.1",
     "WebOb>=1.8.10",
     "mypy>=2.1.0",
@@ -56,6 +57,10 @@ target-version = "py310"
 [tool.ruff.lint]
 select = ["E", "F", "I"]
 
+[tool.pyright]
+typeCheckingMode = "standard"
+pythonVersion = "3.10"
+
 [tool.mypy]
 strict = true
 ignore_missing_imports = true
@@ -65,6 +70,7 @@ module = [
     "examples.wsgiapp.forms",
     "examples.cherrypy.controllers",
     "examples.cherrypy.scopes",
+    "examples.shared.template_engines.jinja_engine",
     "examples.shared.template_engines.mako_engine",
 ]
 disallow_subclassing_any = false

@@ -11,14 +11,6 @@ from snakeguice.interfaces import Provider as ProviderI
 
 _NOT_SET = object()
 
-# TODO: now that we are using standand type annotations we can probably simplify
-#       the interface by replacing ListBinder and DictBinder with MultiBinder.
-#
-#       So using:
-#           MultiBinder(binder, list[Thing])
-#       instead of:
-#           ListBinder(binder, list[Thing])
-
 T = TypeVar("T", bound=type)
 
 

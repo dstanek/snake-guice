@@ -16,6 +16,7 @@ lint:
 	uv run ruff check $(CODE_DIRS)
 	uv run ruff format --check $(CODE_DIRS)
 	uv run mypy $(CODE_DIRS) --show-error-context
+	uv run basedpyright snakeguice
 
 .PHONY: fmt
 fmt:
