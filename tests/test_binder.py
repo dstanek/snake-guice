@@ -65,6 +65,22 @@ def test_invalid_to_argument_is_recorded() -> None:
     assert "'to' requires a new-style class" in binder.errors[0].message
 
 
+def test_to_provider_without_get_method_class_is_recorded() -> None:
+    binder = Binder()
+    binder.bind(ch.Person, to_provider=ch.EvilPerson)  # type: ignore[arg-type]
+
+    assert len(binder.errors) == 1
+    assert "a 'get' method" in binder.errors[0].message
+
+
+def test_to_provider_without_get_method_instance_is_recorded() -> None:
+    binder = Binder()
+    binder.bind(ch.Person, to_provider=ch.EvilPerson())  # type: ignore[call-overload]
+
+    assert len(binder.errors) == 1
+    assert "a 'get' method" in binder.errors[0].message
+
+
 def test_add_error_handles_missing_source_context() -> None:
     binder = Binder()
 

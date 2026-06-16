@@ -144,7 +144,11 @@ class Binder:
             provider = providers.create_simple_provider(to)
 
         elif to_provider is not _NOT_SET:
-            # TODO: add some validation
+            if not callable(getattr(to_provider, "get", None)):
+                self.add_error(
+                    "'to_provider' requires a class or instance with a 'get' method"
+                )
+                return
             provider = to_provider
 
         elif to_instance is not _NOT_SET:
