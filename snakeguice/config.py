@@ -17,7 +17,9 @@ class ConfigParserLoader:
 
     def bind_configuration(self, binder: Binder) -> None:
         parser = ConfigParser()
-        parser.read(self.filename)
+        loaded = parser.read(self.filename)
+        if not loaded:
+            raise FileNotFoundError(f"Config file not found: {self.filename}")
         for section, option, value in _iterate_parser(parser):
             annotation = Config(f"{self.short_name}:{section}:{option}")
             binder.bind(annotation, to_instance=value)

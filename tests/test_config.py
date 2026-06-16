@@ -4,8 +4,23 @@
 
 from pathlib import Path
 
+import pytest
+
 from snakeguice import config, create_injector
 from snakeguice.interfaces import Binder
+
+
+def test_config_parser_loader_raises_on_missing_file() -> None:
+    class ConfigModule:
+        def configure(self, binder: Binder) -> None:
+            config.ConfigParserLoader(
+                "/tmp/does-not-exist-snake-guice.ini"
+            ).bind_configuration(binder)
+
+    with pytest.raises(FileNotFoundError) as exc_info:
+        create_injector([ConfigModule()])
+
+    assert "does-not-exist-snake-guice.ini" in str(exc_info.value)
 
 
 def test_config_parser_loader_binds_ini_values_to_config_annotations(
