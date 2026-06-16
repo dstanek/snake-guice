@@ -1,9 +1,10 @@
 import inspect
 import sys
 from types import FrameType
-from typing import Any, Callable, TypeVar
+from typing import Any, Callable, TypeVar, overload
 
 F = TypeVar("F", bound=Callable[..., Any])
+T = TypeVar("T")
 
 
 def _validate_method_args(method: Callable[..., Any]) -> None:
@@ -26,14 +27,26 @@ def enclosing_frame(frame: FrameType | None = None, level: int = 2) -> FrameType
     return frame
 
 
-def inject(method: F) -> F:
-    _validate_method_args(method)
-    if method.__name__ != "__init__":
+@overload
+def inject(target: type[T]) -> type[T]: ...
+
+
+@overload
+def inject(target: F) -> F: ...
+
+
+def inject(target: Any) -> Any:
+    if isinstance(target, type):
+        if "__init__" in target.__dict__:
+            _validate_method_args(target.__init__)
+        return target
+    _validate_method_args(target)
+    if target.__name__ != "__init__":
         class_locals = enclosing_frame().f_locals
         methods = class_locals.setdefault("__guice_methods__", [])
-        if method.__name__ not in methods:
-            methods.append(method.__name__)
-    return method
+        if target.__name__ not in methods:
+            methods.append(target.__name__)
+    return target
 
 
 class annotate:

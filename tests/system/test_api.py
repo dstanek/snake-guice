@@ -161,6 +161,44 @@ def test_inject_decorator() -> None:
     injector.get_instance(DomainObject)
 
 
+def test_class_level_inject_decorator() -> None:
+    @inject
+    class DomainObject:
+        def __init__(self, logger: ch.Logger) -> None:
+            self.logger = logger
+
+    class MyModule:
+        def configure(self, binder: Binder) -> None:
+            binder.bind(ch.Logger, to=ch.ConcreteLogger)
+
+    injector = Injector(MyModule())
+    obj = injector.get_instance(DomainObject)
+    assert isinstance(obj.logger, ch.ConcreteLogger)
+
+
+def test_class_level_inject_with_method_inject() -> None:
+    """@inject on the class covers __init__; @inject on methods still works."""
+
+    @inject
+    class DomainObject:
+        def __init__(self, logger: ch.Logger) -> None:
+            self.logger = logger
+
+        @inject
+        def set_person(self, person: ch.Person) -> None:
+            self.person = person
+
+    class MyModule:
+        def configure(self, binder: Binder) -> None:
+            binder.bind(ch.Person, to=ch.EvilPerson)
+            binder.bind(ch.Logger, to=ch.ConcreteLogger)
+
+    injector = Injector(MyModule())
+    obj = injector.get_instance(DomainObject)
+    assert isinstance(obj.logger, ch.ConcreteLogger)
+    assert isinstance(obj.person, ch.EvilPerson)
+
+
 class TestMethodInterceptors:
     def setup_method(self) -> None:
         class MyModule:

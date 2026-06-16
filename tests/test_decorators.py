@@ -5,6 +5,38 @@ import pytest
 from snakeguice.decorators import annotate, inject
 
 
+def test_inject_class_returns_the_class() -> None:
+    """@inject on a class returns the class itself unchanged."""
+
+    @inject
+    class SomeClass:
+        def __init__(self, a: int) -> None:
+            pass
+
+    assert SomeClass.__name__ == "SomeClass"
+
+
+def test_inject_class_with_no_init_returns_the_class() -> None:
+    """@inject on a class with no __init__ is a no-op."""
+
+    @inject
+    class SomeClass:
+        pass
+
+    assert SomeClass.__name__ == "SomeClass"
+
+
+def test_inject_class_with_invalid_type_annotations_fails() -> None:
+    """@inject on a class raises TypeError when __init__ has unannotated params."""
+
+    with pytest.raises(TypeError):
+
+        @inject
+        class SomeClass:
+            def __init__(self, a) -> None:  # type: ignore
+                pass
+
+
 def test_inject_init_with_invalid_type_annotations_fails() -> None:
     """Using the inject decorator on the initializer."""
 

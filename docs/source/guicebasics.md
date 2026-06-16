@@ -61,12 +61,25 @@ class Car:
         self.engine = engine
 ```
 
+`@inject` can also be placed on the class itself as a shorthand for decorating
+`__init__`:
+
+```python
+@inject
+class Car:
+    def __init__(self, engine: IEngine):
+        self.engine = engine
+```
+
+Both forms are equivalent for constructor injection. The class-level form is
+more concise when you don't also need `@inject` on any other methods.
+
 ```{important}
-Every non-`self` parameter on an `@inject`-decorated method **must** have a
-type annotation. A missing annotation raises `TypeError` when the decorator is
-applied — at class-definition time, not when the injector runs. This means the
-error surfaces immediately at import, not buried in a later `get_instance()`
-call.
+Every non-`self` parameter on an `@inject`-decorated method (or the `__init__`
+of an `@inject`-decorated class) **must** have a type annotation. A missing
+annotation raises `TypeError` when the decorator is applied — at
+class-definition time, not when the injector runs. This means the error
+surfaces immediately at import, not buried in a later `get_instance()` call.
 ```
 
 There are a couple of odd things here. For one developers with a background in Java may be wondering why there is no relationship between IEngine and SmallBlockEngine. To retain the full flexibility we get with duck-typing no inheritence heirarchy is enforced. The interface is just a clue to the developer and SG to let us know what we should expect.

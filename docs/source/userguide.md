@@ -37,6 +37,20 @@ class Car:
         self.dashboard = dashboard
 ```
 
+When you only need constructor injection and no method injection, `@inject` can
+be placed on the class itself instead of on `__init__`:
+
+```python
+@inject
+class Car:
+    def __init__(self, engine: IEngine) -> None:
+        self.engine = engine
+```
+
+The two forms are identical — the injector reads `__init__`'s type annotations
+either way. If you also want `@inject` on other methods, keep `@inject` on
+those methods regardless of which form you use for `__init__`.
+
 ## Resolving Instances
 
 `injector.get_instance(cls, annotation)` builds a `Key` from `cls` and
