@@ -47,29 +47,29 @@ class RoutesModule(Module):
 
     def run_configure(self, binder: BinderI) -> None:
         self._mapper = routes.Mapper()
-        self.routes_binder = RoutesBinder(self._mapper, self.annotation)
+        self._binder = RoutesBinder(self._mapper, self.annotation)
         binder.bind(
-            RoutesBinder, to_instance=self.routes_binder, annotated_with=self.annotation
+            RoutesBinder, to_instance=self._binder, annotated_with=self.annotation
         )
 
-        self.configure(self.routes_binder)
+        self.configure(self._binder)
         self._mapper.create_regs([])
 
-    def configure(self, routes_binder: RoutesBinder) -> None:
+    def configure(self, binder: RoutesBinder) -> None:
         raise NotImplementedError
 
 
 class AutoRoutesModule(RoutesModule):
     configured_routes: dict[Any, Any]
 
-    def configure(self, routes_binder: RoutesBinder) -> None:
+    def configure(self, binder: RoutesBinder) -> None:
         for route, controller in self.configured_routes.items():
             if isinstance(controller, MethodType):
-                routes_binder.connect(
+                binder.connect(
                     route, controller=controller.__self__, action=controller.__name__
                 )
             else:
-                routes_binder.connect(route, controller=controller)
+                binder.connect(route, controller=controller)
 
 
 class Application:
@@ -100,7 +100,7 @@ class Application:
         if not controller:
             return HTTPNotFound()(environ, start_response)
 
-        response = controller(request, **route)
+        response: Any = controller(request, **route)
         return response(environ, start_response)
 
     def controller_from_class(self, controller: Any, action: Any) -> Any:
