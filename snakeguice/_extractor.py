@@ -11,7 +11,7 @@ class Param(NamedTuple):
 
 
 def extract_params(method: Callable[..., Any]) -> Iterable[Param]:
-    types = inspect.get_annotations(method)
+    types = inspect.get_annotations(method, eval_str=True)
     annotations = getattr(method, "__guice_annotations__", {})
     for name, dtype in types.items():
         if name == "return":
