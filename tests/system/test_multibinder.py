@@ -137,9 +137,9 @@ def test_dict_binder_raises_multi_binding_error_on_duplicate_key() -> None:
     assert "twix" in str(exc_info.value)
 
 
-# Ensure no child ListBinder/DictBinder contributions leak back into the parent injector.
-# Adding a binding through a child injector mutates the class-level provider state
-# shared with the parent, so the parent starts resolving the child's extra bindings.
+# Ensure no child ListBinder/DictBinder contributions leak back into the parent.
+# Adding a binding through a child injector used to mutate class-level provider
+# state shared with the parent, so the parent would resolve the child's bindings.
 
 
 class ChildListModule:
@@ -216,7 +216,7 @@ def test_list_binder_builtin_generic_matches_injection() -> None:
 
 
 class SingleDictCandyModule:
-    """Registers one binding under dict[str, ISnack] (builtin generic, as docs now show)."""
+    """Registers one binding under dict[str, ISnack] (builtin generic)."""
 
     def configure(self, binder: Binder) -> None:
         dictbinder = DictBinder(binder, dict[str, ISnack])

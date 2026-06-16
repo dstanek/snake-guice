@@ -79,7 +79,7 @@ class Test_annotate_stores_annotations_on_methods:
 
 
 def test_annotate_below_inject_works() -> None:
-    """Conventional order: @inject above @annotate in source (annotate applied first)."""
+    """Conventional order: @inject above @annotate in source."""
 
     class Widget:
         @inject

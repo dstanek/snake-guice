@@ -34,7 +34,7 @@ class _MultiBinder(Generic[T]):
         self._interface = interface
         self._provider = self._get_or_create_provider()
 
-    def _create_provider(self, initial: Any = None) -> Any:  # TODO: do this the right way!
+    def _create_provider(self, initial: Any = None) -> Any:  # TODO: type properly
         pass
 
     def _get_or_create_provider(self) -> MultiProviderI[T]:
@@ -86,7 +86,9 @@ class ListBinder(_MultiBinder[T]):
         provider = self._dsl_to_provider(to, to_provider, to_instance)
         self._provider.add_provider(provider)
 
-    def _create_provider(self, initial: list[ProviderI[T]] | None = None) -> type[ProviderI[list[T]]]:
+    def _create_provider(
+        self, initial: list[ProviderI[T]] | None = None
+    ) -> type[ProviderI[list[T]]]:
         _providers: list[ProviderI[T]] = list(initial or [])
 
         class DynamicMultiBindingProvider:
@@ -119,7 +121,9 @@ class DictBinder(_MultiBinder[T]):
         provider = self._dsl_to_provider(to, to_provider, to_instance)
         self._provider.add_provider(key, provider)
 
-    def _create_provider(self, initial: dict[str, ProviderI[T]] | None = None) -> type[ProviderI[dict[str, T]]]:
+    def _create_provider(
+        self, initial: dict[str, ProviderI[T]] | None = None
+    ) -> type[ProviderI[dict[str, T]]]:
         binder_self = self
         _providers: dict[str, ProviderI[T]] = dict(initial or {})
 
@@ -142,6 +146,9 @@ class DictBinder(_MultiBinder[T]):
                 return _providers
 
             def get(self) -> dict[str, Any]:
-                return {k: self._injector.get_instance(p).get() for k, p in _providers.items()}
+                return {
+                    k: self._injector.get_instance(p).get()
+                    for k, p in _providers.items()
+                }
 
         return DynamicMultiBindingProvider

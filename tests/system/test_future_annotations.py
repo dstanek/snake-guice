@@ -5,6 +5,7 @@ Under PEP 563 (from __future__ import annotations) all annotations in the module
 are stored as strings rather than evaluated types.  inject() must still resolve
 them to real types so the injector can look up bindings.
 """
+
 from __future__ import annotations
 
 from snakeguice import create_injector, inject
