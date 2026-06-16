@@ -2,18 +2,16 @@
 
 A normal binding maps one interface to one implementation. Sometimes you want
 the opposite: several implementations of the same interface, contributed by
-different modules, collected into a single `List[T]` or `Dict[str, T]`. That's
+different modules, collected into a single `list[T]` or `dict[str, T]`. That's
 what `ListBinder` and `DictBinder` (from `snakeguice.multibinder`) are for.
 
 ## `ListBinder`
 
 Each module that wants to contribute gets its own `ListBinder` for the same
-`List[T]` type and calls `add_binding()`. All the bindings - across however
+`list[T]` type and calls `add_binding()`. All the bindings - across however
 many modules use a `ListBinder` for that type - end up in one list:
 
 ```python
-from typing import List
-
 from snakeguice import create_injector, inject
 from snakeguice.interfaces import Binder
 from snakeguice.multibinder import ListBinder
@@ -33,19 +31,19 @@ class BrakeLight(IWarningLight):
 
 class EngineModule:
     def configure(self, binder: Binder) -> None:
-        listbinder = ListBinder(binder, List[IWarningLight])
+        listbinder = ListBinder(binder, list[IWarningLight])
         listbinder.add_binding(to=CheckEngineLight)
 
 
 class BrakeModule:
     def configure(self, binder: Binder) -> None:
-        listbinder = ListBinder(binder, List[IWarningLight])
+        listbinder = ListBinder(binder, list[IWarningLight])
         listbinder.add_binding(to=BrakeLight)
 
 
 class Dashboard:
     @inject
-    def __init__(self, warning_lights: List[IWarningLight]) -> None:
+    def __init__(self, warning_lights: list[IWarningLight]) -> None:
         self.warning_lights = warning_lights
 
 
@@ -77,11 +75,9 @@ all contributing modules in the order those modules were installed.
 ## `DictBinder`
 
 `DictBinder` works the same way, but each binding is registered under a string
-key, producing a `Dict[str, T]`:
+key, producing a `dict[str, T]`:
 
 ```python
-from typing import Dict
-
 from snakeguice.multibinder import DictBinder
 
 
@@ -99,19 +95,19 @@ class FuelGauge(IGauge):
 
 class EngineGaugeModule:
     def configure(self, binder: Binder) -> None:
-        dictbinder = DictBinder(binder, Dict[str, IGauge])
+        dictbinder = DictBinder(binder, dict[str, IGauge])
         dictbinder.add_binding("speed", to=SpeedGauge)
 
 
 class FuelGaugeModule:
     def configure(self, binder: Binder) -> None:
-        dictbinder = DictBinder(binder, Dict[str, IGauge])
+        dictbinder = DictBinder(binder, dict[str, IGauge])
         dictbinder.add_binding("fuel", to=FuelGauge)
 
 
 class GaugeCluster:
     @inject
-    def __init__(self, gauges: Dict[str, IGauge]) -> None:
+    def __init__(self, gauges: dict[str, IGauge]) -> None:
         self.gauges = gauges
 
 
@@ -132,7 +128,7 @@ from snakeguice.errors import MultiBindingError
 
 class DuplicateGaugeModule:
     def configure(self, binder: Binder) -> None:
-        dictbinder = DictBinder(binder, Dict[str, IGauge])
+        dictbinder = DictBinder(binder, dict[str, IGauge])
         dictbinder.add_binding("speed", to=SpeedGauge)
         dictbinder.add_binding("speed", to=FuelGauge)
 

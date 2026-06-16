@@ -186,3 +186,51 @@ def test_dict_binder_child_does_not_affect_parent() -> None:
     assert set(child_snacks.keys()) == set(parent_snacks_before.keys()) | {"ruffles"}
     # parent must not be affected by the child's extra binding
     assert set(parent_snacks_after.keys()) == set(parent_snacks_before.keys())
+
+
+# Multibinder keys are compared by exact type, so list[T] and typing.List[T] are
+# different keys.  The docs previously used typing.List/typing.Dict; they now use
+# the builtin forms.  These tests guard that the builtin forms work correctly and
+# serve as a reminder that typing.List / typing.Dict must not be mixed in.
+
+
+class SingleListCandyModule:
+    """Registers one binding under list[ISnack] (builtin generic, as docs now show)."""
+
+    def configure(self, binder: Binder) -> None:
+        listbinder = ListBinder(binder, list[ISnack])
+        listbinder.add_binding(to=Twix)
+
+
+class SingleListSnackMachine:
+    @inject
+    def __init__(self, snacks: list[ISnack]) -> None:
+        self.snacks = snacks
+
+
+def test_list_binder_builtin_generic_matches_injection() -> None:
+    injector = create_injector([SingleListCandyModule()])
+    machine = injector.get_instance(SingleListSnackMachine)
+    assert len(machine.snacks) == 1
+    assert isinstance(machine.snacks[0], Twix)
+
+
+class SingleDictCandyModule:
+    """Registers one binding under dict[str, ISnack] (builtin generic, as docs now show)."""
+
+    def configure(self, binder: Binder) -> None:
+        dictbinder = DictBinder(binder, dict[str, ISnack])
+        dictbinder.add_binding("twix", to=Twix)
+
+
+class SingleDictSnackMachine:
+    @inject
+    def __init__(self, snacks: dict[str, ISnack]) -> None:
+        self.snacks = snacks
+
+
+def test_dict_binder_builtin_generic_matches_injection() -> None:
+    injector = create_injector([SingleDictCandyModule()])
+    machine = injector.get_instance(SingleDictSnackMachine)
+    assert "twix" in machine.snacks
+    assert isinstance(machine.snacks["twix"], Twix)
