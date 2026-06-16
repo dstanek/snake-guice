@@ -30,3 +30,6 @@ pip-log.txt
 
 # uv
 .venv/
+
+# Sphinx docs build output
+docs/_build/
