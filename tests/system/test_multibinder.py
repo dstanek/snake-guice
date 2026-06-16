@@ -234,3 +234,46 @@ def test_dict_binder_builtin_generic_matches_injection() -> None:
     machine = injector.get_instance(SingleDictSnackMachine)
     assert "twix" in machine.snacks
     assert isinstance(machine.snacks["twix"], Twix)
+
+
+# Falsey to_instance values (False, 0, "", [], {}) must be accepted, not rejected.
+
+
+class FalseyListModule:
+    def configure(self, binder: Binder) -> None:
+        lb = ListBinder(binder, list[object])
+        lb.add_binding(to_instance=False)
+        lb.add_binding(to_instance=0)
+        lb.add_binding(to_instance="")
+
+
+class FalseyListConsumer:
+    @inject
+    def __init__(self, items: list[object]) -> None:
+        self.items = items
+
+
+def test_list_binder_accepts_falsey_to_instance_values() -> None:
+    injector = create_injector([FalseyListModule()])
+    consumer = injector.get_instance(FalseyListConsumer)
+    assert consumer.items == [False, 0, ""]
+
+
+class FalseyDictModule:
+    def configure(self, binder: Binder) -> None:
+        db = DictBinder(binder, dict[str, object])
+        db.add_binding("flag", to_instance=False)
+        db.add_binding("count", to_instance=0)
+        db.add_binding("label", to_instance="")
+
+
+class FalseyDictConsumer:
+    @inject
+    def __init__(self, items: dict[str, object]) -> None:
+        self.items = items
+
+
+def test_dict_binder_accepts_falsey_to_instance_values() -> None:
+    injector = create_injector([FalseyDictModule()])
+    consumer = injector.get_instance(FalseyDictConsumer)
+    assert consumer.items == {"flag": False, "count": 0, "label": ""}

@@ -9,6 +9,8 @@ from snakeguice.interfaces import Injector as InjectorI
 from snakeguice.interfaces import Key as KeyI
 from snakeguice.interfaces import Provider as ProviderI
 
+_NOT_SET = object()
+
 # TODO: now that we are using standand type annotations we can probably simplify
 #       the interface by replacing ListBinder and DictBinder with MultiBinder.
 #
@@ -61,14 +63,11 @@ class _MultiBinder(Generic[T]):
         to_provider: ProviderI[T] | type[ProviderI[T]] | None,
         to_instance: Any,
     ) -> Any:
-        if to:
-            # TODO: add some validation
+        if to is not _NOT_SET:
             return providers.create_simple_provider(to)
-        elif to_provider:
-            # TODO: add some validation
+        elif to_provider is not _NOT_SET:
             return to_provider
-        elif to_instance:
-            # TODO: add some validation
+        elif to_instance is not _NOT_SET:
             return providers.create_instance_provider(to_instance)
         else:
             raise MultiBindingError(
@@ -79,9 +78,9 @@ class _MultiBinder(Generic[T]):
 class ListBinder(_MultiBinder[T]):
     def add_binding(
         self,
-        to: Any = None,
-        to_provider: ProviderI[T] | type[ProviderI[T]] | None = None,
-        to_instance: Any = None,
+        to: Any = _NOT_SET,
+        to_provider: Any = _NOT_SET,
+        to_instance: Any = _NOT_SET,
     ) -> None:
         provider = self._dsl_to_provider(to, to_provider, to_instance)
         self._provider.add_provider(provider)
@@ -114,9 +113,9 @@ class DictBinder(_MultiBinder[T]):
     def add_binding(
         self,
         key: KeyI,
-        to: Any = None,
-        to_provider: ProviderI[T] | type[ProviderI[T]] | None = None,
-        to_instance: Any = None,
+        to: Any = _NOT_SET,
+        to_provider: Any = _NOT_SET,
+        to_instance: Any = _NOT_SET,
     ) -> None:
         provider = self._dsl_to_provider(to, to_provider, to_instance)
         self._provider.add_provider(key, provider)
