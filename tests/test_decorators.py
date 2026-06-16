@@ -24,7 +24,28 @@ def test_inject_methods() -> None:
         def go(self, y: float) -> None:
             pass
 
-    assert getattr(SomeClass, "__guice_methods__") == {"go"}
+    assert getattr(SomeClass, "__guice_methods__") == ["go"]
+
+
+def test_inject_methods_preserve_declaration_order() -> None:
+    """@inject on multiple methods must record them in declaration order."""
+
+    class Ordered:
+        @inject
+        def step_one(self, x: int) -> None:
+            pass
+
+        @inject
+        def step_two(self, x: int) -> None:
+            pass
+
+        @inject
+        def step_three(self, x: int) -> None:
+            pass
+
+    methods = getattr(Ordered, "__guice_methods__")
+    assert not isinstance(methods, set), "__guice_methods__ must not be a set"
+    assert list(methods) == ["step_one", "step_two", "step_three"]
 
 
 def test_inject_methods_with_invalid_type_annotations_fails0() -> None:

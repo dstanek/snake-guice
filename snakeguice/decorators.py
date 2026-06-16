@@ -30,7 +30,9 @@ def inject(method: F) -> F:
     _validate_method_args(method)
     if method.__name__ != "__init__":
         class_locals = enclosing_frame().f_locals
-        class_locals.setdefault("__guice_methods__", set()).add(method.__name__)
+        methods = class_locals.setdefault("__guice_methods__", [])
+        if method.__name__ not in methods:
+            methods.append(method.__name__)
     return method
 
 
