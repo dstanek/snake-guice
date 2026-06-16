@@ -16,7 +16,6 @@ release = '1.0.0a1'
 
 extensions = [
     "myst_parser",
-    "reno.sphinxext",
 ]
 
 myst_enable_extensions = [
