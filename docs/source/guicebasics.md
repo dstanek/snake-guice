@@ -61,6 +61,14 @@ class Car:
         self.engine = engine
 ```
 
+```{important}
+Every non-`self` parameter on an `@inject`-decorated method **must** have a
+type annotation. A missing annotation raises `TypeError` when the decorator is
+applied — at class-definition time, not when the injector runs. This means the
+error surfaces immediately at import, not buried in a later `get_instance()`
+call.
+```
+
 There are a couple of odd things here. For one developers with a background in Java may be wondering why there is no relationship between IEngine and SmallBlockEngine. To retain the full flexibility we get with duck-typing no inheritence heirarchy is enforced. The interface is just a clue to the developer and SG to let us know what we should expect.
 
 The @inject annotion feels a little unnatural. This will pass as it's value surfaces. The @inject decoration adds some meta data to your class. It doesn't effect the method's runtime in anyway. It really does two things: declared types and shows snake-guice what it should call to create an instance. (You can use @inject on methods as well - more on that later.)
