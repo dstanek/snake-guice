@@ -119,8 +119,7 @@ class Injector:
         All bindings are inherited. In the future this may become closer to
         child injectors on google-guice.
         """
-        binder = self._binder.create_child()
-        return Injector(modules, binder=binder, stage=self._stage)
+        return Injector(modules, binder=self._binder, stage=self._stage)
 
     def create_object(self, cls: type[Any]) -> Any:
         kwargs = {}

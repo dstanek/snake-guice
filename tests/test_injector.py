@@ -42,6 +42,13 @@ def test_injector_multi_module_init() -> None:
         assert isinstance(module.binder, binder.Binder)
 
 
+def test_create_child_binder_is_direct_child_of_parent_binder() -> None:
+    """create_child() must not insert an extra intermediate binder layer."""
+    parent = injector.Injector([])
+    child = parent.create_child([])
+    assert child._binder._parent is parent._binder
+
+
 def test_create_child() -> None:
     """Create an injector child."""
 
