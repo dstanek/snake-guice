@@ -70,3 +70,34 @@ class Test_annotate_stores_annotations_on_methods:
             "x": "_x_",
             "y": "_y_",
         }
+
+
+# Bug: the docs claimed @annotate must be listed *below* @inject, but the guard
+# that was supposed to enforce this never fired (it checked "__guice__" in class
+# locals; @inject sets "__guice_methods__", never "__guice__").  Both orderings
+# have always worked.  The tests below document that both are valid.
+
+
+def test_annotate_below_inject_works() -> None:
+    """Conventional order: @inject above @annotate in source (annotate applied first)."""
+
+    class Widget:
+        @inject
+        @annotate(x="_x_")
+        def __init__(self, x: object) -> None:
+            self.x = x
+
+    assert getattr(Widget.__init__, "__guice_annotations__") == {"x": "_x_"}
+
+
+def test_annotate_above_inject_works() -> None:
+    """Reversed order: @annotate above @inject in source (inject applied first).
+    The docs incorrectly said this order was forbidden; it works identically."""
+
+    class Widget:
+        @annotate(x="_x_")
+        @inject
+        def __init__(self, x: object) -> None:
+            self.x = x
+
+    assert getattr(Widget.__init__, "__guice_annotations__") == {"x": "_x_"}

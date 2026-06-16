@@ -39,10 +39,6 @@ class annotate:
         self.kwargs = kwargs
 
     def __call__(self, method: F) -> F:
-        class_locals = enclosing_frame().f_locals
-        if "__guice__" in class_locals:
-            if method.__name__ in class_locals["__guice__"].methods:
-                raise Exception("annotate must be applied before inject")
         setattr(method, "__guice_annotations__", self.kwargs)
         return method
 

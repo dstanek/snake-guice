@@ -35,8 +35,8 @@ any `@inject`-decorated methods).
 **Decorators** (`decorators.py`, `_extractor.py`):
 - `@inject` requires type annotations on all non-`self` params; on
   non-`__init__` methods it records the method name in `__guice_methods__`.
-- `@annotate(param=value, ...)` sets `__guice_annotations__`; must be applied
-  *before* `@inject` (i.e. listed below it).
+- `@annotate(param=value, ...)` sets `__guice_annotations__`; either ordering
+  relative to `@inject` works — convention is `@inject` above `@annotate`.
 - `@provides(SomeType)` marks a module method as a factory for `SomeType`
   (collected by `ProvidesBinderHelper`).
 - `extract_params(method)` combines `__annotations__` +

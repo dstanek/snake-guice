@@ -125,7 +125,7 @@ class Car:
         self.right_door = right_door
 ```
 
-We needed to tell snake-guice how to differentiate the two `IDoor` parameters. We do this by annotating the `__init__` method with `@annotate`. Decorators apply bottom-up, so `@annotate` is listed *below* `@inject` - it attaches the annotation metadata first, then `@inject` validates the (now-annotated) signature.
+We needed to tell snake-guice how to differentiate the two `IDoor` parameters. We do this by annotating the `__init__` method with `@annotate`. Either ordering of `@inject` and `@annotate` works; the convention shown here (`@inject` above `@annotate`) matches the rest of the codebase.
 
 The module for this car would look like:
 
