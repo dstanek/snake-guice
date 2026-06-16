@@ -2,10 +2,10 @@
 
 This page is a cookbook: short recipes for common DI patterns, each with a
 pointer to the page that covers it in depth and - where one exists - to the
-place it's used in [`examples/fastapi_tasks/`](../../examples/fastapi_tasks/),
+place it's used in `examples/fastapi_tasks/`,
 a pair of small REST APIs that implement the same Tasks API once with
 FastAPI's native `Depends()` and once with snake-guice. That example's
-[`design.md`](../../examples/fastapi_tasks/design.md) has a feature-by-feature
+`examples/fastapi_tasks/design.md` has a feature-by-feature
 table mapping several of these patterns to exact files and lines, alongside
 the native equivalent.
 

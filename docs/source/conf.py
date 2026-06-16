@@ -22,6 +22,8 @@ myst_enable_extensions = [
     "deflist",
 ]
 
+myst_heading_anchors = 3
+
 templates_path = ['_templates']
 exclude_patterns = []
 
