@@ -38,7 +38,7 @@ def inject(target: F) -> F: ...
 def inject(target: Any) -> Any:
     if isinstance(target, type):
         if "__init__" in target.__dict__:
-            _validate_method_args(target.__init__)
+            _validate_method_args(target.__dict__["__init__"])
         return target
     _validate_method_args(target)
     if target.__name__ != "__init__":
