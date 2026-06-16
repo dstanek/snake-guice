@@ -1,44 +1,14 @@
-import inspect
-from typing import Any, Callable, TypeVar, overload
+from typing import Any, TypeVar, overload
 
 from snakeguice._extractor import extract_params
 from snakeguice.annotation import UNANNOTATED, AnnotationLike
 from snakeguice.binder import Binder, Key
-from snakeguice.decorators import inject
 from snakeguice.interfaces import Binder as BinderI
 from snakeguice.interfaces import Injector as IInjector
-from snakeguice.interfaces import Module, Provider
-from snakeguice.modules import ModuleAdapter
+from snakeguice.interfaces import Provider
+from snakeguice.modules import ModuleAdapter, ProvidesBinderHelper
 
 U = TypeVar("U")
-
-
-class ProvidesBinderHelper:
-    def bind_providers(self, module: Module, binder: BinderI) -> None:
-        members = [m for m in inspect.getmembers(module) if inspect.ismethod(m[1])]
-        for name, method in members:
-            if hasattr(method, "__guice_provides__"):
-                type = method.__guice_provides__
-                provider = self._build_provider(module, type, method)
-                binder.bind(type, to_provider=provider)
-
-    def _build_provider(
-        self, module: Module, type: type[Any], method: Callable[..., Any]
-    ) -> type[Any]:
-        class GenericProvider:
-            @inject
-            def __init__(self, injector: IInjector) -> None:
-                self._injector = injector
-
-            def get(self) -> Any:
-                kwargs = {}
-                for param in extract_params(method):
-                    kwargs[param.name] = self._injector.get_instance(
-                        param.dtype, param.annotation
-                    )
-                return method(**kwargs)
-
-        return GenericProvider
 
 
 class Injector:

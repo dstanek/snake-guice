@@ -12,6 +12,7 @@ import pytest
 
 from snakeguice import Injector, ParameterInterceptor, annotate, inject, provides
 from snakeguice.interfaces import Binder
+from snakeguice.modules import Module
 
 from .. import cls_heirarchy as ch
 
@@ -248,6 +249,78 @@ class TestProvidesDecorator:
 
     def test_the_location_was_injected(self) -> None:
         assert isinstance(self.location, ch.Beach)
+
+
+class TestModuleInstall:
+    """install() must propagate @provides methods from installed modules."""
+
+    def test_provides_method_on_installed_module_is_bound(self) -> None:
+        class IFoo:
+            pass
+
+        class Foo(IFoo):
+            pass
+
+        class IBar:
+            pass
+
+        class Bar(IBar):
+            @inject
+            def __init__(self, foo: IFoo) -> None:
+                self.foo = foo
+
+        class Sub(Module):
+            def configure(self, binder: Binder) -> None:
+                binder.bind(IFoo, to=Foo)
+
+            @provides(IBar)
+            @inject
+            def provide_bar(self, foo: IFoo) -> IBar:
+                return Bar(foo)
+
+        class Root(Module):
+            def configure(self, binder: Binder) -> None:
+                self.install(binder, Sub())
+
+        inj = Injector([Root()])
+        bar = inj.get_instance(IBar)
+        assert isinstance(bar, Bar)
+        assert isinstance(bar.foo, Foo)
+
+    def test_provides_method_on_installed_module_with_dependency(self) -> None:
+        """Provider from installed module can itself depend on other bindings."""
+
+        class IService:
+            pass
+
+        class Service(IService):
+            pass
+
+        class IClient:
+            pass
+
+        class Client(IClient):
+            @inject
+            def __init__(self, svc: IService) -> None:
+                self.svc = svc
+
+        class ServiceModule(Module):
+            def configure(self, binder: Binder) -> None:
+                binder.bind(IService, to=Service)
+
+            @provides(IClient)
+            @inject
+            def provide_client(self, svc: IService) -> IClient:
+                return Client(svc)
+
+        class AppModule(Module):
+            def configure(self, binder: Binder) -> None:
+                self.install(binder, ServiceModule())
+
+        inj = Injector([AppModule()])
+        client = inj.get_instance(IClient)
+        assert isinstance(client, Client)
+        assert isinstance(client.svc, Service)
 
 
 # TODO: constant injection
