@@ -12,10 +12,9 @@ class Annotation:
         return hash((self.__class__, self.value))
 
     def __eq__(self, other: object) -> bool:
-        return hash(self) == hash(other)
-
-    def __ne__(self, other: object) -> bool:
-        return not self == other
+        if not isinstance(other, Annotation) or type(self) is not type(other):
+            return NotImplemented
+        return bool(self.value == other.value)
 
 
 UNANNOTATED = Annotation(None)

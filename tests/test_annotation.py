@@ -1,6 +1,22 @@
 from snakeguice.annotation import Annotation
 
 
+class Test_Annotation_equality_against_non_Annotation:
+    def test_hash_collision_does_not_produce_equality(self) -> None:
+        a = Annotation("x")
+
+        class HashThief:
+            def __hash__(self) -> int:
+                return hash(a)
+
+        assert a != HashThief()
+
+    def test_ne_against_unrelated_type(self) -> None:
+        assert Annotation("x") != "x"
+        assert Annotation("x") != 42
+        assert Annotation("x") != None  # noqa: E711
+
+
 class Test_Annotations_with_equal_values:
     annotation0: Annotation
     annotation1: Annotation
