@@ -112,6 +112,9 @@ class Binder:
 
         self._binding_map[key] = binding
 
+    def get_own_binding(self, key: Key) -> Binding | None:
+        return self._binding_map.get(key)
+
     def get_binding(self, key: Key) -> Binding | None:
         return self._binding_map.get(key) or self._parent.get_binding(key)
 

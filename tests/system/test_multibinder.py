@@ -135,3 +135,54 @@ def test_dict_binder_raises_multi_binding_error_on_duplicate_key() -> None:
         create_injector([DuplicateKeyModule()])
 
     assert "twix" in str(exc_info.value)
+
+
+# Ensure no child ListBinder/DictBinder contributions leak back into the parent injector.
+# Adding a binding through a child injector mutates the class-level provider state
+# shared with the parent, so the parent starts resolving the child's extra bindings.
+
+
+class ChildListModule:
+    """Adds one extra snack binding via a child injector."""
+
+    def configure(self, binder: Binder) -> None:
+        listbinder = ListBinder(binder, list[ISnack])
+        listbinder.add_binding(to=Ruffles)
+
+
+def test_list_binder_child_does_not_affect_parent() -> None:
+    parent = create_injector([ListCandyModule()])
+    parent_snacks_before = parent.get_instance(ListSnackMachine).snacks
+
+    child = parent.create_child([ChildListModule()])
+    child_snacks = child.get_instance(ListSnackMachine).snacks
+
+    parent_snacks_after = parent.get_instance(ListSnackMachine).snacks
+
+    # child should include the extra binding
+    assert len(child_snacks) == len(parent_snacks_before) + 1
+    # parent must not be affected by the child's extra binding
+    assert len(parent_snacks_after) == len(parent_snacks_before)
+
+
+class ChildDictModule:
+    """Adds one extra snack binding via a child injector."""
+
+    def configure(self, binder: Binder) -> None:
+        dictbinder = DictBinder(binder, dict[str, ISnack])
+        dictbinder.add_binding("ruffles", to=Ruffles)
+
+
+def test_dict_binder_child_does_not_affect_parent() -> None:
+    parent = create_injector([DictCandyModule()])
+    parent_snacks_before = parent.get_instance(DictSnackMachine).snacks
+
+    child = parent.create_child([ChildDictModule()])
+    child_snacks = child.get_instance(DictSnackMachine).snacks
+
+    parent_snacks_after = parent.get_instance(DictSnackMachine).snacks
+
+    # child should include the extra binding
+    assert set(child_snacks.keys()) == set(parent_snacks_before.keys()) | {"ruffles"}
+    # parent must not be affected by the child's extra binding
+    assert set(parent_snacks_after.keys()) == set(parent_snacks_before.keys())
