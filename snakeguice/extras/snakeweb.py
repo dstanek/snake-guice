@@ -16,10 +16,6 @@ from snakeguice.modules import Module
 __all__ = ["Response"]
 
 
-def is_unbound_method(func: Any) -> bool:
-    return inspect.ismethod(func) and getattr(func, "im_self", None) is None
-
-
 class RoutesBinder:
     def __init__(self, mapper: Any, annotation: Annotation) -> None:
         self.mapper = mapper
@@ -99,9 +95,6 @@ class Application:
             action = route.pop("action", "index")
             controller = self.controller_from_class(controller, action)
 
-        elif is_unbound_method(controller):
-            controller = self.controller_from_method(controller)
-
         elif not callable(controller):
             return HTTPNotFound()(environ, start_response)
 
@@ -114,6 +107,3 @@ class Application:
     def controller_from_class(self, controller: Any, action: Any) -> Any:
         controller = self._injector.get_instance(controller)
         return getattr(controller, action, None)
-
-    def controller_from_method(self, controller: Any) -> Any:
-        return self.controller_from_class(controller.im_class, controller.__name__)
