@@ -54,12 +54,20 @@ class _MultiBinder(ABC, Generic[T, C]):
     def _dsl_to_provider(
         self,
         to: Any,
-        to_provider: ProviderI[T] | type[ProviderI[T]] | None,
+        to_provider: type[ProviderI[Any]] | ProviderI[Any] | None,
         to_instance: Any,
     ) -> Any:
         if to is not _NOT_SET:
             return providers.create_simple_provider(to)
-        elif to_provider is not _NOT_SET:
+        elif to_provider is not None:
+            if not isinstance(to_provider, type):
+                _instance = to_provider
+
+                class _ProviderInstanceWrapper:
+                    def get(self) -> Any:
+                        return _instance.get()
+
+                return _ProviderInstanceWrapper
             return to_provider
         elif to_instance is not _NOT_SET:
             return providers.create_instance_provider(to_instance)
@@ -73,7 +81,7 @@ class ListBinder(_MultiBinder[T, list[T]]):
     def add_binding(
         self,
         to: Any = _NOT_SET,
-        to_provider: Any = _NOT_SET,
+        to_provider: type[ProviderI[Any]] | ProviderI[Any] | None = None,
         to_instance: Any = _NOT_SET,
     ) -> None:
         provider = self._dsl_to_provider(to, to_provider, to_instance)
@@ -108,7 +116,7 @@ class DictBinder(_MultiBinder[T, dict[str, T]]):
         self,
         key: KeyI,
         to: Any = _NOT_SET,
-        to_provider: Any = _NOT_SET,
+        to_provider: type[ProviderI[Any]] | ProviderI[Any] | None = None,
         to_instance: Any = _NOT_SET,
     ) -> None:
         provider = self._dsl_to_provider(to, to_provider, to_instance)

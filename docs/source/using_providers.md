@@ -15,10 +15,13 @@ class Provider(Protocol[T]):
     def get(self) -> T: ...
 ```
 
-Bind to a provider with `to_provider=` instead of `to=`:
+Bind to a provider with `to_provider=` instead of `to=`. You can pass either
+a provider class (snake-guice instantiates it, so it can itself be injected)
+or a pre-built provider instance:
 
 ```python
-binder.bind(IEngine, to_provider=TurboEngineProvider)
+binder.bind(IEngine, to_provider=TurboEngineProvider)   # class
+binder.bind(IEngine, to_provider=TurboEngineProvider())  # instance
 ```
 
 ## A Simple Provider

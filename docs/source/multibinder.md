@@ -66,7 +66,7 @@ combined list.
 | argument | meaning |
 | --- | --- |
 | `to=Implementation` | construct `Implementation` via the injector |
-| `to_provider=Provider` | delegate to a `Provider`'s `get()` |
+| `to_provider=Provider` | delegate to a provider class or instance; snake-guice calls `.get()` on it (see [Using Providers](using_providers.md)) |
 | `to_instance=obj` | always return this exact object |
 
 Elements appear in the list in the order `add_binding()` was called, across

@@ -253,6 +253,45 @@ class FalseyListConsumer:
         self.items = items
 
 
+class SnickersProvider:
+    def get(self) -> Snickers:
+        return Snickers()
+
+
+class TwixProvider:
+    def get(self) -> Twix:
+        return Twix()
+
+
+class ListProviderInstanceModule:
+    def configure(self, binder: Binder) -> None:
+        lb = ListBinder(binder, list[ISnack])
+        lb.add_binding(to_provider=SnickersProvider())
+        lb.add_binding(to_provider=TwixProvider())
+
+
+def test_list_binder_accepts_provider_instance() -> None:
+    injector = create_injector([ListProviderInstanceModule()])
+    machine = injector.get_instance(ListSnackMachine)
+    assert len(machine.snacks) == 2
+    assert isinstance(machine.snacks[0], Snickers)
+    assert isinstance(machine.snacks[1], Twix)
+
+
+class DictProviderInstanceModule:
+    def configure(self, binder: Binder) -> None:
+        db = DictBinder(binder, dict[str, ISnack])
+        db.add_binding("snickers", to_provider=SnickersProvider())
+        db.add_binding("twix", to_provider=TwixProvider())
+
+
+def test_dict_binder_accepts_provider_instance() -> None:
+    injector = create_injector([DictProviderInstanceModule()])
+    machine = injector.get_instance(DictSnackMachine)
+    assert isinstance(machine.snacks["snickers"], Snickers)
+    assert isinstance(machine.snacks["twix"], Twix)
+
+
 def test_list_binder_accepts_falsey_to_instance_values() -> None:
     injector = create_injector([FalseyListModule()])
     consumer = injector.get_instance(FalseyListConsumer)
