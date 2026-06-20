@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from typing import Any, Generic, TypeVar, cast
 
 from snakeguice import providers
@@ -12,6 +13,7 @@ from snakeguice.interfaces import Provider as ProviderI
 _NOT_SET = object()
 
 T = TypeVar("T", bound=type)
+C = TypeVar("C")
 
 
 class MultiProviderI(ProviderI[T]):
@@ -22,14 +24,14 @@ class MultiProviderI(ProviderI[T]):
     def get_providers() -> Any: ...
 
 
-class _MultiBinder(Generic[T]):
+class _MultiBinder(ABC, Generic[T, C]):
     def __init__(self, binder: BinderI, interface: T) -> None:
         self._binder = binder
         self._interface = interface
         self._provider = self._get_or_create_provider()
 
-    def _create_provider(self, initial: Any = None) -> Any:  # TODO: type properly
-        pass
+    @abstractmethod
+    def _create_provider(self, initial: Any = None) -> type[ProviderI[C]]: ...
 
     def _get_or_create_provider(self) -> MultiProviderI[T]:
         key = Key(self._interface)
@@ -67,7 +69,7 @@ class _MultiBinder(Generic[T]):
             )
 
 
-class ListBinder(_MultiBinder[T]):
+class ListBinder(_MultiBinder[T, list[T]]):
     def add_binding(
         self,
         to: Any = _NOT_SET,
@@ -101,7 +103,7 @@ class ListBinder(_MultiBinder[T]):
         return DynamicMultiBindingProvider
 
 
-class DictBinder(_MultiBinder[T]):
+class DictBinder(_MultiBinder[T, dict[str, T]]):
     def add_binding(
         self,
         key: KeyI,
