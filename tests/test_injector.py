@@ -4,7 +4,10 @@
 injector module unit tests
 """
 
+import pytest
+
 from snakeguice import binder, create_injector, inject, injector
+from snakeguice.errors import CreationError
 from snakeguice.interfaces import Binder
 
 from . import cls_heirarchy as ch
@@ -123,6 +126,25 @@ class Test_using_create_injector_factory:
 # TODO: implement this test
 # def test_create_an_injector_without_any_modules():
 #     modules = [FakeModule(), FakeModule(), FakeModule()]
+
+
+def test_add_modules_raises_creation_error_on_duplicate_binding() -> None:
+    """add_modules() must raise CreationError just like the constructor does."""
+
+    class IThing:
+        pass
+
+    class Thing(IThing):
+        pass
+
+    class DuplicateModule:
+        def configure(self, binder: Binder) -> None:
+            binder.bind(IThing, to=Thing)
+            binder.bind(IThing, to=Thing)
+
+    inj = create_injector([])
+    with pytest.raises(CreationError):
+        inj.add_modules([DuplicateModule()])
 
 
 class Test_using_get_provider:

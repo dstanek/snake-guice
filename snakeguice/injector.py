@@ -28,13 +28,13 @@ class Injector:
         self._stage = stage
 
         self.add_modules(modules)
-        self._binder.raise_if_errors()
 
     def add_modules(self, modules: Any) -> None:
         provides_helper = ProvidesBinderHelper()
         for module in modules:
             ModuleAdapter(module, self).configure(self._binder)
             provides_helper.bind_providers(module, self._binder)
+        self._binder.raise_if_errors()
 
     @overload
     def get_provider(
