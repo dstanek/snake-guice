@@ -225,9 +225,8 @@ assert car1.engine is car2.engine
 process binds `IEngine` (unannotated) `in_scope=scopes.SINGLETON`, every other
 injector that does the same shares that one cached instance, even if they bind
 `IEngine` to a different implementation. If you need an independent cache -
-for example, one per test - create your own scope with `scopes._Singleton()`
-instead of using the shared `scopes.SINGLETON`, as `tests/test_singletons.py`
-does.
+for example, one per test - create your own scope instance with
+`scopes.Singleton()` instead of using the shared `scopes.SINGLETON`.
 ```
 
 ## Why It Matters: Swapping Implementations in Tests

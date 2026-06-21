@@ -73,7 +73,7 @@ class TestSingetonScope:
             self.place = place
 
     def test_simple_singleton_to(self) -> None:
-        SINGLETON = scopes._Singleton()
+        SINGLETON = scopes.Singleton()
 
         class MyModule:
             def configure(self, binder: BinderI) -> None:
@@ -85,7 +85,7 @@ class TestSingetonScope:
         assert obj0.place is obj1.place
 
     def test_simple_singleton_to_provider(self) -> None:
-        SINGLETON = scopes._Singleton()
+        SINGLETON = scopes.Singleton()
 
         class PlaceProvider:
             def get(self) -> ch.Place:
@@ -101,7 +101,7 @@ class TestSingetonScope:
         assert obj0.place is obj1.place
 
     def test_simple_singleton_to_injectable_provider(self) -> None:
-        SINGLETON = scopes._Singleton()
+        SINGLETON = scopes.Singleton()
 
         class PlaceProvider:
             def __init__(self, injector: InjectorI) -> None:

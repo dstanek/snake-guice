@@ -19,9 +19,13 @@ class _NoScope:
         return provider
 
 
-class _Singleton:
+class Singleton:
     """A singleton scope only allows a single instance to be created for a
     given key.
+
+    Each ``Singleton()`` instance maintains its own cache, so creating one
+    per injector or per test avoids the process-global state of
+    ``SINGLETON``.
     """
 
     def __init__(self) -> None:
@@ -38,4 +42,4 @@ class _Singleton:
 
 
 NO_SCOPE = _NoScope()
-SINGLETON = _Singleton()
+SINGLETON = Singleton()

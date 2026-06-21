@@ -1,4 +1,4 @@
-from snakeguice.scopes import _NoScope, _Singleton
+from snakeguice.scopes import Singleton, _NoScope
 
 
 class FakeProvider:
@@ -19,7 +19,7 @@ class Test_the_Singleton_scope:
     def setup_method(self) -> None:
         self.key = "key"
         self.provider = FakeProvider()
-        self.scope = _Singleton()
+        self.scope = Singleton()
         self.scope.scope(self.key, self.provider)
 
     def test_using_the_same_key_results_in_getting_a_cached_provider(self) -> None:
