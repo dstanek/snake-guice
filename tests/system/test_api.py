@@ -409,6 +409,89 @@ def test_explicit_binding_overrides_default_parameter_value() -> None:
     assert car.name == "injected"
 
 
+def test_inherited_inject_method_runs_on_subclass() -> None:
+    """@inject methods defined on a base class must run when a subclass is resolved."""
+
+    class ILog:
+        pass
+
+    class Log(ILog):
+        pass
+
+    class Base:
+        @inject
+        def set_log(self, log: ILog) -> None:
+            self.log = log
+
+    class Child(Base):
+        pass
+
+    class MyModule:
+        def configure(self, binder: Binder) -> None:
+            binder.bind(ILog, to=Log)
+
+    obj = Injector([MyModule()]).get_instance(Child)
+    assert hasattr(obj, "log")
+    assert isinstance(obj.log, Log)
+
+
+def test_base_and_subclass_inject_methods_both_run() -> None:
+    """@inject methods from both base and subclass must all run."""
+
+    class ILog:
+        pass
+
+    class Log(ILog):
+        pass
+
+    class Base:
+        @inject
+        def set_log(self, log: ILog) -> None:
+            self.log = log
+
+    class Child(Base):
+        @inject
+        def set_other(self, log: ILog) -> None:
+            self.other = log
+
+    class MyModule:
+        def configure(self, binder: Binder) -> None:
+            binder.bind(ILog, to=Log)
+
+    obj = Injector([MyModule()]).get_instance(Child)
+    assert hasattr(obj, "log")
+    assert hasattr(obj, "other")
+
+
+def test_inherited_inject_methods_called_base_before_subclass() -> None:
+    """Base @inject methods must run before subclass @inject methods."""
+
+    call_order: list[str] = []
+
+    class IDep:
+        pass
+
+    class Dep(IDep):
+        pass
+
+    class Base:
+        @inject
+        def set_base(self, dep: IDep) -> None:
+            call_order.append("base")
+
+    class Child(Base):
+        @inject
+        def set_child(self, dep: IDep) -> None:
+            call_order.append("child")
+
+    class MyModule:
+        def configure(self, binder: Binder) -> None:
+            binder.bind(IDep, to=Dep)
+
+    Injector([MyModule()]).get_instance(Child)
+    assert call_order == ["base", "child"]
+
+
 def test_default_parameter_value_used_in_injected_method() -> None:
     class Service:
         pass

@@ -107,8 +107,18 @@ class Injector:
         return cls(**kwargs)
 
     def inject_members(self, instance: Any) -> Any:
-        # this may be a little slow; done twice
-        for method_name in getattr(instance.__class__, "__guice_methods__", []):
+        # Walk MRO from most-derived to base so that if the same method name
+        # appears in multiple classes, the most-derived definition wins.
+        # Reversing the collected list produces base-first call order.
+        seen: set[str] = set()
+        ordered: list[str] = []
+        for cls in instance.__class__.__mro__:
+            for method_name in cls.__dict__.get("__guice_methods__", []):
+                if method_name not in seen:
+                    seen.add(method_name)
+                    ordered.append(method_name)
+
+        for method_name in reversed(ordered):
             kwargs = {}
             method = getattr(instance, method_name)
             for param in extract_params(method):
