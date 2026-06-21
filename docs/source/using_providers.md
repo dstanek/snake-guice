@@ -127,8 +127,16 @@ scopes as a normal lookup.
 A binding's scope wraps whatever provider it points to. With the default
 `scopes.NO_SCOPE`, `.get()` runs every time the binding is resolved. With
 `scopes.SINGLETON`, the provider's `.get()` runs once and the result is cached
-for the lifetime of the injector:
+for the lifetime of the process:
 
 ```python
 binder.bind(IEngine, to_provider=TurboEngineProvider, in_scope=scopes.SINGLETON)
+```
+
+```{warning}
+`scopes.SINGLETON` is a single shared object, and its cache is keyed only by
+`(interface, annotation)` — not by injector. Once a key is cached, every
+injector in the process that uses `scopes.SINGLETON` for that key shares the
+same instance. If you need an independent cache — for example, one per test —
+create your own scope instance with `scopes.Singleton()` instead.
 ```
