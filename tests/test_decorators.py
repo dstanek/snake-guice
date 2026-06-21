@@ -26,6 +26,20 @@ def test_inject_class_with_no_init_returns_the_class() -> None:
     assert SomeClass.__name__ == "SomeClass"
 
 
+def test_inject_class_with_inherited_unannotated_init_fails() -> None:
+    """@inject on a subclass should validate the inherited __init__ too."""
+
+    class Base:
+        def __init__(self, dep) -> None:  # type: ignore
+            self.dep = dep
+
+    with pytest.raises(TypeError):
+
+        @inject
+        class Child(Base):
+            pass
+
+
 def test_inject_class_with_invalid_type_annotations_fails() -> None:
     """@inject on a class raises TypeError when __init__ has unannotated params."""
 

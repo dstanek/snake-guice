@@ -39,6 +39,13 @@ def inject(target: Any) -> Any:
     if isinstance(target, type):
         if "__init__" in target.__dict__:
             _validate_method_args(target.__dict__["__init__"])
+        else:
+            for base in target.__mro__[1:]:
+                if base is object:
+                    break
+                if "__init__" in base.__dict__:
+                    _validate_method_args(base.__dict__["__init__"])
+                    break
         return target
     _validate_method_args(target)
     if target.__name__ != "__init__":
