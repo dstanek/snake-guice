@@ -256,8 +256,18 @@ class TestMethodInterceptors:
                 pass
 
         obj = self.injector.get_instance(DomainObject)
-        with pytest.raises(TypeError):
+        with pytest.raises(TypeError, match="injected automatically"):
             obj.intercept_me(person=ch.GoodPerson())
+
+    def test_explicit_managed_positional_raises_type_error(self) -> None:
+        class DomainObject:
+            @self.interceptor(person=ch.Person)
+            def intercept_me(self, person: Any = None) -> None:
+                pass
+
+        obj = self.injector.get_instance(DomainObject)
+        with pytest.raises(TypeError, match="injected automatically"):
+            obj.intercept_me(ch.GoodPerson())
 
     def test_more_than_one_kwarg_raises_type_error(self) -> None:
         with pytest.raises(TypeError):

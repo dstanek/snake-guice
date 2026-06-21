@@ -1,5 +1,6 @@
 """ """
 
+import inspect
 from typing import Any, Callable
 
 from snakeguice.annotation import UNANNOTATED, AnnotationLike
@@ -18,8 +19,11 @@ class ParameterInterceptor:
         param_name, param_type = next(iter(kwargs.items()))
 
         def callback(method: Callable[..., Any]) -> Callable[..., Any]:
+            sig = inspect.signature(method)
+
             def _callback(*args: Any, **kwargs: Any) -> Any:
-                if param_name in kwargs:
+                bound = sig.bind_partial(*args, **kwargs)
+                if param_name in bound.arguments:
                     raise TypeError(
                         f"{method.__name__}() got an explicit value for managed "
                         f"parameter {param_name!r}; it is injected automatically"
