@@ -95,6 +95,37 @@ injection on are usually left unbound and constructed implicitly, as `Car` is
 here.
 ```
 
+### Default Parameter Values
+
+When a parameter has a Python default value and no binding exists for its
+type, snake-guice skips it and lets Python supply the default. If a binding
+*does* exist, the binding wins:
+
+```python
+@inject
+class Car:
+    def __init__(self, engine: IEngine, name: str = "default") -> None:
+        self.engine = engine
+        self.name = name
+
+
+# No binding for str → name stays "default"
+car = create_injector([EngineModule()]).get_instance(Car)
+assert car.name == "default"
+
+# Explicit binding for str → binding overrides the default
+class NameModule:
+    def configure(self, binder: Binder) -> None:
+        binder.bind(str, to_instance="sport")
+
+car = create_injector([EngineModule(), NameModule()]).get_instance(Car)
+assert car.name == "sport"
+```
+
+This applies to both constructor injection and method injection. It lets
+optional collaborators or low-value defaults stay in the signature without
+requiring a binding for every parameter.
+
 ## Modules and Binders
 
 A **module** is anything with a `configure(binder)` method - that's the
