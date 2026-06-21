@@ -1,7 +1,8 @@
 """Specification for PrivateModules using the "robot legs" problem."""
 
 from snakeguice import inject, annotate, Injector
-from snakeguice.modules import Module, PrivateModule
+from snakeguice import PrivateModule
+from snakeguice.modules import Module
 
 
 class IFoot: pass

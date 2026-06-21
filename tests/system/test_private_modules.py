@@ -1,9 +1,9 @@
 import pytest
 
-from snakeguice import annotate, create_injector, inject
-from snakeguice.errors import BindingError
+from snakeguice import PrivateModule, annotate, create_injector, inject
+from snakeguice.errors import BindingError, CreationError
 from snakeguice.interfaces import Binder
-from snakeguice.modules import Module, PrivateModule
+from snakeguice.modules import Module
 
 
 class IConnectionConfig:
@@ -94,11 +94,10 @@ class BrokenAppModule(Module):
         self.install(binder, BrokenReplicaDatabaseModule())
 
 
-def test_expose_without_a_matching_private_binding_recurses() -> None:
-    injector = create_injector([BrokenAppModule()])
-
-    with pytest.raises(RecursionError):
-        injector.get_instance(IDatabase, "replica")
+def test_expose_without_a_matching_private_binding_raises_at_creation() -> None:
+    msg = r"replica.*has no matching private binding"
+    with pytest.raises(CreationError, match=msg):
+        create_injector([BrokenAppModule()])
 
 
 class UnannotatedConfigModule(PrivateModule):

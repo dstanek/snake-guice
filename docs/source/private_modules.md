@@ -61,7 +61,7 @@ only ever uses one.
 
 ## Isolating Bindings with `PrivateModule`
 
-`snakeguice.modules.PrivateModule` is a `Module` whose `configure(binder)`
+`snakeguice.PrivateModule` is a `Module` whose `configure(binder)`
 receives a *private* binder, backed by its own child injector. Bindings made
 there - like `IConnectionConfig` - aren't visible to the parent binder or to
 other modules, so two `PrivateModule`s can each bind `IConnectionConfig` to a
@@ -73,8 +73,8 @@ To make a binding visible outside the private module, call
 *parent* binder that, when resolved, delegates to the private injector:
 
 ```python
-from snakeguice import annotate, inject
-from snakeguice.modules import Module, PrivateModule
+from snakeguice import annotate, inject, PrivateModule
+from snakeguice.modules import Module
 
 
 class IDatabase:
@@ -135,12 +135,6 @@ in the private module *under that same `(interface, annotation)` key* - here,
 `binder.bind(IDatabase, annotated_with="primary", to=Database)` inside
 `PrimaryDatabaseModule`.
 
-`expose()` adds a provider to the *parent* binder that calls
-`private_injector.get_instance(interface, annotation)`. If the private binder
-doesn't have its own binding for that exact key, the lookup falls through to
-the parent binder - where it finds the very provider `expose()` just added,
-and calls it again, infinitely (`RecursionError`). Binding the same
-`(interface, annotation)` key inside the private module (as
-`PrimaryDatabaseModule` does for `(IDatabase, "primary")`) ensures the lookup
-is satisfied locally.
+If the private binder has no binding for the exposed key, `create_injector()`
+raises `CreationError` immediately with a message identifying the missing key.
 ```

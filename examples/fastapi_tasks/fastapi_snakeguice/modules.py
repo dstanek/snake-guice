@@ -25,9 +25,9 @@ from examples.fastapi_tasks.fastapi_snakeguice.scopes import (
     FASTAPI_REQUEST_SCOPE,
     PerAppSingleton,
 )
-from snakeguice import inject, scopes
+from snakeguice import PrivateModule, inject, scopes
 from snakeguice.interfaces import Binder
-from snakeguice.modules import Module, PrivateModule
+from snakeguice.modules import Module
 from snakeguice.multibinder import ListBinder
 
 

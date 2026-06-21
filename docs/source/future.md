@@ -94,8 +94,7 @@ Guice can resolve some circular dependencies - e.g. by injecting a
 `Provider<T>` to break the cycle, or via proxies for circular singletons.
 snake-guice has no cycle detection or breaking: two implicitly-constructed
 classes that depend on each other (directly or transitively) recurse until
-`RecursionError`. The `expose()` recursion gotcha documented in [Private
-Modules](private_modules.md) is one specific case of this same gap.
+`RecursionError`.
 
 ## Built-in web-request/session scopes
 

@@ -203,8 +203,7 @@ class PrimaryDatabaseModule(PrivateModule):
         self.expose(binder, IDatabase, "primary")
 ```
 
-Full explanation: [Private Modules](private_modules.md) - including the
-`expose()`/recursion gotcha to watch for.
+Full explanation and the `expose()` validation rules: [Private Modules](private_modules.md).
 
 **In `examples/fastapi_tasks`:** `ReaderDatabaseModule`/`WriterDatabaseModule`
 are `PrivateModule`s that each privately bind `IDatabase` and an annotated
