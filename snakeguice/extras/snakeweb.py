@@ -8,7 +8,6 @@ import routes
 from webob import Request, Response
 from webob.exc import HTTPNotFound
 
-from snakeguice.annotation import UNANNOTATED, Annotation
 from snakeguice.interfaces import Binder as BinderI
 from snakeguice.interfaces import Injector as InjectorI
 from snakeguice.modules import Module
@@ -17,9 +16,8 @@ __all__ = ["Response"]
 
 
 class RoutesBinder:
-    def __init__(self, mapper: Any, annotation: Annotation) -> None:
+    def __init__(self, mapper: Any) -> None:
         self.mapper = mapper
-        self._annotation = annotation
         self.controller_map: dict[Any, Any] = {}
 
     def connect(self, *args: Any, **kwargs: Any) -> None:
@@ -43,14 +41,10 @@ class RoutesBinder:
 
 
 class RoutesModule(Module):
-    annotation = UNANNOTATED
-
     def run_configure(self, binder: BinderI) -> None:
         self._mapper = routes.Mapper()
-        self._binder = RoutesBinder(self._mapper, self.annotation)
-        binder.bind(
-            RoutesBinder, to_instance=self._binder, annotated_with=self.annotation
-        )
+        self._binder = RoutesBinder(self._mapper)
+        binder.bind(RoutesBinder, to_instance=self._binder)
 
         self.configure(self._binder)
         self._mapper.create_regs([])

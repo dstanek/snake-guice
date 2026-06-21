@@ -43,8 +43,7 @@ class TestRoutesModuleIsAbstract:
 class BaseTestRoutesBinder:
     def setup_method(self) -> None:
         self.routes_mapper = Mock()
-        self.annotation = Mock()
-        self.binder = snakeweb.RoutesBinder(self.routes_mapper, self.annotation)
+        self.binder = snakeweb.RoutesBinder(self.routes_mapper)
 
 
 class TestRoutesBinderConnectWithInvalidControllers(BaseTestRoutesBinder):
