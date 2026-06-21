@@ -364,3 +364,51 @@ class TestModuleInstall:
 # TODO: constant injection
 
 # TODO: provider injection
+
+
+def test_default_parameter_value_used_when_no_binding_exists() -> None:
+    class Engine:
+        pass
+
+    @inject
+    class Car:
+        def __init__(self, engine: Engine, name: str = "default") -> None:
+            self.engine = engine
+            self.name = name
+
+    car = Injector([]).get_instance(Car)
+    assert car.name == "default"
+    assert isinstance(car.engine, Engine)
+
+
+def test_explicit_binding_overrides_default_parameter_value() -> None:
+    class Engine:
+        pass
+
+    class StrModule:
+        def configure(self, binder: Binder) -> None:
+            binder.bind(str, to_instance="injected")
+
+    @inject
+    class Car:
+        def __init__(self, engine: Engine, name: str = "default") -> None:
+            self.engine = engine
+            self.name = name
+
+    car = Injector([StrModule()]).get_instance(Car)
+    assert car.name == "injected"
+
+
+def test_default_parameter_value_used_in_injected_method() -> None:
+    class Service:
+        pass
+
+    class Worker:
+        @inject
+        def setup(self, svc: Service, label: str = "default-label") -> None:
+            self.svc = svc
+            self.label = label
+
+    worker = Injector([]).get_instance(Worker)
+    assert worker.label == "default-label"
+    assert isinstance(worker.svc, Service)

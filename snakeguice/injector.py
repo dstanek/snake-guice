@@ -1,3 +1,4 @@
+import inspect
 from typing import Any, TypeVar, overload
 
 from snakeguice._extractor import extract_params
@@ -91,9 +92,17 @@ class Injector:
         """
         return Injector(modules, binder=self._binder, stage=self._stage)
 
+    def _has_binding(self, param: Any) -> bool:
+        key = Key(param.dtype, param.annotation)
+        return bool(self._binder.get_binding(key))
+
     def create_object(self, cls: type[Any]) -> Any:
         kwargs = {}
         for param in extract_params(cls.__init__):
+            if param.default is not inspect.Parameter.empty and not self._has_binding(
+                param
+            ):
+                continue  # no explicit binding — let Python use its own default
             kwargs[param.name] = self.get_instance(param.dtype, param.annotation)
         return cls(**kwargs)
 
@@ -103,6 +112,11 @@ class Injector:
             kwargs = {}
             method = getattr(instance, method_name)
             for param in extract_params(method):
+                if (
+                    param.default is not inspect.Parameter.empty
+                    and not self._has_binding(param)
+                ):
+                    continue  # no explicit binding — let Python use its own default
                 kwargs[param.name] = self.get_instance(param.dtype, param.annotation)
             method(**kwargs)
         return instance
