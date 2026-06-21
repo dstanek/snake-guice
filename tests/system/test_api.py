@@ -249,6 +249,16 @@ class TestMethodInterceptors:
         obj = self.injector.get_instance(DomainObject)
         obj.intercept_me()
 
+    def test_explicit_managed_kwarg_raises_type_error(self) -> None:
+        class DomainObject:
+            @self.interceptor(person=ch.Person)
+            def intercept_me(self, person: Any = None) -> None:
+                pass
+
+        obj = self.injector.get_instance(DomainObject)
+        with pytest.raises(TypeError):
+            obj.intercept_me(person=ch.GoodPerson())
+
     def test_more_than_one_kwarg_raises_type_error(self) -> None:
         with pytest.raises(TypeError):
             self.interceptor(a=ch.Person, b=ch.Logger)

@@ -19,6 +19,11 @@ class ParameterInterceptor:
 
         def callback(method: Callable[..., Any]) -> Callable[..., Any]:
             def _callback(*args: Any, **kwargs: Any) -> Any:
+                if param_name in kwargs:
+                    raise TypeError(
+                        f"{method.__name__}() got an explicit value for managed "
+                        f"parameter {param_name!r}; it is injected automatically"
+                    )
                 kwargs[param_name] = self._injector.get_instance(param_type, annotation)
                 return method(*args, **kwargs)
 

@@ -75,6 +75,14 @@ garage = injector.get_instance(Garage)
 assert garage.audit() == "MasterKeyCard, GuestKeyCard"
 ```
 
+```{warning}
+Passing a managed parameter explicitly raises `TypeError`:
+
+    garage.open(key_card=some_card)  # TypeError
+
+The parameter is always resolved by the injector; the caller must not supply it.
+```
+
 ```{note}
 Unlike `@inject`, `ParameterInterceptor` doesn't validate type annotations and
 doesn't require the intercepted parameter to be annotated at all - it just
