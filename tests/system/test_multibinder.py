@@ -12,27 +12,27 @@ class ISnack:
     """A snack interface."""
 
 
-class Twix:
+class Twix(ISnack):
     """A concrete snack implementation."""
 
 
-class Snickers:
+class Snickers(ISnack):
     """A concrete snack implementation."""
 
 
-class Skittles:
+class Skittles(ISnack):
     """A concrete snack implementation."""
 
 
-class Lays:
+class Lays(ISnack):
     """A concrete snack implementation."""
 
 
-class Tostitos:
+class Tostitos(ISnack):
     """A concrete snack implementation."""
 
 
-class Ruffles:
+class Ruffles(ISnack):
     """A concrete snack implementation."""
 
 
@@ -254,12 +254,12 @@ class FalseyListConsumer:
 
 
 class SnickersProvider:
-    def get(self) -> Snickers:
+    def get(self) -> ISnack:
         return Snickers()
 
 
 class TwixProvider:
-    def get(self) -> Twix:
+    def get(self) -> ISnack:
         return Twix()
 
 
