@@ -75,6 +75,12 @@ Every class that has a `Session` injected will go through `SessionProvider`,
 which resolves the session for the current request via whatever
 `RequestContext` binding is active.
 
+```{note}
+Both `from snakeguice.interfaces import Injector` and `from snakeguice import
+Injector` resolve to the current injector instance when used as an `@inject`
+annotation. Use whichever import is most natural; they are equivalent.
+```
+
 ## `@provides`: Factory Methods on a Module
 
 For simple cases, writing a whole provider class is more ceremony than the
