@@ -33,3 +33,4 @@ pip-log.txt
 
 # Sphinx docs build output
 docs/_build/
+docs/build/
