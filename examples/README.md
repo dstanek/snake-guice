@@ -26,11 +26,11 @@ Side-by-side FastAPI implementations — one using native FastAPI `Depends`,
 the other using snake-guice — doing the same task-management API.
 
 ```bash
-# snake-guice version
-uv run uvicorn examples.fastapi_tasks.fastapi_snakeguice.app:app --reload
+# snake-guice version (port 8001)
+uv run python -m examples.fastapi_tasks.fastapi_snakeguice.main
 
-# native FastAPI version
-uv run uvicorn examples.fastapi_tasks.fastapi_native.app:app --reload
+# native FastAPI version (port 8000)
+uv run python -m examples.fastapi_tasks.fastapi_native.main
 ```
 
 See `fastapi_tasks/design.md` for a detailed write-up.
