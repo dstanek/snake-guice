@@ -64,9 +64,9 @@ yourself where it matters.
 
 ## Multiple Config Files
 
-`ConfigParserLoader` can be called more than once, for as many files as you
-need - each binds its values under its own `<filename>:...` keys, so there's
-no collision between files:
+`ConfigParserLoader` can be called more than once. By default the key prefix
+is the file's basename, so two files with different names load without
+collision:
 
 ```python
 class ConfigModule:
@@ -74,3 +74,34 @@ class ConfigModule:
         config.ConfigParserLoader("app.ini").bind_configuration(binder)
         config.ConfigParserLoader("logging.ini").bind_configuration(binder)
 ```
+
+Two loaders can share the same namespace (or the same basename) as long as
+their `section`/`option` keys don't overlap — the values simply merge:
+
+```python
+class ConfigModule:
+    def configure(self, binder: Binder) -> None:
+        # base.ini has [server] host = ...
+        # overrides.ini has [server] port = ...
+        config.ConfigParserLoader("base.ini", namespace="app").bind_configuration(binder)
+        config.ConfigParserLoader("overrides.ini", namespace="app").bind_configuration(binder)
+```
+
+If two files share the same basename *and* the same `section`/`option` key,
+`create_injector()` raises `CreationError` with a message identifying the
+conflicting key and suggesting `namespace=`. Pass distinct namespaces to keep
+the values separate:
+
+```python
+class ConfigModule:
+    def configure(self, binder: Binder) -> None:
+        config.ConfigParserLoader(
+            "config/primary/settings.ini", namespace="primary"
+        ).bind_configuration(binder)
+        config.ConfigParserLoader(
+            "config/replica/settings.ini", namespace="replica"
+        ).bind_configuration(binder)
+```
+
+Values are then available under `Config("primary:section:option")` and
+`Config("replica:section:option")` respectively.

@@ -2,7 +2,8 @@ from configparser import ConfigParser
 from pathlib import Path
 from typing import Iterable
 
-from snakeguice.annotation import Annotation
+from snakeguice.annotation import UNANNOTATED, Annotation
+from snakeguice.binder import Key
 from snakeguice.interfaces import Binder
 
 
@@ -11,9 +12,9 @@ class Config(Annotation):
 
 
 class ConfigParserLoader:
-    def __init__(self, filename: str) -> None:
+    def __init__(self, filename: str, namespace: str | None = None) -> None:
         self.filename = filename
-        self.short_name = Path(filename).name
+        self.namespace = namespace if namespace is not None else Path(filename).name
 
     def bind_configuration(self, binder: Binder) -> None:
         parser = ConfigParser()
@@ -21,8 +22,15 @@ class ConfigParserLoader:
         if not loaded:
             raise FileNotFoundError(f"Config file not found: {self.filename}")
         for section, option, value in _iterate_parser(parser):
-            annotation = Config(f"{self.short_name}:{section}:{option}")
-            binder.bind(annotation, to_instance=value)
+            annotation = Config(f"{self.namespace}:{section}:{option}")
+            if binder.get_own_binding(Key(annotation, UNANNOTATED)) is not None:  # type: ignore[arg-type]
+                binder.add_error(
+                    f"config key '{annotation}' is already bound; "
+                    "if two files share the same basename, pass namespace= "
+                    "to give each loader a distinct key prefix"
+                )
+            else:
+                binder.bind(annotation, to_instance=value)
 
 
 def _iterate_parser(parser: ConfigParser) -> Iterable[tuple[str, str, str]]:
