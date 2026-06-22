@@ -61,17 +61,6 @@ produces a single-value binding (`binder.bind(type, to_provider=...)`);
 contributing to a `ListBinder`/`DictBinder` means calling `add_binding()`
 directly in `configure()` instead.
 
-## Method/field injection on explicitly-bound classes
-
-A sharp edge in the current implementation rather than a missing feature:
-`inject_members()` (which calls `@inject`-decorated methods other than
-`__init__`) only runs for *implicitly* constructed classes. A class bound with
-`to=SomeClass` only has its `__init__` injected - any other
-`@inject`-decorated method on `SomeClass` is silently never called. See the
-note in [User Guide — Resolving Instances](userguide.md#resolving-instances).
-Guice performs method/field injection uniformly regardless of how a binding is
-satisfied.
-
 ## `@provides` with `annotated_with=` / `in_scope=`
 
 `@provides(SomeType)` always produces an unannotated, `NO_SCOPE` binding -

@@ -86,14 +86,8 @@ assert isinstance(car.dashboard, BasicDashboard)    # via set_dashboard
 construction: `__init__` gets its `IEngine`, and then `set_dashboard` is called
 automatically with its `IDashboard`.
 
-```{note}
-Method injection (`inject_members`) only happens for implicit construction. If
-you explicitly bind a class with `to=SomeClass`, only its `__init__` is
-injected - `@inject`-decorated methods other than `__init__` won't be called
-automatically. This is rarely an issue in practice: classes you want method
-injection on are usually left unbound and constructed implicitly, as `Car` is
-here.
-```
+Method injection runs for both implicit construction and explicit `to=`
+bindings — any class that snake-guice constructs is fully injected.
 
 ### Default Parameter Values
 

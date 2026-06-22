@@ -16,7 +16,7 @@ def create_simple_provider(cls: type[Any]) -> type[Provider[Any]]:
             self._injector = injector
 
         def get(self) -> Any:
-            return self._injector.create_object(cls)
+            return self._injector.inject_members(self._injector.create_object(cls))
 
     return DynamicSimpleProvider
 

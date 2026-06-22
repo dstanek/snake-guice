@@ -419,6 +419,34 @@ def test_explicit_binding_overrides_default_parameter_value() -> None:
     assert car.name == "injected"
 
 
+def test_explicit_to_binding_runs_inject_methods() -> None:
+    """binder.bind(IFoo, to=Foo) must run @inject methods on Foo."""
+
+    class IService:
+        pass
+
+    class Service(IService):
+        pass
+
+    class IClient:
+        pass
+
+    class Client(IClient):
+        @inject
+        def set_service(self, svc: IService) -> None:
+            self.svc = svc
+
+    class MyModule:
+        def configure(self, binder: Binder) -> None:
+            binder.bind(IService, to=Service)
+            binder.bind(IClient, to=Client)
+
+    obj = Injector([MyModule()]).get_instance(IClient)
+    assert isinstance(obj, Client)
+    assert hasattr(obj, "svc")
+    assert isinstance(obj.svc, Service)
+
+
 def test_inherited_inject_method_runs_on_subclass() -> None:
     """@inject methods defined on a base class must run when a subclass is resolved."""
 
