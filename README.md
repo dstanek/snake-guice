@@ -51,5 +51,6 @@ assert isinstance(car.engine, SmallBlockEngine)
 
 - `scopes.SINGLETON` is process-global. For per-test or per-injector isolation,
   create your own `scopes.Singleton()` instance and pass it to `in_scope=`.
-- Method injection (`@inject` on methods other than `__init__`) only runs for
-  implicitly constructed classes, not for classes bound with `to=`.
+- Method injection (`@inject` on methods other than `__init__`) runs for any
+  class snake-guice constructs, whether that's implicit construction or an
+  explicit `to=` binding.
