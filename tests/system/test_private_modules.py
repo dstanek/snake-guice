@@ -1,7 +1,7 @@
 import pytest
 
 from snakeguice import PrivateModule, annotate, create_injector, inject
-from snakeguice.errors import BindingError, CreationError
+from snakeguice.errors import BindingError, CircularDependencyError, CreationError
 from snakeguice.interfaces import Binder
 from snakeguice.modules import Module
 
@@ -114,3 +114,104 @@ def test_expose_without_an_annotation_resolves_the_private_binding() -> None:
     config = injector.get_instance(IConnectionConfig)
 
     assert isinstance(config, PrimaryConfig)
+
+
+class IInner:
+    """Interface for a cycle that lives entirely inside a private module."""
+
+
+class IInnerOther:
+    """The other half of the internal cycle."""
+
+
+class InnerImpl(IInner):
+    @inject
+    def __init__(self, other: IInnerOther) -> None:
+        self.other = other
+
+
+class InnerOtherImpl(IInnerOther):
+    @inject
+    def __init__(self, inner: IInner) -> None:
+        self.inner = inner
+
+
+class CyclicPrivateModule(PrivateModule):
+    """Both bindings, and the cycle between them, are entirely private.
+
+    Exposing IInner doesn't matter here -- the cycle never crosses the
+    private/parent boundary, it's confined to the private injector.
+    """
+
+    def configure(self, binder: Binder) -> None:
+        binder.bind(IInner, to=InnerImpl)
+        binder.bind(IInnerOther, to=InnerOtherImpl)
+        self.expose(binder, IInner)
+
+
+class CyclicPrivateAppModule(Module):
+    def configure(self, binder: Binder) -> None:
+        self.install(binder, CyclicPrivateModule())
+
+
+def test_cycle_entirely_inside_a_private_module_is_detected() -> None:
+    """A genuine cycle confined to one private module's own bindings must
+    still raise CircularDependencyError, not RecursionError -- the
+    per-injector resolving stack has to work for the private injector too.
+    """
+
+    injector = create_injector([CyclicPrivateAppModule()])
+
+    with pytest.raises(CircularDependencyError):
+        injector.get_instance(IInner)
+
+
+class IK:
+    """Exposed by PrivA; its implementation depends on IL, exposed by PrivB."""
+
+
+class IL:
+    """Exposed by PrivB; its implementation depends on IK, exposed by PrivA."""
+
+
+class KImpl(IK):
+    @inject
+    def __init__(self, ell: IL) -> None:
+        self.ell = ell
+
+
+class LImpl(IL):
+    @inject
+    def __init__(self, k: IK) -> None:
+        self.k = k
+
+
+class PrivA(PrivateModule):
+    def configure(self, binder: Binder) -> None:
+        binder.bind(IK, to=KImpl)
+        self.expose(binder, IK)
+
+
+class PrivB(PrivateModule):
+    def configure(self, binder: Binder) -> None:
+        binder.bind(IL, to=LImpl)
+        self.expose(binder, IL)
+
+
+class CrossPrivateAppModule(Module):
+    def configure(self, binder: Binder) -> None:
+        self.install(binder, PrivA())
+        self.install(binder, PrivB())
+
+
+def test_cycle_spanning_two_private_modules_expose_boundaries_is_detected() -> None:
+    """IK (exposed by PrivA) depends on IL (exposed by PrivB) depends back on
+    IK: a cycle that crosses two separate expose() boundaries must still be
+    detected, since every hop through an expose() provider always re-enters
+    that private module's own (consistent) injector instance.
+    """
+
+    injector = create_injector([CrossPrivateAppModule()])
+
+    with pytest.raises(CircularDependencyError):
+        injector.get_instance(IK)

@@ -89,6 +89,50 @@ automatically with its `IDashboard`.
 Method injection runs for both implicit construction and explicit `to=`
 bindings — any class that snake-guice constructs is fully injected.
 
+### Circular Dependencies
+
+`get_instance()` tracks the chain of keys it's currently resolving. If
+resolving a key requires resolving that same key again — directly, or
+transitively through some chain of other bindings — it raises
+`CircularDependencyError` (a `BindingError` subclass) instead of recursing
+until Python raises `RecursionError`:
+
+```python
+class A:
+    @inject
+    def __init__(self, b: "B") -> None:
+        self.b = b
+
+
+class B:
+    @inject
+    def __init__(self, a: A) -> None:
+        self.a = a
+
+
+create_injector([]).get_instance(A)
+```
+
+```text
+CircularDependencyError: Circular dependency detected:
+  A -> B -> A
+```
+
+The message shows the full chain from the top-level `get_instance()` call, not
+just the cyclic part, so it's clear what actually pulled in the bad subgraph.
+An annotated key in the chain renders as `Name['annotation']`. Detection works
+the same way through `@provides` methods, `@inject` method injection,
+`to_provider=` bindings, assisted injection, and `SINGLETON`-scoped bindings —
+anything that goes through `get_instance()`.
+
+snake-guice detects cycles; it doesn't break them for you the way Guice can
+with proxies for circular singletons. The standard Guice workaround still
+applies here: depend on a `Provider[T]` instead of `T` for one side of the
+cycle. [`get_provider()`](using_providers.md#deferred-resolution-with-get_provider)
+defers the actual `get_instance()` call until `.get()` runs, so as long as
+that happens later — e.g. inside a method, not in `__init__` — the cycle
+never appears on the resolving stack at once.
+
 ### Default Parameter Values
 
 When a parameter has a Python default value and no binding exists for its

@@ -77,13 +77,15 @@ There's no `Set[T]`, no `Optional[T]` ("bind this if available"), and no way to
 register an arbitrary generic type as a first-class injectable shape - `Key`
 equality for generics is hardcoded around `List` and `Dict`.
 
-## Circular dependency support
+## Circular dependency breaking
 
-Guice can resolve some circular dependencies - e.g. by injecting a
-`Provider<T>` to break the cycle, or via proxies for circular singletons.
-snake-guice has no cycle detection or breaking: two implicitly-constructed
-classes that depend on each other (directly or transitively) recurse until
-`RecursionError`.
+`Injector.get_instance()` detects circular dependencies and raises
+`CircularDependencyError` with the full resolution chain (see
+[Circular Dependencies](userguide.md#circular-dependencies)) - so a cycle is
+now a clear error instead of a `RecursionError`. What snake-guice still can't
+do is *break* a cycle automatically the way Guice does - e.g. via proxies for
+circular singletons. The manual workaround (injecting a `Provider[T]` instead
+of the instance) still works, since resolving it happens later.
 
 ## Built-in web-request/session scopes
 

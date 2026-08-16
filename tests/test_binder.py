@@ -2,7 +2,7 @@ import pytest
 
 from snakeguice import create_injector
 from snakeguice.binder import Binder
-from snakeguice.errors import BindingError, CreationError
+from snakeguice.errors import BindingError, CircularDependencyError, CreationError
 from snakeguice.interfaces import Binder as BinderI
 
 from . import cls_heirarchy as ch
@@ -39,6 +39,20 @@ def test_raise_if_errors_raises_creation_error_with_details() -> None:
 
 def test_creation_error_is_a_binding_error() -> None:
     assert issubclass(CreationError, BindingError)
+
+
+def test_circular_dependency_error_is_a_binding_error_but_not_a_creation_error() -> (
+    None
+):
+    """CircularDependencyError is raised lazily from get_instance(), for a
+    single key, potentially long after create_injector() has already
+    succeeded -- unlike CreationError, which is only ever raised eagerly and
+    in a batch, at create_injector() time. It stays inside the documented
+    `except BindingError` catch-all as a sibling of CreationError, not a
+    subclass of it.
+    """
+    assert issubclass(CircularDependencyError, BindingError)
+    assert not issubclass(CircularDependencyError, CreationError)
 
 
 def test_multiple_errors_are_numbered() -> None:

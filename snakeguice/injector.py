@@ -4,12 +4,20 @@ from typing import Any, TypeVar, overload
 from snakeguice._extractor import extract_params
 from snakeguice.annotation import UNANNOTATED, AnnotationLike
 from snakeguice.binder import Binder, Key
+from snakeguice.errors import CircularDependencyError
 from snakeguice.interfaces import Binder as BinderI
 from snakeguice.interfaces import Injector as IInjector
 from snakeguice.interfaces import Provider
 from snakeguice.modules import ModuleAdapter, ProvidesBinderHelper
 
 U = TypeVar("U")
+
+
+def _format_key(key: Key) -> str:
+    name = getattr(key.interface, "__name__", None) or repr(key.interface)
+    if key.annotation != UNANNOTATED:
+        return f"{name}[{key.annotation!r}]"
+    return name
 
 
 class Injector:
@@ -27,6 +35,7 @@ class Injector:
             self._binder = Binder()
 
         self._stage = stage
+        self._resolving: list[Key] = []
 
         self.add_modules(modules)
 
@@ -73,16 +82,23 @@ class Injector:
             return self
 
         key = Key(cls, annotation)
-        binding = self._binder.get_binding(key)
-        if binding:
-            provider = binding.provider
-            if isinstance(provider, type):
-                provider = self.get_instance(provider)
-            provider = binding.scope.scope(key, provider)
-            return provider.get()
-        else:
-            instance = self.create_object(cls)
-            return self.inject_members(instance)
+        if key in self._resolving:
+            chain = " -> ".join(_format_key(k) for k in [*self._resolving, key])
+            raise CircularDependencyError(f"Circular dependency detected:\n  {chain}")
+        self._resolving.append(key)
+        try:
+            binding = self._binder.get_binding(key)
+            if binding:
+                provider = binding.provider
+                if isinstance(provider, type):
+                    provider = self.get_instance(provider)
+                provider = binding.scope.scope(key, provider)
+                return provider.get()
+            else:
+                instance = self.create_object(cls)
+                return self.inject_members(instance)
+        finally:
+            self._resolving.pop()
 
     def create_child(self, modules: Any) -> "Injector":
         """Create a new injector that inherits the state from this injector.
