@@ -84,3 +84,20 @@ library for WSGI.
   fixture classes used across modules.
 - `tests/system/` — end-to-end API tests.
 - `examples/` — runnable sample apps, not part of tests/lint.
+
+## Gotchas
+
+- **Reproduce version-dependent behavior on the pinned 3.12**
+  (`.python-version`), not whatever is on `PATH`. Python 3.14 defers
+  annotation evaluation (PEP 649), so undefined names in a signature raise
+  `NameError` on 3.10-3.13 but not on 3.14 — a doc snippet can look fine on
+  3.14 while being broken for four of the five supported versions. Check with
+  `uv run --no-project -p 3.12 python <snippet>`.
+- **A stale `.venv/`** (shebangs pointing at a previous checkout path) makes
+  `uv`-mediated commands fail for unrelated-looking reasons. `uv sync
+  --reinstall` clears it.
+- **API references live outside `docs/` too** — this file's Architecture
+  section and `README.md` both name specific methods and describe
+  behavior. When renaming an identifier or changing resolution/binding
+  behavior, grep both, not just the docs tree. (`docs/_build/` is
+  generated output; ignore it.)
