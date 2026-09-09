@@ -319,7 +319,7 @@ class Test_using_create_injector_factory:
 
 
 def test_add_modules_raises_creation_error_on_duplicate_binding() -> None:
-    """add_modules() must raise CreationError just like the constructor does."""
+    """_add_modules() must raise CreationError just like the constructor does."""
 
     class IThing:
         pass
@@ -334,7 +334,7 @@ def test_add_modules_raises_creation_error_on_duplicate_binding() -> None:
 
     inj = create_injector([])
     with pytest.raises(CreationError):
-        inj.add_modules([DuplicateModule()])
+        inj._add_modules([DuplicateModule()])
 
 
 class Test_using_get_provider:

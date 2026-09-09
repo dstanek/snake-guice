@@ -34,9 +34,9 @@ class Injector:
 
         self._resolving: list[Key] = []
 
-        self.add_modules(modules)
+        self._add_modules(modules)
 
-    def add_modules(self, modules: Any) -> None:
+    def _add_modules(self, modules: Any) -> None:
         provides_helper = ProvidesBinderHelper()
         for module in modules:
             ModuleAdapter(module, self).configure(self._binder)
