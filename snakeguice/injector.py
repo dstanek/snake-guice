@@ -21,9 +21,7 @@ def _format_key(key: Key) -> str:
 
 
 class Injector:
-    def __init__(
-        self, modules: Any = None, binder: BinderI | None = None, stage: Any = None
-    ) -> None:
+    def __init__(self, modules: Any = None, binder: BinderI | None = None) -> None:
         if modules is None:
             modules = []
         elif not hasattr(modules, "__iter__"):
@@ -34,7 +32,6 @@ class Injector:
         else:
             self._binder = Binder()
 
-        self._stage = stage
         self._resolving: list[Key] = []
 
         self.add_modules(modules)
@@ -112,7 +109,7 @@ class Injector:
         All bindings are inherited. In the future this may become closer to
         child injectors on google-guice.
         """
-        return Injector(modules, binder=self._binder, stage=self._stage)
+        return Injector(modules, binder=self._binder)
 
     def _has_binding(self, param: Any) -> bool:
         key = Key(param.dtype, param.annotation)
