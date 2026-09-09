@@ -79,6 +79,4 @@ library for WSGI.
 - `tests/` — pytest suite (`make tests`); `tests/cls_heirarchy.py` has shared
   fixture classes used across modules.
 - `tests/system/` — end-to-end API tests.
-- `specs/` — legacy `describe_*/when_*/then_*` BDD specs, **not** run by
-  `make tests` or CI; useful as design reference only.
 - `examples/` — runnable sample apps, not part of tests/lint.
