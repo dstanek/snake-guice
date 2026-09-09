@@ -4,7 +4,7 @@ from typing import Any, TypeVar, overload
 from snakeguice._extractor import extract_params
 from snakeguice.annotation import UNANNOTATED, AnnotationLike
 from snakeguice.binder import Binder, Key
-from snakeguice.errors import CircularDependencyError
+from snakeguice.errors import CircularDependencyError, MissingBindingError
 from snakeguice.interfaces import Binder as BinderI
 from snakeguice.interfaces import Injector as IInjector
 from snakeguice.interfaces import Provider
@@ -94,6 +94,12 @@ class Injector:
                     provider = self.get_instance(provider)
                 provider = binding.scope.scope(key, provider)
                 return provider.get()
+            elif key.annotation != UNANNOTATED:
+                raise MissingBindingError(
+                    f"no binding registered for {_format_key(key)}; "
+                    "an annotated key must match an explicit binding, it is "
+                    "never implicitly constructed"
+                )
             else:
                 instance = self.create_object(cls)
                 return self.inject_members(instance)

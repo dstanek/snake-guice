@@ -15,8 +15,13 @@ from snakeguice import (
     provides,
     scopes,
 )
+from snakeguice.annotation import Annotation
 from snakeguice.assist import AssistProvider, assisted_inject
-from snakeguice.errors import CircularDependencyError, CreationError
+from snakeguice.errors import (
+    CircularDependencyError,
+    CreationError,
+    MissingBindingError,
+)
 from snakeguice.interfaces import Binder
 from snakeguice.interfaces import Injector as InjectorI
 from snakeguice.modules import Module
@@ -65,6 +70,11 @@ class _AnnCycle:
     @annotate(other="left")
     def __init__(self, other: "_AnnCycle") -> None:
         self.other = other
+
+
+class _AnnCycleModule:
+    def configure(self, binder: Binder) -> None:
+        binder.bind(_AnnCycle, annotated_with="left", to=_AnnCycle)
 
 
 class _OffsetRoot:
@@ -377,7 +387,7 @@ def test_transitive_cycle_raises_circular_dependency_error() -> None:
 def test_annotated_cycle_message_includes_the_annotation() -> None:
     """The chain must remain readable when an annotation is involved."""
 
-    inj = injector.Injector([])
+    inj = injector.Injector([_AnnCycleModule()])
     with pytest.raises(CircularDependencyError, match=r"_AnnCycle\['left'\]"):
         inj.get_instance(_AnnCycle)
 
@@ -531,6 +541,39 @@ def test_cycle_in_a_child_injector_is_detected() -> None:
     child = parent.create_child([])
     with pytest.raises(CircularDependencyError):
         child.get_instance(_SelfCycle)
+
+
+def test_annotated_get_instance_with_no_binding_raises_missing_binding_error() -> None:
+    """An annotated key that matches no binding must fail loudly, not
+    silently construct a plausible-looking wrong instance."""
+
+    inj = injector.Injector([])
+    with pytest.raises(MissingBindingError, match=r"Person\['mine'\]"):
+        inj.get_instance(ch.Person, "mine")
+
+
+def test_annotation_instance_mismatched_with_string_binding_raises() -> None:
+    """`Annotation("mine")` and `"mine"` are different keys, so looking up the
+    Annotation-wrapped form of a string-annotated binding must raise, not
+    return an unrelated instance."""
+
+    class MyModule:
+        def configure(self, binder: Binder) -> None:
+            binder.bind(ch.Person, annotated_with="mine", to=ch.EvilPerson)
+
+    inj = injector.Injector(MyModule())
+    assert isinstance(inj.get_instance(ch.Person, "mine"), ch.EvilPerson)
+    with pytest.raises(MissingBindingError):
+        inj.get_instance(ch.Person, Annotation("mine"))
+
+
+def test_unannotated_lookup_of_unbound_class_still_implicitly_constructs() -> None:
+    """The UNANNOTATED implicit-construction fallback is unaffected -- only
+    annotated keys with no binding are required to raise."""
+
+    inj = injector.Injector([])
+    person = inj.get_instance(ch.Person)
+    assert isinstance(person, ch.Person)
 
 
 def test_resolving_the_same_key_in_child_then_parent_is_not_flagged() -> None:

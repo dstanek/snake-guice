@@ -20,6 +20,15 @@ class CircularDependencyError(BindingError):
     rather than a batch of configuration problems."""
 
 
+class MissingBindingError(BindingError):
+    """Raised at resolution time (get_instance()) when an annotated key has
+    no matching binding. Like CircularDependencyError, this is a single-key
+    resolution-time failure rather than a batch of configuration problems
+    caught up front -- an annotation names one specific binding among
+    several, so falling back to implicit construction would silently return
+    the wrong object instead of the requested one."""
+
+
 class AssistError(SnakeGuiceError):
     """Raised when an issue with assisted injection is found."""
 
