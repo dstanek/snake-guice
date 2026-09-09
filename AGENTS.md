@@ -28,9 +28,12 @@ builds a `Key(interface, annotation)` and looks up a `Binding` in the `Binder`
 (binders chain to a parent via `create_child()`, so child injectors
 inherit/override parent bindings). If bound: a provider class is itself
 instantiated via `get_instance` (providers are injectable), then resolved
-through `binding.scope.scope(key, provider).get()`. If unbound: implicitly
-`create_object(cls)` (injects `__init__` params) then `inject_members` (calls
-any `@inject`-decorated methods).
+through `binding.scope.scope(key, provider).get()`. If unbound and the key is
+unannotated: implicitly `create_object(cls)` (injects `__init__` params) then
+`inject_members` (calls any `@inject`-decorated methods). If unbound and the
+key *is* annotated: raise `MissingBindingError` - an annotation names one
+specific binding, so a miss is a mismatch rather than a request to implicitly
+construct something.
 
 **Decorators** (`decorators.py`, `_extractor.py`):
 - `@inject` requires type annotations on all non-`self` params; on
@@ -63,7 +66,8 @@ modules contribute to one `List[T]`/`Dict[str, T]` binding; `DictBinder` raises
 `AssistProvider(cls)` builds a `.create(**kwargs)` factory for the rest.
 
 **Configuration errors** (`binder.py`): `Binder.bind()` never raises directly -
-problems (duplicate `Key`, invalid `to=`/`to_instance=`) are recorded via
+problems (duplicate `Key`, invalid `to=`/`to_provider=`, no target at all)
+are recorded via
 `add_error()` as `BinderErrorRecord`s. After running every module,
 `Injector.__init__` calls `binder.raise_if_errors()`, which raises one
 `CreationError` (a `BindingError` subclass) with a numbered list of every
