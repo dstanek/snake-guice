@@ -152,13 +152,6 @@ class Binder:
             provider = to_provider
 
         elif to_instance is not _NOT_SET:
-            if isinstance(_class, type) and not isinstance(to_instance, _class):
-                self.add_error(
-                    f"'to_instance' value {to_instance!r} is not an"
-                    f" instance of {_class!r}"
-                )
-                return
-
             provider = providers.create_instance_provider(to_instance)
 
         else:

@@ -1,3 +1,5 @@
+from unittest.mock import Mock
+
 import pytest
 
 from snakeguice import create_injector
@@ -93,6 +95,40 @@ def test_to_provider_without_get_method_instance_is_recorded() -> None:
 
     assert len(binder.errors) == 1
     assert "a 'get' method" in binder.errors[0].message
+
+
+def test_to_instance_accepts_a_duck_typed_stand_in() -> None:
+    """to_instance= no longer requires isinstance(to_instance, _class); a
+    duck-typed test double is enough, matching the other two binding forms."""
+
+    class FakePerson:
+        pass
+
+    binder = Binder()
+    binder.bind(ch.Person, to_instance=FakePerson())
+
+    assert binder.errors == []
+
+
+def test_to_instance_accepts_a_mock() -> None:
+    binder = Binder()
+    binder.bind(ch.Person, to_instance=Mock())
+
+    assert binder.errors == []
+
+
+def test_to_instance_with_annotation_still_resolves_the_bound_instance() -> None:
+    """Annotation-keyed to_instance= bindings still work with the isinstance
+    check removed."""
+
+    mock_person = Mock()
+
+    class MyModule:
+        def configure(self, binder: BinderI) -> None:
+            binder.bind(ch.Person, annotated_with="fake", to_instance=mock_person)
+
+    inj = create_injector([MyModule()])
+    assert inj.get_instance(ch.Person, "fake") is mock_person
 
 
 def test_add_error_handles_missing_source_context() -> None:
