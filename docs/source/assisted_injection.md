@@ -39,6 +39,13 @@ class ServiceTicket:
 assisted - they won't be resolved from a binding, even though they're plain
 `str` parameters.
 
+```{note}
+`@inject` isn't required here - `@assisted_inject` works on its own as long as
+`__init__`'s parameters are type-annotated. Stacking `@inject` on top, as
+above, buys you its early validation: a missing annotation raises `TypeError`
+at class-definition time instead of surfacing later.
+```
+
 ## Building a Factory with `AssistProvider`
 
 `AssistProvider(cls)` builds a provider whose `.get()` returns a factory with

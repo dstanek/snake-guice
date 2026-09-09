@@ -5,6 +5,12 @@ than the current breed of XML IoC containers.
 - **Repository**: https://github.com/dstanek/snake-guice
 - **Documentation**: https://snake-guice.readthedocs.io/
 
+## Installation
+
+```bash
+pip install snake-guice
+```
+
 ## Quick Start
 
 Declare dependencies with `@inject` and type annotations, wire them up in a
@@ -54,3 +60,8 @@ assert isinstance(car.engine, SmallBlockEngine)
 - Method injection (`@inject` on methods other than `__init__`) runs for any
   class snake-guice constructs, whether that's implicit construction or an
   explicit `to=` binding.
+- `annotated_with="left"` and `annotated_with=Annotation("left")` are
+  different keys, not two spellings of the same one - see [Guice
+  Basics](https://snake-guice.readthedocs.io/en/latest/guicebasics.html#multiple-bindings-using-annotations).
+  An annotated lookup with no matching binding raises `MissingBindingError`
+  rather than implicitly constructing something unbound.

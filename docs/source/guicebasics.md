@@ -82,9 +82,9 @@ class-definition time, not when the injector runs. This means the error
 surfaces immediately at import, not buried in a later `get_instance()` call.
 ```
 
-There are a couple of odd things here. For one developers with a background in Java may be wondering why there is no relationship between IEngine and SmallBlockEngine. To retain the full flexibility we get with duck-typing no inheritence heirarchy is enforced. The interface is just a clue to the developer and SG to let us know what we should expect.
+There are a couple of odd things here. For one developers with a background in Java may be wondering why there is no relationship between IEngine and SmallBlockEngine. To retain the full flexibility we get with duck-typing no inheritance hierarchy is enforced. The interface is just a clue to the developer and SG to let us know what we should expect.
 
-The @inject annotion feels a little unnatural. This will pass as it's value surfaces. The @inject decoration adds some meta data to your class. It doesn't effect the method's runtime in anyway. It really does two things: declared types and shows snake-guice what it should call to create an instance. (You can use @inject on methods as well - more on that later.)
+The @inject annotation feels a little unnatural. This will pass as its value surfaces. The @inject decoration adds some meta data to your class, and - as the admonition above notes - it validates your annotations up front rather than leaving that to fail later. It really does two things: declares types and shows snake-guice what it should call to create an instance. (You can use @inject on methods as well - more on that later.)
 
 A module is used to associate the correct implementation to the interface.
 
@@ -160,3 +160,19 @@ class AutoModule:
 ```
 
 The combination of an interface and an annotation make a unique key in the binder. Each key can only have a single implementation bound to it.
+
+```{important}
+A plain string annotation and an `Annotation` instance wrapping the same
+value are **different keys** - `annotated_with="left"` and
+`annotated_with=Annotation("left")` do not match each other, even though
+they look interchangeable. snake-guice deliberately doesn't normalize them
+into one key space, so pick one style per interface and use it consistently
+for both the binding and the `@annotate`/`get_instance()` call site.
+
+Because of this, an annotated lookup that doesn't match any binding is
+treated as a mismatch, not as "unbound" - it raises `MissingBindingError`
+rather than falling back to implicit construction. This is unlike an
+*unannotated* lookup of a class with no binding at all, which is still
+implicitly constructed (see the previous section) - that fallback only
+applies when there's no annotation to have mismatched in the first place.
+```

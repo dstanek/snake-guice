@@ -59,11 +59,18 @@ those methods regardless of which form you use for `__init__`.
 - **Bound** - if a binding exists for that key, its provider is asked for an
   instance (passed through the binding's scope - see [Scopes](#scopes)
   below).
-- **Unbound** - if no binding exists, snake-guice falls back to *implicit
-  construction*: it calls `create_object(cls)`, which inspects `cls.__init__`
-  and injects each annotated parameter, and then `inject_members(instance)`,
-  which calls every `@inject`-decorated method (other than `__init__`) the
-  same way.
+- **Unbound, unannotated** - if no binding exists and `annotation` is
+  `UNANNOTATED`, snake-guice falls back to *implicit construction*: it calls
+  `create_object(cls)`, which inspects `cls.__init__` and injects each
+  annotated parameter, and then `inject_members(instance)`, which calls every
+  `@inject`-decorated method (other than `__init__`) the same way.
+- **Unbound, annotated** - if no binding exists for an annotated key,
+  snake-guice raises `MissingBindingError` instead of implicitly constructing
+  anything. An annotation names one specific binding; if there's no match,
+  that's a mismatch to report loudly, not a signal to fall back and build a
+  plausible-looking but unbound instance. See [Guice
+  Basics](guicebasics.md#multiple-bindings-using-annotations) for why a plain
+  string and an `Annotation` instance can produce two different keys here.
 
 ```python
 from snakeguice import create_injector

@@ -168,6 +168,12 @@ the same test run don't share state - write a scope with its own private
 cache.
 
 ```python
+from typing import Any
+
+from snakeguice import providers
+from snakeguice.interfaces import Key, Provider, T
+
+
 class PerAppSingleton:
     def __init__(self) -> None:
         self._cache: dict[Key, Any] = {}
@@ -175,7 +181,7 @@ class PerAppSingleton:
     def scope(self, key: Key, provider: Provider[T]) -> Provider[T]:
         if key not in self._cache:
             self._cache[key] = provider.get()
-        return create_instance_provider(self._cache[key])()
+        return providers.create_instance_provider(self._cache[key])()
 ```
 
 Full explanation: [User Guide — Scopes
