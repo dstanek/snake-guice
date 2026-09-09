@@ -33,7 +33,7 @@ class Singleton:
 
     def scope(self, key: Key, provider: Provider[T]) -> Provider[T]:
         cached_provider = self._cached_provider_map.get(key)
-        if not cached_provider:
+        if cached_provider is None:
             instance = provider.get()
             cached_provider = self._cached_provider_map[key] = (
                 providers.create_instance_provider(instance)()
