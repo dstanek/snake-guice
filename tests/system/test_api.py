@@ -530,6 +530,80 @@ def test_inherited_inject_methods_called_base_before_subclass() -> None:
     assert call_order == ["base", "child"]
 
 
+def test_child_inherits_an_injected_init() -> None:
+    """A subclass with no __init__ of its own inherits the parent's injected one."""
+
+    class Base:
+        @inject
+        def __init__(self, person: ch.Person) -> None:
+            self.person = person
+
+    class Child(Base):
+        pass
+
+    class MyModule:
+        def configure(self, binder: Binder) -> None:
+            binder.bind(ch.Person, to=ch.EvilPerson)
+
+    obj = Injector([MyModule()]).get_instance(Child)
+    assert isinstance(obj.person, ch.EvilPerson)
+
+
+def test_child_inherits_and_defines_a_method_each_with_its_own_annotation() -> None:
+    """An inherited @inject method and the child's own @inject method both
+    run, each resolving its own annotated binding."""
+
+    class Base:
+        @inject
+        @annotate(person="good")
+        def set_base_person(self, person: ch.Person) -> None:
+            self.base_person = person
+
+    class Child(Base):
+        @inject
+        @annotate(person="evil")
+        def set_child_person(self, person: ch.Person) -> None:
+            self.child_person = person
+
+    class MyModule:
+        def configure(self, binder: Binder) -> None:
+            binder.bind(ch.Person, annotated_with="good", to=ch.GoodPerson)
+            binder.bind(ch.Person, annotated_with="evil", to=ch.EvilPerson)
+
+    obj = Injector([MyModule()]).get_instance(Child)
+    assert isinstance(obj.base_person, ch.GoodPerson)
+    assert isinstance(obj.child_person, ch.EvilPerson)
+
+
+def test_child_overriding_an_inherited_method_only_runs_the_childs_definition() -> None:
+    """When a child overrides an inherited @inject method by name, only the
+    child's definition runs -- the parent's side effect must not happen."""
+
+    class Base:
+        @inject
+        @annotate(person="good")
+        def set_person(self, person: ch.Person) -> None:
+            self.base_ran = True
+            self.person = person
+
+    class Child(Base):
+        @inject
+        @annotate(person="evil")
+        def set_person(self, person: ch.Person) -> None:
+            self.child_ran = True
+            self.person = person
+
+    class MyModule:
+        def configure(self, binder: Binder) -> None:
+            binder.bind(ch.Person, annotated_with="good", to=ch.GoodPerson)
+            binder.bind(ch.Person, annotated_with="evil", to=ch.EvilPerson)
+
+    obj = Injector([MyModule()]).get_instance(Child)
+    assert obj.child_ran is True
+    assert not hasattr(obj, "base_ran")
+    assert isinstance(obj.person, ch.EvilPerson)
+
+
 def test_default_parameter_value_used_in_injected_method() -> None:
     class Service:
         pass
