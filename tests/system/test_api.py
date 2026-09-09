@@ -309,6 +309,27 @@ class TestProvidesDecorator:
         assert isinstance(self.location, ch.Beach)
 
 
+def test_provides_method_with_annotated_dependency() -> None:
+    """A @provides factory method can itself take an @annotate'd param,
+    resolved via an explicit binding the same as any other annotated
+    constructor/method param."""
+
+    class MyModule:
+        def configure(self, binder: Binder) -> None:
+            binder.bind(ch.Person, annotated_with="good", to=ch.GoodPerson)
+
+        @provides(ch.Place)
+        @inject
+        @annotate(person="good")
+        def provide_place(self, person: ch.Person) -> ch.Place:
+            assert isinstance(person, ch.GoodPerson)
+            return ch.Beach()
+
+    injector = Injector(MyModule())
+    place = injector.get_instance(ch.Place)
+    assert isinstance(place, ch.Beach)
+
+
 class TestModuleInstall:
     """install() must propagate @provides methods from installed modules."""
 

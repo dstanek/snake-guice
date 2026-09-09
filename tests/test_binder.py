@@ -2,7 +2,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from snakeguice import create_injector
+from snakeguice import create_injector, inject
 from snakeguice.binder import Binder
 from snakeguice.errors import BindingError, CircularDependencyError, CreationError
 from snakeguice.interfaces import Binder as BinderI
@@ -129,6 +129,35 @@ def test_to_instance_with_annotation_still_resolves_the_bound_instance() -> None
 
     inj = create_injector([MyModule()])
     assert inj.get_instance(ch.Person, "fake") is mock_person
+
+
+def test_to_instance_duck_typed_instance_bound_in_one_module_consumed_in_another() -> (
+    None
+):
+    """A duck-typed to_instance= binding must resolve across module
+    boundaries too, not only when bound and consumed by the same module."""
+
+    class FakePerson:
+        """Duck-typed stand-in; not a ch.Person subclass."""
+
+    class Consumer:
+        @inject
+        def __init__(self, person: ch.Person) -> None:
+            self.person = person
+
+    fake_person = FakePerson()
+
+    class BindingModule:
+        def configure(self, binder: BinderI) -> None:
+            binder.bind(ch.Person, to_instance=fake_person)
+
+    class ConsumerModule:
+        def configure(self, binder: BinderI) -> None:
+            binder.bind(Consumer, to=Consumer)
+
+    inj = create_injector([BindingModule(), ConsumerModule()])
+    consumer = inj.get_instance(Consumer)
+    assert consumer.person is fake_person  # type: ignore[comparison-overlap]
 
 
 def test_add_error_handles_missing_source_context() -> None:

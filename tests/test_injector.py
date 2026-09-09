@@ -567,6 +567,63 @@ def test_annotation_instance_mismatched_with_string_binding_raises() -> None:
         inj.get_instance(ch.Person, Annotation("mine"))
 
 
+def test_annotated_method_injection_with_no_binding_raises_missing_binding_error() -> (
+    None
+):
+    """Method injection (inject_members) must raise for a missing annotated
+    binding just like constructor injection does -- the _has_binding check
+    guards both call sites in injector.py, and both must agree."""
+
+    class Consumer:
+        @inject
+        @annotate(person="mine")
+        def set_person(self, person: ch.Person) -> None:
+            self.person = person
+
+    inj = injector.Injector([])
+    with pytest.raises(MissingBindingError, match=r"Person\['mine'\]"):
+        inj.get_instance(Consumer)
+
+
+def test_annotated_param_with_default_and_no_binding_uses_default() -> None:
+    """An annotated parameter with a default value must fall back to the
+    default when unbound, not raise -- the same default-skips-lookup rule
+    that applies to unannotated params must also apply to annotated ones,
+    for both constructor and method injection."""
+
+    class Consumer:
+        @inject
+        @annotate(person="mine")
+        def __init__(self, person: ch.Person | None = None) -> None:
+            self.person = person
+
+        @inject
+        @annotate(other="theirs")
+        def set_other(self, other: ch.Person | None = None) -> None:
+            self.other = other
+
+    inj = injector.Injector([])
+    obj = inj.get_instance(Consumer)
+    assert obj.person is None
+    assert obj.other is None
+
+
+def test_child_injector_resolves_annotated_binding_inherited_from_parent() -> None:
+    """An annotated key bound only on the parent binder must still resolve
+    through a child injector -- Binder.get_binding()'s fallback to the
+    parent must apply to annotated keys, not just unannotated ones."""
+
+    class ParentModule:
+        def configure(self, binder: Binder) -> None:
+            binder.bind(ch.Person, annotated_with="good", to=ch.GoodPerson)
+
+    parent = injector.Injector(ParentModule())
+    child = parent.create_child([])
+
+    person = child.get_instance(ch.Person, "good")
+    assert isinstance(person, ch.GoodPerson)
+
+
 def test_unannotated_lookup_of_unbound_class_still_implicitly_constructs() -> None:
     """The UNANNOTATED implicit-construction fallback is unaffected -- only
     annotated keys with no binding are required to raise."""

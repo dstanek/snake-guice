@@ -1,7 +1,12 @@
 import pytest
 
 from snakeguice import PrivateModule, annotate, create_injector, inject
-from snakeguice.errors import BindingError, CircularDependencyError, CreationError
+from snakeguice.errors import (
+    BindingError,
+    CircularDependencyError,
+    CreationError,
+    MissingBindingError,
+)
 from snakeguice.interfaces import Binder
 from snakeguice.modules import Module
 
@@ -114,6 +119,31 @@ def test_expose_without_an_annotation_resolves_the_private_binding() -> None:
     config = injector.get_instance(IConnectionConfig)
 
     assert isinstance(config, PrimaryConfig)
+
+
+class HiddenDatabaseModule(PrivateModule):
+    """Binds IDatabase privately, under an annotation, but never exposes it."""
+
+    def configure(self, binder: Binder) -> None:
+        binder.bind(IConnectionConfig, to=PrimaryConfig)
+        binder.bind(IDatabase, annotated_with="hidden", to=Database)
+
+
+class HiddenAppModule(Module):
+    def configure(self, binder: Binder) -> None:
+        self.install(binder, HiddenDatabaseModule())
+
+
+def test_private_binding_never_exposed_is_invisible_to_the_parent() -> None:
+    """A key bound inside a private module but never passed to expose() must
+    stay invisible to the parent injector -- under the old fall-through
+    behavior an unexposed annotated key would silently implicitly-construct
+    a plausible but wrong instance; now it must raise MissingBindingError."""
+
+    injector = create_injector([HiddenAppModule()])
+
+    with pytest.raises(MissingBindingError, match=r"hidden"):
+        injector.get_instance(IDatabase, "hidden")
 
 
 class IInner:
