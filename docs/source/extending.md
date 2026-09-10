@@ -31,9 +31,9 @@ that per-injector caching (and `scopes.THREAD_LOCAL`'s per-thread caching)
 works and how it interacts with `create_child()`.
 
 Writing your own scope follows the same shape. Here's a `RequestScope` that
-caches one instance per `Key` until `reset()` is called - useful in a web app,
-where you want one instance per request rather than one for the whole
-process:
+caches one instance per `Key` until `reset()` is called - the shape you'd
+reach for when a lifetime doesn't fit `SINGLETON`'s per-injector cache or
+`THREAD_LOCAL`'s per-thread one:
 
 ```python
 from typing import Any
@@ -57,6 +57,14 @@ class RequestScope:
 
     def reset(self) -> None:
         self._cache.clear()
+```
+
+```{note}
+This cache lives on `self`, so it's one cache shared by every caller of this
+particular `RequestScope` instance, with no lock guarding it - two threads can
+both miss the cache and construct twice. For a per-request (or per-task) cache
+that's actually safe under concurrent threads or `asyncio`, see [Per-request
+or per-task scope](concurrency.md#per-request-or-per-task-scope).
 ```
 
 Bind to it with `in_scope=`, just like the built-in scopes:

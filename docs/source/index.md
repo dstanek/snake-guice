@@ -14,6 +14,7 @@ release_notes
 guicebasics
 userguide
 extending
+concurrency
 injecting_configuration
 using_providers
 multibinder

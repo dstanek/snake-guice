@@ -332,16 +332,12 @@ construction, not one each.
 
 This covers snake-guice's own bookkeeping, not the objects it builds - a
 provider that does I/O or touches shared mutable state is still that
-provider's own responsibility to make safe. Two limitations, both pre-existing
-and neither specific to concurrency:
-
-- A provider that re-enters `get_instance()` to resolve the *same* singleton
-  binding it's currently constructing still constructs it twice - no lock can
-  prevent a thread from re-entering itself. This is a reentrancy limitation,
-  not a race.
-- A dependency cycle that crosses a fresh `create_child()` on every hop isn't
-  detected as `CircularDependencyError`; it surfaces as Python's own
-  `RecursionError` instead, the same as before.
+provider's own responsibility to make safe. See [Threads and
+Async](concurrency.md) for how to structure a threaded or `asyncio`
+application around this guarantee, and its
+[Limitations](concurrency.md#limitations) section for two pre-existing edge
+cases - reentrant singleton construction through a child injector, and cycles
+that cross a fresh `create_child()` on every hop - that it doesn't cover.
 
 ## Why It Matters: Swapping Implementations in Tests
 

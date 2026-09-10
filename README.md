@@ -63,7 +63,9 @@ assert isinstance(car.engine, SmallBlockEngine)
   per-thread instances, use `scopes.THREAD_LOCAL`.
 - `Injector` is safe to share between threads (and asyncio tasks): resolution
   state is per-thread/per-task, not shared. Objects it constructs are still
-  your responsibility to make thread-safe.
+  your responsibility to make thread-safe. See [Threads and
+  Async](https://snake-guice.readthedocs.io/en/latest/concurrency.html) for
+  how to structure an application around that and its limitations.
 - Method injection (`@inject` on methods other than `__init__`) runs for any
   class snake-guice constructs, whether that's implicit construction or an
   explicit `to=` binding.

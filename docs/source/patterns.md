@@ -155,6 +155,11 @@ automatically and isn't a request scope.
 binder.bind(IHttpClient, to=RequestsSessionClient, in_scope=scopes.THREAD_LOCAL)
 ```
 
+This is per **thread**, not per `asyncio` task - every task on an event loop
+shares the same thread, so this hands every concurrent task the same
+instance. See [Threads and Async](concurrency.md) for the async-safe
+alternative.
+
 Full explanation: [User Guide — Scopes](userguide.md#scopes).
 
 ## Custom scopes
@@ -182,7 +187,7 @@ end of each request (`fastapi_snakeguice/scopes.py`).
 injector" and "one instance per thread" - the two most common lifetimes. If
 neither fits (e.g. a lifetime keyed on something other than the current
 thread, or a cache that needs an explicit reset hook), write a scope with its
-own cache, the same way `SINGLETON` and `THREAD_LOCAL` are implemented:
+own cache:
 
 ```python
 from typing import Any
@@ -204,7 +209,9 @@ class MyScope:
 A scope written this way caches on `self`, so its lifetime is whatever the
 scope instance's lifetime is - share one `MyScope()` across bindings and
 injectors for a wider-than-per-injector cache, or construct a fresh one per
-injector for a narrower one.
+injector for a narrower one. Unlike `SINGLETON` and `THREAD_LOCAL`, nothing
+here guards the cache with a lock, so two threads can both miss it and
+construct twice; see [Threads and Async](concurrency.md) for how to add one.
 
 Full explanation: [User Guide — Scopes](userguide.md#scopes) and [Extending —
 Custom Scopes](extending.md#custom-scopes).
