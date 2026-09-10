@@ -29,6 +29,10 @@ class Binding:
     key: Key
     provider: Provider[Any] | type[Provider[Any]]
     scope: Scope
+    # A Scope's per-binding cache slot, None until a scope writes to it.
+    # Living here ties the cache's lifetime to the binding's injector rather
+    # than to a process-global scope object like `scopes.SINGLETON`.
+    scope_cache: Any = None
 
 
 class _EmptyBinder:

@@ -2,9 +2,11 @@
 
 # pylint: disable-msg=C0111
 
-from typing import Any, Dict
+import threading
+from typing import Any, Dict, cast
 
 from snakeguice import providers
+from snakeguice._context import current_binding
 from snakeguice.interfaces import Key, Provider, T
 
 
@@ -20,26 +22,96 @@ class _NoScope:
 
 
 class Singleton:
-    """A singleton scope only allows a single instance to be created for a
-    given key.
+    """Caches one instance per binding.
 
-    Each ``Singleton()`` instance maintains its own cache, so creating one
-    per injector or per test avoids the process-global state of
-    ``SINGLETON``.
+    The cache lives on the ``Binding`` being resolved, found via
+    ``_context.current_binding``. Bindings are shared down a
+    ``create_child()`` chain, so a parent and its children share an instance
+    while unrelated injectors -- even both using the exported ``SINGLETON``
+    -- do not, and the cache is reclaimed with its injector rather than
+    accumulating on a process-global scope object.
+
+    Falls back to a ``key``-keyed dict when called outside
+    ``Injector.get_instance()``, where there is no ambient binding.
     """
 
     def __init__(self) -> None:
         self._cached_provider_map: Dict[Key, Provider[Any]] = {}
+        self._lock = threading.RLock()
 
     def scope(self, key: Key, provider: Provider[T]) -> Provider[T]:
-        cached_provider = self._cached_provider_map.get(key)
+        binding = current_binding.get()
+
+        def get_cached() -> Provider[Any] | None:
+            if binding is not None:
+                return cast("Provider[Any] | None", binding.scope_cache)
+            return self._cached_provider_map.get(key)
+
+        def set_cached(instance_provider: Provider[Any]) -> None:
+            if binding is not None:
+                binding.scope_cache = instance_provider
+            else:
+                self._cached_provider_map[key] = instance_provider
+
+        cached_provider = get_cached()
+        if cached_provider is None:
+            # RLock, not Lock: constructing this instance can re-enter
+            # scope() on the same thread for a different binding.
+            with self._lock:
+                cached_provider = get_cached()
+                if cached_provider is None:
+                    instance = provider.get()
+                    cached_provider = providers.create_instance_provider(instance)()
+                    set_cached(cached_provider)
+        return cached_provider
+
+
+class ThreadLocalScope:
+    """Like ``Singleton``, but one instance per thread.
+
+    For state that must not cross threads -- a non-thread-safe client, a
+    session -- but should survive repeated resolutions on one thread. Each
+    binding's cache is a ``threading.local()`` stored on the ``Binding``, for
+    the same lifetime reason as ``Singleton``.
+
+    Only the owning thread touches its own slot, so the cached values need no
+    lock; creating a binding's ``threading.local()`` is a shared first write
+    and does.
+    """
+
+    def __init__(self) -> None:
+        # Only used when called directly, without an ambient Binding.
+        self._local = threading.local()
+        self._init_lock = threading.Lock()
+
+    def scope(self, key: Key, provider: Provider[T]) -> Provider[T]:
+        binding = current_binding.get()
+        if binding is None:
+            return self._scope_in(self._local, key, provider)
+
+        local = cast("threading.local | None", binding.scope_cache)
+        if local is None:
+            with self._init_lock:
+                local = cast("threading.local | None", binding.scope_cache)
+                if local is None:
+                    local = binding.scope_cache = threading.local()
+        return self._scope_in(local, key, provider)
+
+    def _scope_in(
+        self, local: threading.local, key: Key, provider: Provider[T]
+    ) -> Provider[T]:
+        cache: Dict[Key, Provider[Any]] | None = getattr(local, "cache", None)
+        if cache is None:
+            cache = local.cache = {}
+        cached_provider = cache.get(key)
         if cached_provider is None:
             instance = provider.get()
-            cached_provider = self._cached_provider_map[key] = (
-                providers.create_instance_provider(instance)()
-            )
+            cached_provider = cache[key] = providers.create_instance_provider(
+                instance
+            )()
         return cached_provider
 
 
 NO_SCOPE = _NoScope()
 SINGLETON = Singleton()
+THREAD_LOCAL = ThreadLocalScope()

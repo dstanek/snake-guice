@@ -7,6 +7,7 @@ injector module unit tests
 import pytest
 
 from snakeguice import (
+    _context,
     annotate,
     binder,
     create_injector,
@@ -392,6 +393,61 @@ def test_annotated_cycle_message_includes_the_annotation() -> None:
         inj.get_instance(_AnnCycle)
 
 
+def test_cross_injector_cycle_via_create_child_is_not_mislabeled_private_module() -> (
+    None
+):
+    """A cycle spanning a plain parent/create_child() boundary -- no
+    PrivateModule anywhere -- must not claim to cross a "[private module]"
+    boundary. _format_chain() used to label every injector-identity change
+    with that specific (and here false) claim; it now uses a neutral
+    "[different injector]" label instead, since the frame stack only knows
+    the injector changed, not why."""
+
+    class Foo:
+        pass
+
+    class ParentToChildProvider:
+        def __init__(self) -> None:
+            self.child: injector.Injector | None = None
+
+        def get(self) -> Foo:
+            assert self.child is not None
+            return self.child.get_instance(Foo)
+
+    class ChildToParentProvider:
+        def __init__(self, parent: injector.Injector) -> None:
+            self._parent = parent
+
+        def get(self) -> Foo:
+            return self._parent.get_instance(Foo)
+
+    class ParentModule:
+        def __init__(self, provider: ParentToChildProvider) -> None:
+            self._provider = provider
+
+        def configure(self, binder: Binder) -> None:
+            binder.bind(Foo, to_provider=self._provider)
+
+    class ChildModule:
+        def __init__(self, provider: ChildToParentProvider) -> None:
+            self._provider = provider
+
+        def configure(self, binder: Binder) -> None:
+            binder.bind(Foo, to_provider=self._provider)
+
+    parent_to_child = ParentToChildProvider()
+    parent = injector.Injector([ParentModule(parent_to_child)])
+    child = parent.create_child([ChildModule(ChildToParentProvider(parent))])
+    parent_to_child.child = child
+
+    with pytest.raises(CircularDependencyError) as exc_info:
+        parent.get_instance(Foo)
+
+    message = str(exc_info.value)
+    assert "private module" not in message
+    assert "[different injector]" in message
+
+
 def test_circular_dependency_error_does_not_break_later_resolutions() -> None:
     """The resolving stack must be popped on failure, not leak across calls."""
 
@@ -523,7 +579,7 @@ def test_stack_is_clean_after_a_cycle_nested_under_a_partial_success() -> None:
     with pytest.raises(CircularDependencyError):
         inj.get_instance(_Multi)
 
-    assert inj._resolving == []
+    assert _context.resolving.get() == ()
 
     ok = inj.get_instance(_MultiOk)
     assert isinstance(ok, _MultiOk)
@@ -531,7 +587,7 @@ def test_stack_is_clean_after_a_cycle_nested_under_a_partial_success() -> None:
     with pytest.raises(CircularDependencyError):
         inj.get_instance(_MultiCycleX)
 
-    assert inj._resolving == []
+    assert _context.resolving.get() == ()
 
 
 def test_cycle_in_a_child_injector_is_detected() -> None:

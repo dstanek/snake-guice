@@ -100,6 +100,42 @@ class TestSingetonScope:
         obj1 = injector.get_instance(self.SimpleClass)
         assert obj0.place is obj1.place
 
+    def test_exported_singleton_gives_each_injector_its_own_instance(self) -> None:
+        """Regression test for B3: the exported scopes.SINGLETON used to be
+        a single process-global cache keyed only by Key, so two independent
+        injectors both binding in_scope=scopes.SINGLETON handed out the
+        *same* object. The cache is now keyed by the ambient Binding (see
+        _context.current_binding), and each injector's bind() call creates
+        its own Binding, so this must no longer happen."""
+
+        class MyModule:
+            def configure(self, binder: BinderI) -> None:
+                binder.bind(ch.Place, to=ch.Beach, in_scope=scopes.SINGLETON)
+
+        i1 = Injector([MyModule()])
+        i2 = Injector([MyModule()])
+
+        assert i1.get_instance(ch.Place) is not i2.get_instance(ch.Place)
+
+    def test_exported_singleton_is_shared_between_parent_and_create_child(self) -> None:
+        """Regression guard for the other half of B3's fix: keying the
+        singleton cache on the ambient Binding (rather than on the
+        resolving Injector itself) is what lets a parent and its
+        create_child() share a parent-defined singleton -- a Binding
+        created once by bind() is shared down the create_child() chain, so
+        parent and child see the same cache key even though they are
+        different Injector objects. Keying on the injector instead would
+        break exactly this case."""
+
+        class MyModule:
+            def configure(self, binder: BinderI) -> None:
+                binder.bind(ch.Place, to=ch.Beach, in_scope=scopes.SINGLETON)
+
+        parent = Injector([MyModule()])
+        child = parent.create_child([])
+
+        assert parent.get_instance(ch.Place) is child.get_instance(ch.Place)
+
     def test_simple_singleton_to_injectable_provider(self) -> None:
         SINGLETON = scopes.Singleton()
 

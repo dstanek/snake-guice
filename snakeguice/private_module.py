@@ -1,3 +1,5 @@
+from contextvars import ContextVar
+from dataclasses import dataclass, field
 from typing import Any, cast
 
 from snakeguice.annotation import UNANNOTATED, AnnotationLike
@@ -8,12 +10,31 @@ from snakeguice.interfaces import Interface
 from snakeguice.modules import Module
 
 
+@dataclass
+class _Run:
+    """Per-`run_configure()`-call state for a `PrivateModule`.
+
+    Held ambiently (see `_current_run`), not on the module instance, so one
+    `PrivateModule` instance can safely configure more than one injector:
+    each run gets its own `original_binder`/`exposed_keys`/
+    `private_injector`, and `expose()`'s provider closure captures this run
+    object rather than the module - so an older run's exposed bindings keep
+    resolving through that run's private injector even after the module is
+    reused for a newer one.
+    """
+
+    original_binder: BinderI
+    exposed_keys: list[tuple[Interface, AnnotationLike]] = field(default_factory=list)
+    private_injector: Injector | None = None
+
+
+_current_run: "ContextVar[_Run | None]" = ContextVar(
+    "snakeguice_private_module_run", default=None
+)
+
+
 class PrivateModule(Module):
     """Module that uses a child injector to isolate bindings."""
-
-    def __init__(self) -> None:
-        super().__init__()
-        self._exposed_keys: list[tuple[Interface, AnnotationLike]] = []
 
     def expose(
         self,
@@ -22,29 +43,33 @@ class PrivateModule(Module):
         annotation: AnnotationLike = UNANNOTATED,
     ) -> None:
         """Expose the child injector to the parent inject for a binding."""
-        self._exposed_keys.append((interface, annotation))
-        private_module = self
+        run = _current_run.get()
+        assert run is not None, "expose() may only be called from configure()"
+        run.exposed_keys.append((interface, annotation))
 
         class Provider:
             def get(self) -> Any:
-                return private_module.private_injector.get_instance(
-                    interface, annotation
-                )
+                assert run is not None and run.private_injector is not None
+                return run.private_injector.get_instance(interface, annotation)
 
-        self.original_binder.bind(
+        run.original_binder.bind(
             interface, annotated_with=annotation, to_provider=Provider
         )
 
     def run_configure(self, binder: BinderI) -> None:
-        self.original_binder = binder
-        self._exposed_keys = []
-        wrapper = _PrivateModuleWrapper(self)
-        assert self._injector is not None
-        self.private_injector = cast(Injector, self._injector.create_child(wrapper))
+        run = _Run(original_binder=binder)
+        token = _current_run.set(run)
+        try:
+            wrapper = _PrivateModuleWrapper(self)
+            assert self._injector is not None
+            private_injector = cast(Injector, self._injector.create_child(wrapper))
+            run.private_injector = private_injector
+        finally:
+            _current_run.reset(token)
 
-        for interface, annotation in self._exposed_keys:
+        for interface, annotation in run.exposed_keys:
             key = Key(interface, annotation)
-            if self.private_injector._binder.get_own_binding(key) is None:
+            if private_injector._binder.get_own_binding(key) is None:
                 binder.add_error(
                     f"{interface!r} (annotation={annotation!r}) is exposed "
                     "but has no matching private binding"
@@ -58,7 +83,6 @@ class _PrivateModuleWrapper(Module):
 
     def __init__(self, module: PrivateModule) -> None:
         self._module = module
-        super().__init__()
 
     def configure(self, binder: BinderI) -> None:
         self._module.configure(binder)

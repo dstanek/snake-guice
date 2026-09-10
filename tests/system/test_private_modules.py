@@ -1,6 +1,6 @@
 import pytest
 
-from snakeguice import PrivateModule, annotate, create_injector, inject
+from snakeguice import PrivateModule, annotate, create_injector, inject, scopes
 from snakeguice.errors import (
     BindingError,
     CircularDependencyError,
@@ -8,6 +8,7 @@ from snakeguice.errors import (
     MissingBindingError,
 )
 from snakeguice.interfaces import Binder
+from snakeguice.interfaces import Injector as InjectorI
 from snakeguice.modules import Module
 
 
@@ -245,3 +246,114 @@ def test_cycle_spanning_two_private_modules_expose_boundaries_is_detected() -> N
 
     with pytest.raises(CircularDependencyError):
         injector.get_instance(IK)
+
+
+def test_cycle_spanning_two_private_modules_message_marks_the_expose_hops() -> None:
+    """This cycle crosses two expose() boundaries (PrivA -> PrivB -> PrivA),
+    so _format_chain() must mark each hop rather than render an unmarked
+    "->" that would read like the false positive it isn't. The label is the
+    neutral "[different injector]": a frame only records the injector it was
+    resolved on, so an expose() hop and a plain create_child() hop are
+    indistinguishable at format time (see
+    test_injector.test_cross_injector_cycle_via_create_child_is_not_mislabeled_private_module
+    for the create_child() side of that)."""
+
+    injector = create_injector([CrossPrivateAppModule()])
+
+    with pytest.raises(CircularDependencyError) as exc_info:
+        injector.get_instance(IK)
+
+    message = str(exc_info.value)
+    # the cycle crosses PrivA -> PrivB -> PrivA, i.e. two injector hops
+    assert message.count("[different injector]") >= 2
+
+
+class Marker:
+    pass
+
+
+# One process-wide Singleton() instance, shared across every run of
+# ReusedPrivateModule.configure() below -- deliberately, to show that
+# scopes.Singleton's cache is keyed by the per-run Binding object (B3), not
+# by this shared scope instance, so reusing it doesn't merge the two
+# private injectors' caches.
+_MARKER_SCOPE = scopes.Singleton()
+
+
+class ReusedPrivateModule(PrivateModule):
+    """A single instance of this is deliberately passed to two separate
+    create_injector() calls below -- see B5."""
+
+    def configure(self, binder: Binder) -> None:
+        binder.bind(Marker, to=Marker, in_scope=_MARKER_SCOPE)
+        self.expose(binder, Marker)
+
+
+def test_reusing_a_private_module_across_two_injectors_keeps_them_independent() -> None:
+    """Regression test for B5: run_configure() used to store
+    original_binder/private_injector on the *module instance*, and the
+    expose() provider closure read private_injector back off the module at
+    resolution time -- so building a second injector from the same
+    PrivateModule instance would silently repoint the first injector's
+    exposed bindings into the second injector's private scope. Both
+    injectors must resolve correctly and independently, even after the
+    second one is built.
+    """
+
+    module = ReusedPrivateModule()
+
+    i1 = create_injector([module])
+    i2 = create_injector([module])
+
+    # Resolved *after* i2 exists -- under the old bug, i1's exposed
+    # provider would by now read module.private_injector == i2's private
+    # injector, so m1 would incorrectly come out equal to m2.
+    m1 = i1.get_instance(Marker)
+    m2 = i2.get_instance(Marker)
+    m1_again = i1.get_instance(Marker)
+
+    assert type(m1) is Marker
+    assert type(m2) is Marker
+    assert m1 is not m2  # each injector's private scope is its own
+    assert m1 is m1_again  # i1 keeps resolving through its OWN private injector
+
+
+class InstalledSubModule:
+    """A plain (non-Private) module installed *from inside* a
+    PrivateModule.configure() -- see
+    test_private_module_install_sees_the_parent_injector_not_the_private_child.
+    """
+
+    def configure(self, binder: Binder) -> None:
+        pass
+
+
+class InjectorRecordingPrivateModule(PrivateModule):
+    def __init__(self) -> None:
+        self.seen_injector: InjectorI | None = None
+
+    def configure(self, binder: Binder) -> None:
+        # Recorded here, not returned, since self._injector is only valid
+        # for the duration of this configure() call.
+        self.seen_injector = self._injector
+        self.install(binder, InstalledSubModule())
+
+
+def test_private_module_install_sees_the_parent_injector_not_the_private_child() -> (
+    None
+):
+    """Regression test for B5's wrapper-indirection: run_configure() runs
+    the module's own configure() *nested* one layer inside
+    _PrivateModuleWrapper's own ModuleAdapter.configure() call for the
+    private child injector -- so the innermost `_configuring` frame at the
+    point configure() runs belongs to the wrapper, not to the module
+    itself. self._injector (and anything configure() derives from it, like
+    self.install()) must still resolve to the real PARENT injector, not
+    the in-progress private child injector that wraps it.
+    """
+
+    module = InjectorRecordingPrivateModule()
+
+    injector = create_injector([module])
+
+    assert module.seen_injector is injector

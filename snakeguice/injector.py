@@ -1,6 +1,7 @@
 import inspect
 from typing import Any, TypeVar, overload
 
+from snakeguice import _context
 from snakeguice._extractor import extract_params
 from snakeguice.annotation import UNANNOTATED, AnnotationLike
 from snakeguice.binder import Binder, Key
@@ -20,6 +21,22 @@ def _format_key(key: Key) -> str:
     return name
 
 
+def _format_chain(frames: "tuple[tuple[Injector, Key], ...]") -> str:
+    # Injector hops are marked: the same Key can legitimately repeat across
+    # one (e.g. a PrivateModule.expose()), and an unmarked "->" would read
+    # like a false positive. The label is neutral because a frame records
+    # only that the injector changed, not why.
+    pieces: list[str] = []
+    previous_injector: Injector | None = None
+    for index, (frame_injector, key) in enumerate(frames):
+        if index > 0:
+            same_injector = frame_injector is previous_injector
+            pieces.append(" -> " if same_injector else " -> [different injector] -> ")
+        pieces.append(_format_key(key))
+        previous_injector = frame_injector
+    return "".join(pieces)
+
+
 class Injector:
     def __init__(self, modules: Any = None, binder: BinderI | None = None) -> None:
         if modules is None:
@@ -31,8 +48,6 @@ class Injector:
             self._binder = binder.create_child()
         else:
             self._binder = Binder()
-
-        self._resolving: list[Key] = []
 
         self._add_modules(modules)
 
@@ -79,17 +94,23 @@ class Injector:
             return self
 
         key = Key(cls, annotation)
-        if key in self._resolving:
-            chain = " -> ".join(_format_key(k) for k in [*self._resolving, key])
+        frame = (self, key)
+        stack = _context.resolving.get()
+        if frame in stack:
+            chain = _format_chain((*stack, frame))
             raise CircularDependencyError(f"Circular dependency detected:\n  {chain}")
-        self._resolving.append(key)
+        resolving_token = _context.resolving.set((*stack, frame))
         try:
             binding = self._binder.get_binding(key)
             if binding:
                 provider = binding.provider
                 if isinstance(provider, type):
                     provider = self.get_instance(provider)
-                provider = binding.scope.scope(key, provider)
+                binding_token = _context.current_binding.set(binding)
+                try:
+                    provider = binding.scope.scope(key, provider)
+                finally:
+                    _context.current_binding.reset(binding_token)
                 return provider.get()
             elif key.annotation != UNANNOTATED:
                 raise MissingBindingError(
@@ -101,7 +122,7 @@ class Injector:
                 instance = self.create_object(cls)
                 return self.inject_members(instance)
         finally:
-            self._resolving.pop()
+            _context.resolving.reset(resolving_token)
 
     def create_child(self, modules: Any) -> "Injector":
         """Create a new injector that inherits the state from this injector.
