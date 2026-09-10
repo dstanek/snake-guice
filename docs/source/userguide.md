@@ -277,7 +277,7 @@ assert car1.engine is not car2.engine
 ```
 
 `scopes.SINGLETON` builds the instance once and reuses it for every later
-resolution of that `(interface, annotation)` key:
+resolution of that `(interface, annotation)` key, *on that injector*:
 
 ```python
 from snakeguice import scopes
@@ -295,15 +295,53 @@ car2 = injector.get_instance(Car)
 assert car1.engine is car2.engine
 ```
 
-```{warning}
-`scopes.SINGLETON` is a single shared object, and its cache is keyed only by
-`Key` (interface + annotation) - not by injector. If *any* injector in the
-process binds `IEngine` (unannotated) `in_scope=scopes.SINGLETON`, every other
-injector that does the same shares that one cached instance, even if they bind
-`IEngine` to a different implementation. If you need an independent cache -
-for example, one per test - create your own scope instance with
-`scopes.Singleton()` instead of using the shared `scopes.SINGLETON`.
+The cache lives on the `Binding`, not on the shared `scopes.SINGLETON` object
+itself, so it's scoped to the injector the binding belongs to: two independent
+`create_injector([SingletonModule()])` calls - two runs of a test, two
+`create_app()`s - each get their own instance, even though both use the same
+exported `scopes.SINGLETON`. A `create_child()` injector is the exception: it
+shares a singleton its parent already created, the same as Guice, because
+inheriting a parent's bindings is the point of a child injector.
+
+```{note}
+If you want one instance shared across *independent* injectors - not a
+parent/child pair - `scopes.SINGLETON` won't do that; build the instance
+yourself and bind it with `to_instance=`, which bypasses scoping entirely.
 ```
+
+For state that must stay on one thread - a non-thread-safe client, say -
+rather than one per injector, use `scopes.THREAD_LOCAL` instead:
+
+```python
+binder.bind(IHttpClient, to=RequestsSessionClient, in_scope=scopes.THREAD_LOCAL)
+```
+
+It caches one instance per thread per binding, and - like `SINGLETON` - never
+resets itself; it isn't a request scope.
+
+### Thread and Async Safety
+
+An `Injector` is safe to call from multiple threads, or from multiple
+concurrent `asyncio` tasks: `get_instance()`'s in-progress resolution state is
+tracked per-thread and per-task, not on the injector, so two unrelated
+resolutions running concurrently can't interfere with each other's circular
+dependency detection or scope caching. `scopes.Singleton()` (and the exported
+`scopes.SINGLETON`) additionally guards each key's *first* resolution with a
+lock, so concurrent callers racing to build the same singleton get exactly one
+construction, not one each.
+
+This covers snake-guice's own bookkeeping, not the objects it builds - a
+provider that does I/O or touches shared mutable state is still that
+provider's own responsibility to make safe. Two limitations, both pre-existing
+and neither specific to concurrency:
+
+- A provider that re-enters `get_instance()` to resolve the *same* singleton
+  binding it's currently constructing still constructs it twice - no lock can
+  prevent a thread from re-entering itself. This is a reentrancy limitation,
+  not a race.
+- A dependency cycle that crosses a fresh `create_child()` on every hop isn't
+  detected as `CircularDependencyError`; it surfaces as Python's own
+  `RecursionError` instead, the same as before.
 
 ## Why It Matters: Swapping Implementations in Tests
 

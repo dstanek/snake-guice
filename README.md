@@ -55,8 +55,15 @@ assert isinstance(car.engine, SmallBlockEngine)
 
 ## Sharp Edges
 
-- `scopes.SINGLETON` is process-global. For per-test or per-injector isolation,
-  create your own `scopes.Singleton()` instance and pass it to `in_scope=`.
+- `scopes.SINGLETON` is per-injector: two `create_injector()` calls each get
+  their own cached instance. A `create_child()` injector still shares a
+  parent-defined singleton with its parent (that's deliberate, matching
+  Guice). For an instance shared across independent injectors, construct it
+  yourself and bind it with `to_instance=`, which bypasses scoping. For
+  per-thread instances, use `scopes.THREAD_LOCAL`.
+- `Injector` is safe to share between threads (and asyncio tasks): resolution
+  state is per-thread/per-task, not shared. Objects it constructs are still
+  your responsibility to make thread-safe.
 - Method injection (`@inject` on methods other than `__init__`) runs for any
   class snake-guice constructs, whether that's implicit construction or an
   explicit `to=` binding.

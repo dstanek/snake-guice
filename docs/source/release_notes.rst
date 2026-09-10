@@ -20,3 +20,9 @@ Python 3.10 or later.
 - ``PrivateModule`` for isolated child injectors (robot-legs pattern).
 - ``ListBinder`` and ``DictBinder`` multi-bindings.
 - ``@assisted_inject`` for factory-style partial injection.
+- ``Injector`` is now safe to share between threads and concurrent ``asyncio``
+  tasks. ``scopes.SINGLETON`` is now per-injector rather than process-global
+  (a ``create_child()`` injector still shares a parent-defined singleton).
+  Added ``scopes.THREAD_LOCAL`` for state that should be cached per thread
+  instead. A ``PrivateModule`` instance can now safely configure more than
+  one injector.

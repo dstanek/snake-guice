@@ -77,9 +77,9 @@ binder.bind(IDatabase, to_instance=self._database)
 Full explanation: [User Guide — The Binder DSL](userguide.md#the-binder-dsl).
 
 **In `examples/fastapi_tasks`:** `ReaderDatabaseModule`/`WriterDatabaseModule`
-each eagerly construct one `Database` and bind it with `to_instance=`, so the
-reader and writer never collide on - or share - `scopes.SINGLETON`'s
-process-global cache for unannotated `IDatabase`
+each eagerly construct one `Database` from their own `db_path` and bind it
+with `to_instance=`, since that construction argument comes from the module's
+own `__init__`, not from anything the injector can supply
 (`fastapi_snakeguice/modules.py`; rationale in `fastapi_snakeguice/db.py`).
 
 ## Custom providers (`to_provider=`)
@@ -126,20 +126,36 @@ Module](using_providers.md#provides-factory-methods-on-a-module).
 
 ## Singleton scope (`scopes.SINGLETON`)
 
-Build an instance once per `(interface, annotation)` key and reuse it for the
-life of the process.
+Build an instance once per `(interface, annotation)` key, per injector, and
+reuse it for the life of that injector. A `create_child()` injector shares a
+singleton its parent already created, but two independent `create_injector()`
+calls each get their own instance - so two `create_app()` calls in the same
+process, or the same test run, don't leak state through `SINGLETON`.
 
 ```python
 binder.bind(IEngine, to=SmallBlockEngine, in_scope=scopes.SINGLETON)
 ```
 
-Full explanation: [User Guide — Scopes](userguide.md#scopes) - read the
-warning about the global cache before reaching for this.
+Full explanation: [User Guide — Scopes](userguide.md#scopes).
 
 **In `examples/fastapi_tasks`:** `ClockModule` binds `Clock` to `SystemClock`
-`in_scope=scopes.SINGLETON` - safe because `SystemClock` is stateless, so
-sharing the cache across `create_app()` calls causes no harm
+`in_scope=scopes.SINGLETON` - safe because `SystemClock` is stateless, and
+each `create_app()` call gets its own injector and so its own cached instance
 (`fastapi_snakeguice/modules.py`).
+
+## Per-thread scope (`scopes.THREAD_LOCAL`)
+
+Build one instance per `(interface, annotation)` key *per thread*, and reuse
+it for every resolution on that thread - for state that must not cross
+threads (a non-thread-safe client, a session) but should still survive
+repeated resolutions on the same thread. Unlike `SINGLETON`, it isn't reset
+automatically and isn't a request scope.
+
+```python
+binder.bind(IHttpClient, to=RequestsSessionClient, in_scope=scopes.THREAD_LOCAL)
+```
+
+Full explanation: [User Guide — Scopes](userguide.md#scopes).
 
 ## Custom scopes
 
@@ -160,12 +176,13 @@ per request in a `ContextVar`, applied to both the reader and writer `Session`
 bindings; `main.py`'s middleware resets the cache and closes sessions at the
 end of each request (`fastapi_snakeguice/scopes.py`).
 
-## Per-instance singleton scope (avoiding `SINGLETON`'s global cache)
+## Writing a custom cache-based scope
 
-When you want "one instance for the life of *this* injector" rather than "one
-instance for the life of the *process*" - e.g. so two `create_app()` calls in
-the same test run don't share state - write a scope with its own private
-cache.
+`scopes.SINGLETON` and `scopes.THREAD_LOCAL` already cover "one instance per
+injector" and "one instance per thread" - the two most common lifetimes. If
+neither fits (e.g. a lifetime keyed on something other than the current
+thread, or a cache that needs an explicit reset hook), write a scope with its
+own cache, the same way `SINGLETON` and `THREAD_LOCAL` are implemented:
 
 ```python
 from typing import Any
@@ -174,7 +191,7 @@ from snakeguice import providers
 from snakeguice.interfaces import Key, Provider, T
 
 
-class PerAppSingleton:
+class MyScope:
     def __init__(self) -> None:
         self._cache: dict[Key, Any] = {}
 
@@ -184,16 +201,19 @@ class PerAppSingleton:
         return providers.create_instance_provider(self._cache[key])()
 ```
 
-Full explanation: [User Guide — Scopes
-warning](userguide.md#scopes) and [Extending — Custom
-Scopes](extending.md#custom-scopes).
+A scope written this way caches on `self`, so its lifetime is whatever the
+scope instance's lifetime is - share one `MyScope()` across bindings and
+injectors for a wider-than-per-injector cache, or construct a fresh one per
+injector for a narrower one.
 
-**In `examples/fastapi_tasks`:** `PerAppSingleton` gives `MetricsCollector` its
-own per-`create_app()` cache, since `scopes.SINGLETON`'s cache is
-process-global and keyed only by `(interface, annotation)` - using it for
-`MetricsCollector` would leak counters between apps (and tests)
+Full explanation: [User Guide — Scopes](userguide.md#scopes) and [Extending —
+Custom Scopes](extending.md#custom-scopes).
+
+**In `examples/fastapi_tasks`:** `PerAppSingleton` gives `MetricsCollector`
+its own per-`create_app()` cache this way
 (`fastapi_snakeguice/scopes.py`, used by `MetricsModule` in
-`fastapi_snakeguice/modules.py`).
+`fastapi_snakeguice/modules.py`) - predating `SINGLETON` becoming per-injector,
+this could now use `scopes.SINGLETON` directly instead.
 
 ## Isolating bindings with `PrivateModule` ("robot legs")
 

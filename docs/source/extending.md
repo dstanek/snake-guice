@@ -24,10 +24,11 @@ class Scope(Protocol):
 ```
 
 `scopes.NO_SCOPE` (the default) returns `provider` unchanged, so `.get()` runs
-on every resolution. `scopes.SINGLETON` calls `provider.get()` once, caches the
-result for that `Key`, and returns a provider for the cached instance from
-then on - see [Scopes](userguide.md#scopes) in the User Guide for the
-cross-injector caching gotcha that comes with sharing that one instance.
+on every resolution. `scopes.SINGLETON` calls `provider.get()` once per
+injector, caches the result, and returns a provider for the cached instance
+from then on - see [Scopes](userguide.md#scopes) in the User Guide for how
+that per-injector caching (and `scopes.THREAD_LOCAL`'s per-thread caching)
+works and how it interacts with `create_child()`.
 
 Writing your own scope follows the same shape. Here's a `RequestScope` that
 caches one instance per `Key` until `reset()` is called - useful in a web app,

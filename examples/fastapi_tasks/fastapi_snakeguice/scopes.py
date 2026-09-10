@@ -2,9 +2,10 @@
 
 `FastAPIRequestScope` caches per-request bindings (e.g. database sessions) in
 a `ContextVar`-backed dict, since FastAPI has nothing like `cherrypy.request`
-to hang state off of. `PerAppSingleton` is like `scopes.SINGLETON` but with a
-cache private to one instance, so each `create_app()` call gets its own
-singleton state.
+to hang state off of. `PerAppSingleton` is a from-scratch, minimal
+reimplementation of the same idea behind `scopes.SINGLETON` - a worked example
+of the `Scope` protocol (see `docs/source/extending.md`), not a workaround for
+anything `SINGLETON` gets wrong.
 """
 
 from contextvars import ContextVar
@@ -69,12 +70,17 @@ FASTAPI_REQUEST_SCOPE = FastAPIRequestScope()
 
 
 class PerAppSingleton:
-    """Like `scopes.SINGLETON`, but its cache is private to this instance.
+    """A minimal from-scratch `scopes.SINGLETON`-alike: caches one instance
+    per `Key`, on `self`.
 
-    `scopes.SINGLETON`'s cache is process-global and keyed only by
-    `(interface, annotation)`, so two `create_app()` calls (e.g. across
-    tests) would share state for any binding that uses it. Create one
-    `PerAppSingleton` per `Module` instance instead.
+    `scopes.SINGLETON` already does exactly this per-injector, so this isn't
+    needed to keep `MetricsModule`'s state from leaking between `create_app()`
+    calls - it exists here as a small, self-contained example of the `Scope`
+    protocol (see `docs/source/extending.md`), built the same way `SINGLETON`
+    itself is. Because the cache lives on `self` rather than on a `Binding`,
+    reusing one `PerAppSingleton()` instance across bindings or modules shares
+    its cache between them - a lifetime `SINGLETON` can't express, since
+    `SINGLETON`'s cache is always tied to a single `Binding`.
     """
 
     def __init__(self) -> None:

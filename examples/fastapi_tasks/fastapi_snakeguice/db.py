@@ -1,11 +1,11 @@
 """Database access, bound separately for the reader and writer modules.
 
 `Database` is constructed eagerly (outside the injector) and bound with
-`to_instance=` rather than `in_scope=scopes.SINGLETON` — `SINGLETON`'s cache
-is process-global and keyed only by `(interface, annotation)`, so binding the
-unannotated `IDatabase` to `SINGLETON` in both `ReaderDatabaseModule` and
-`WriterDatabaseModule` would collide and one would silently get the other's
-`Database`.
+`to_instance=` rather than `in_scope=scopes.SINGLETON`, because its
+constructor needs a `db_path` that comes from `ReaderDatabaseModule`'s /
+`WriterDatabaseModule`'s own `__init__` argument, not from anything the
+injector can supply — `to=`/`SINGLETON` only help when the injector can build
+the object itself.
 """
 
 from sqlalchemy import create_engine

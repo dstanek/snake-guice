@@ -35,6 +35,15 @@ key *is* annotated: raise `MissingBindingError` - an annotation names one
 specific binding, so a miss is a mismatch rather than a request to implicitly
 construct something.
 
+In-flight resolution state - the `(injector, key)` chain used for
+`CircularDependencyError`, and the `Binding` currently being handed to
+`scope.scope()` - lives in `_context.py` as `ContextVar`s, not on the
+`Injector` instance, so a shared `Injector` resolves correctly from multiple
+threads or concurrent `asyncio` tasks at once. `_format_chain()` marks a hop
+to a different injector as `-> [different injector] ->` in the error message,
+since the same `Key` can legitimately repeat across a `PrivateModule.expose()`
+boundary.
+
 **Decorators** (`decorators.py`, `_extractor.py`):
 - `@inject` requires type annotations on all non-`self` params; on
   non-`__init__` methods it records the method name in `__guice_methods__`.
@@ -46,16 +55,29 @@ construct something.
   `__guice_annotations__` into `Param(name, dtype, annotation)`.
 
 **Modules** (`modules.py`): a "simple module" just needs `configure(binder)`; a
-`Module` subclass also gets `run_configure` (sets `_injector` first).
+`Module` subclass also gets `run_configure`. `Module._injector` is a property,
+not a plain attribute - it reads back from an ambient `ContextVar` stack
+(`_configuring`) that `ModuleAdapter.configure()` pushes/pops around each
+`configure()` call, keyed by module identity rather than stored on the module
+instance, so one `Module`/`PrivateModule` instance can safely configure more
+than one injector (e.g. two `create_injector()` calls sharing a module).
 `Module.install(binder, other)` composes modules. `PrivateModule` creates an
 isolated child injector and `expose()`s individual bindings to the parent
 binder (robot-legs pattern, see `tests/system/test_private_modules.py` and
-`docs/source/private_modules.md`).
+`docs/source/private_modules.md`); its own per-`run_configure()`-call state
+(`original_binder`, `exposed_keys`, `private_injector`) is likewise held
+ambiently (`private_module.py`'s `_current_run`), for the same reason.
 
 **Providers/scopes**: `providers.create_simple_provider(cls)` builds via
 `injector.create_object`; `create_instance_provider(obj)` returns a fixed
-value. `scopes.NO_SCOPE` (default) is a pass-through; `scopes.SINGLETON` caches
-the first instance per `Key`.
+value. `scopes.NO_SCOPE` (default) is a pass-through. `scopes.SINGLETON`
+caches the first instance per `Key`, per injector: the cache lives on the
+`Binding` (found via the same ambient context as above), not on the shared
+`Singleton` object, so independent injectors don't share a cache - a
+`create_child()` injector still does, inheriting the parent's `Binding`.
+First construction is guarded by a lock so concurrent callers building the
+same singleton construct exactly once. `scopes.THREAD_LOCAL` is the same idea
+scoped per-thread instead of per-injector.
 
 **Multibinder** (`multibinder.py`): `ListBinder`/`DictBinder` let multiple
 modules contribute to one `List[T]`/`Dict[str, T]` binding; `DictBinder` raises
