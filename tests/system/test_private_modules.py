@@ -1,6 +1,13 @@
 import pytest
 
-from snakeguice import PrivateModule, annotate, create_injector, inject, scopes
+from snakeguice import (
+    PrivateModule,
+    annotate,
+    create_injector,
+    inject,
+    provides,
+    scopes,
+)
 from snakeguice.errors import (
     BindingError,
     CircularDependencyError,
@@ -337,6 +344,116 @@ class InjectorRecordingPrivateModule(PrivateModule):
         # for the duration of this configure() call.
         self.seen_injector = self._injector
         self.install(binder, InstalledSubModule())
+
+
+class Secret:
+    pass
+
+
+class ProvidedSecret(Secret):
+    """Marker subclass returned by SecretProvidingPrivateModule's @provides."""
+
+
+class SecretProvidingPrivateModule(PrivateModule):
+    """Provides Secret privately via @provides, but binds and exposes
+    nothing -- regression test for the @provides methods leaking onto the
+    parent binder.
+    """
+
+    def configure(self, binder: Binder) -> None:
+        pass
+
+    @provides(Secret)
+    def provide_secret(self) -> Secret:
+        return ProvidedSecret()
+
+
+def test_unexposed_provides_method_does_not_leak_onto_the_parent_binder() -> None:
+    """Regression test: @provides(Secret) on a PrivateModule must bind Secret
+    on the *private* binder, same as configure() would. Under the old bug it
+    was instead bound on the parent's binder, so the parent would resolve
+    the provided ProvidedSecret instance directly. Since Secret is never
+    exposed, the parent has no binding for it at all, and Secret is
+    unannotated, so the parent falls through to implicit construction: the
+    result must be a plain Secret, not the private module's ProvidedSecret.
+    """
+    injector = create_injector([SecretProvidingPrivateModule()])
+
+    secret = injector.get_instance(Secret)
+
+    assert type(secret) is Secret
+
+
+class Hidden:
+    pass
+
+
+class ProvidedHidden(Hidden):
+    """Marker subclass returned by HiddenProvidingPrivateModule's @provides."""
+
+
+class HiddenProvidingPrivateModule(PrivateModule):
+    """Provides Hidden privately via @provides and exposes it -- the
+    exposed binding must be satisfied by the @provides method landing on
+    the private binder, not raise "no matching private binding".
+    """
+
+    def configure(self, binder: Binder) -> None:
+        self.expose(binder, Hidden)
+
+    @provides(Hidden)
+    def provide_hidden(self) -> Hidden:
+        return ProvidedHidden()
+
+
+def test_exposed_provides_method_satisfies_the_expose() -> None:
+    """Regression test: exposing a key that's only ever bound via a
+    @provides method (never binder.bind()) must succeed -- the private
+    binding it's checked against has to include @provides bindings, not
+    just explicit binder.bind() calls."""
+    injector = create_injector([HiddenProvidingPrivateModule()])
+
+    hidden = injector.get_instance(Hidden)
+
+    assert type(hidden) is ProvidedHidden
+
+
+class Dep:
+    pass
+
+
+class ProvidedDep(Dep):
+    """Marker subclass returned by DepProvidingPrivateModule's @provides."""
+
+
+class Consumer:
+    @inject
+    def __init__(self, dep: Dep) -> None:
+        self.dep = dep
+
+
+class DepProvidingPrivateModule(PrivateModule):
+    """Provides Dep privately via @provides (never exposed) and exposes
+    Consumer, which depends on Dep -- proves the private @provides binding
+    is visible to other bindings resolved *inside* the same private
+    injector, even though it never crosses the expose() boundary itself.
+    """
+
+    def configure(self, binder: Binder) -> None:
+        binder.bind(Consumer, to=Consumer)
+        self.expose(binder, Consumer)
+
+    @provides(Dep)
+    def provide_dep(self) -> Dep:
+        return ProvidedDep()
+
+
+def test_private_provides_method_is_visible_inside_its_own_private_injector() -> None:
+    injector = create_injector([DepProvidingPrivateModule()])
+
+    consumer = injector.get_instance(Consumer)
+
+    assert type(consumer.dep) is ProvidedDep
 
 
 def test_private_module_install_sees_the_parent_injector_not_the_private_child() -> (

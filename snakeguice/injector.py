@@ -9,7 +9,7 @@ from snakeguice.errors import CircularDependencyError, MissingBindingError
 from snakeguice.interfaces import Binder as BinderI
 from snakeguice.interfaces import Injector as IInjector
 from snakeguice.interfaces import Provider
-from snakeguice.modules import ModuleAdapter, ProvidesBinderHelper
+from snakeguice.modules import ModuleAdapter
 
 U = TypeVar("U")
 
@@ -52,10 +52,8 @@ class Injector:
         self._add_modules(modules)
 
     def _add_modules(self, modules: Any) -> None:
-        provides_helper = ProvidesBinderHelper()
         for module in modules:
             ModuleAdapter(module, self).configure(self._binder)
-            provides_helper.bind_providers(module, self._binder)
         self._binder.raise_if_errors()
 
     @overload

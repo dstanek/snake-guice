@@ -7,7 +7,7 @@ from snakeguice.binder import Key
 from snakeguice.injector import Injector
 from snakeguice.interfaces import Binder as BinderI
 from snakeguice.interfaces import Interface
-from snakeguice.modules import Module
+from snakeguice.modules import Module, _configure
 
 
 @dataclass
@@ -85,4 +85,4 @@ class _PrivateModuleWrapper(Module):
         self._module = module
 
     def configure(self, binder: BinderI) -> None:
-        self._module.configure(binder)
+        _configure(self._module, binder)

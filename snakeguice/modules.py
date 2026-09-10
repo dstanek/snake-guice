@@ -52,6 +52,14 @@ class ProvidesBinderHelper:
         return GenericProvider
 
 
+def _configure(module: ModuleI, binder: BinderI) -> None:
+    """Configure a module against a binder, including its `@provides`
+    bindings, as one operation on the same binder.
+    """
+    module.configure(binder)
+    ProvidesBinderHelper().bind_providers(module, binder)
+
+
 class ModuleAdapter:
     """Adapts the simple and standard module interfaces to a common one."""
 
@@ -70,7 +78,7 @@ class ModuleAdapter:
             if hasattr(self._module, "run_configure"):
                 self._module.run_configure(binder)
             else:
-                self._module.configure(binder)
+                _configure(self._module, binder)
         finally:
             if token is not None:
                 _configuring.reset(token)
@@ -82,13 +90,17 @@ class Module:
     def install(self, binder: BinderI, module: ModuleI) -> None:
         """Add another module's bindings to a binder."""
         ModuleAdapter(module, self._injector).configure(binder)
-        ProvidesBinderHelper().bind_providers(module, binder)
 
     def run_configure(self, binder: BinderI) -> None:
         """A hook for intercepting the configure method. Allows different
         module implementations to change the binder passed to configure.
+
+        By default this also binds the module's `@provides` methods onto
+        the same binder as `configure()`. A subclass that overrides this
+        (e.g. to route configure() to a different binder) is responsible
+        for deciding where its `@provides` bindings land.
         """
-        self.configure(binder)
+        _configure(self, binder)
 
     def configure(self, binder: BinderI) -> None:
         """A subclass should override this to configure a binder."""

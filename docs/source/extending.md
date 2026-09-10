@@ -109,8 +109,9 @@ injector, so `reset()` only affects bindings that use this particular
 ## Custom Module Types
 
 `Module.run_configure(binder)` is the hook `Injector` calls instead of
-`configure(binder)` directly - the default implementation just calls
-`self.configure(binder)`. Overriding `run_configure` lets a `Module` subclass
+`configure(binder)` directly - the default implementation calls
+`self.configure(binder)` and then binds the module's `@provides` methods on
+that same binder. Overriding `run_configure` lets a `Module` subclass
 change the binder, or do other setup, before its own `configure()` runs.
 
 `PrivateModule` is the built-in example of this pattern: its `run_configure`
