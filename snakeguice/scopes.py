@@ -29,7 +29,9 @@ class Singleton:
     ``create_child()`` chain, so a parent and its children share an instance
     while unrelated injectors -- even both using the exported ``SINGLETON``
     -- do not, and the cache is reclaimed with its injector rather than
-    accumulating on a process-global scope object.
+    accumulating on a process-global scope object. Construction is likewise
+    guarded by a lock on the ``Binding``, so building one singleton never
+    waits on another, unrelated one.
 
     Falls back to a ``key``-keyed dict when called outside
     ``Injector.get_instance()``, where there is no ambient binding.
@@ -55,9 +57,13 @@ class Singleton:
 
         cached_provider = get_cached()
         if cached_provider is None:
-            # RLock, not Lock: constructing this instance can re-enter
-            # scope() on the same thread for a different binding.
-            with self._lock:
+            # RLock, not Lock: with a per-binding lock, the only same-thread
+            # re-entry is a provider re-entering get_instance() for this same
+            # binding through a child injector (which inherits it). An RLock
+            # turns that into the double construction the user guide documents
+            # instead of a deadlock.
+            lock = binding.scope_lock if binding is not None else self._lock
+            with lock:
                 cached_provider = get_cached()
                 if cached_provider is None:
                     instance = provider.get()
@@ -76,13 +82,12 @@ class ThreadLocalScope:
 
     Only the owning thread touches its own slot, so the cached values need no
     lock; creating a binding's ``threading.local()`` is a shared first write
-    and does.
+    and does, guarded by that binding's ``scope_lock``.
     """
 
     def __init__(self) -> None:
         # Only used when called directly, without an ambient Binding.
         self._local = threading.local()
-        self._init_lock = threading.Lock()
 
     def scope(self, key: Key, provider: Provider[T]) -> Provider[T]:
         binding = current_binding.get()
@@ -91,7 +96,7 @@ class ThreadLocalScope:
 
         local = cast("threading.local | None", binding.scope_cache)
         if local is None:
-            with self._init_lock:
+            with binding.scope_lock:
                 local = cast("threading.local | None", binding.scope_cache)
                 if local is None:
                     local = binding.scope_cache = threading.local()

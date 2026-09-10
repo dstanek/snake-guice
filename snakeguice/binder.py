@@ -1,5 +1,6 @@
 import inspect
-from dataclasses import dataclass
+import threading
+from dataclasses import dataclass, field
 from typing import Any, TypeVar, overload
 
 from snakeguice import errors, providers, scopes
@@ -33,6 +34,12 @@ class Binding:
     # Living here ties the cache's lifetime to the binding's injector rather
     # than to a process-global scope object like `scopes.SINGLETON`.
     scope_cache: Any = None
+    # A Scope's per-binding construction lock. Living here means unrelated
+    # singletons never wait on each other, and a `create_child()` chain
+    # shares it along with the cache.
+    scope_lock: threading.RLock = field(
+        default_factory=threading.RLock, repr=False, compare=False
+    )
 
 
 class _EmptyBinder:

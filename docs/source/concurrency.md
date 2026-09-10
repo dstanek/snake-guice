@@ -64,8 +64,8 @@ and every later call returns the cached instance without locking. Keep
 singleton constructors cheap, or resolve the expensive ones eagerly right
 after `create_injector()`, so construction never lands on a request's critical
 path. And never block inside a singleton constructor waiting on another thread
-that itself resolves singletons: that can deadlock on the construction lock
-rather than merely run slowly.
+that resolves that *same* singleton: that can deadlock on the binding's
+construction lock rather than merely run slowly.
 
 ```{warning}
 `scopes.THREAD_LOCAL` never resets itself. Threads in a pool are reused

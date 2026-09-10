@@ -190,20 +190,189 @@ def test_singleton_scope_under_thread_contention_constructs_exactly_once() -> No
     assert construction_count == 1  # ...and it was built exactly once
 
 
+def test_two_unrelated_singletons_construct_concurrently_across_injectors() -> None:
+    """Regression test for moving Singleton's construction lock from the
+    scope object onto the Binding: two independent injectors, each binding
+    its own class in_scope=scopes.SINGLETON, must be able to construct
+    those unrelated singletons at the same time. Both constructors
+    barrier.wait() on a shared, timed Barrier -- with a per-binding lock
+    both threads are inside the barrier together and it releases; with the
+    old design, where the exported scopes.SINGLETON held a single
+    process-wide lock, the second constructor could not even start until
+    the first finished constructing (and released the lock), so the second
+    thread would never reach the barrier in time and BrokenBarrierError
+    would surface out of the first constructor's barrier.wait()."""
+
+    barrier = threading.Barrier(2, timeout=2)
+
+    class _WidgetA:
+        def __init__(self) -> None:
+            barrier.wait()
+
+    class _WidgetB:
+        def __init__(self) -> None:
+            barrier.wait()
+
+    class ModuleA:
+        def configure(self, binder: BinderI) -> None:
+            binder.bind(_WidgetA, to=_WidgetA, in_scope=scopes.SINGLETON)
+
+    class ModuleB:
+        def configure(self, binder: BinderI) -> None:
+            binder.bind(_WidgetB, to=_WidgetB, in_scope=scopes.SINGLETON)
+
+    inj_a = create_injector([ModuleA()])
+    inj_b = create_injector([ModuleB()])
+    results: dict[str, object] = {}
+    lock = threading.Lock()
+
+    def resolve(name: str, inj: object, cls: type) -> None:
+        try:
+            result: object = inj.get_instance(cls)  # type: ignore[attr-defined]
+        except BaseException as exc:  # noqa: BLE001 - captured across threads
+            result = exc
+        with lock:
+            results[name] = result
+
+    threads = [
+        threading.Thread(target=resolve, args=("a", inj_a, _WidgetA)),
+        threading.Thread(target=resolve, args=("b", inj_b, _WidgetB)),
+    ]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    assert isinstance(results["a"], _WidgetA)
+    assert isinstance(results["b"], _WidgetB)
+
+
+def test_constructing_one_singleton_does_not_block_constructing_another() -> None:
+    """Regression test for the deadlock shape a single process-wide
+    Singleton lock invites: A and B are both in_scope=scopes.SINGLETON on
+    ONE injector, and A's constructor -- still "under construction", still
+    holding whatever lock guards it -- spins up a worker thread that
+    resolves B and only then sets an Event. With a per-binding lock this is
+    fine, since A and B's construction locks are distinct; with one lock
+    shared by every singleton, A's constructor would hold that lock for as
+    long as it runs, so the worker's attempt to resolve B would block until
+    A returns, and the Event would never be set within A's own wait --
+    which is exactly the deadlock shape this pins."""
+
+    construction_counts = {"B": 0}
+    counts_lock = threading.Lock()
+    b_resolved = threading.Event()
+
+    class B:
+        def __init__(self) -> None:
+            with counts_lock:
+                construction_counts["B"] += 1
+
+    class A:
+        def __init__(self) -> None:
+            def worker() -> None:
+                inj.get_instance(B)
+                b_resolved.set()
+
+            t = threading.Thread(target=worker, daemon=True)
+            t.start()
+            self.worker_set_in_time = b_resolved.wait(timeout=2)
+
+    class MyModule:
+        def configure(self, binder: BinderI) -> None:
+            binder.bind(A, to=A, in_scope=scopes.SINGLETON)
+            binder.bind(B, to=B, in_scope=scopes.SINGLETON)
+
+    inj = create_injector([MyModule()])
+    result: list[object] = []
+
+    def resolve() -> None:
+        result.append(inj.get_instance(A))
+
+    thread = threading.Thread(target=resolve, daemon=True)
+    thread.start()
+    thread.join(timeout=5)
+
+    assert not thread.is_alive(), "resolving A did not complete within the timeout"
+    assert len(result) == 1
+    a = result[0]
+    assert isinstance(a, A)
+    assert a.worker_set_in_time, "B did not resolve while A was under construction"
+    assert construction_counts == {"B": 1}
+
+
+def test_provider_reenter_same_binding_via_child_constructs_twice() -> None:
+    """Pins the pre-existing, intentional limitation that motivates keeping
+    scopes.Singleton's construction lock an RLock rather than a plain Lock:
+    a to_provider= provider whose first call re-enters
+    injector.create_child([]).get_instance(A) for the SAME key it is itself
+    supplying. The child inherits the parent's Binding (and so its
+    scope_lock), but the child is a different Injector object, so the
+    (injector, key) cycle frame differs from the parent's and no
+    CircularDependencyError fires. The re-entrant call sees no cached value
+    yet and reacquires the (already held, by this same thread) scope_lock
+    via RLock, constructing A a second time -- this is documented, existing
+    behavior being pinned here, not a bug under test. What IS under test is
+    that per-binding locks stay RLocks: swapping to a plain Lock would make
+    this hang instead of double-construct, so the daemon thread and bounded
+    join turn that hang into a fast, ordinary failure."""
+
+    construction_count = 0
+    count_lock = threading.Lock()
+
+    class A:
+        def __init__(self) -> None:
+            nonlocal construction_count
+            with count_lock:
+                construction_count += 1
+
+    class ReentrantProvider:
+        def __init__(self) -> None:
+            self._first_call = True
+
+        def get(self) -> A:
+            if self._first_call:
+                self._first_call = False
+                inj.create_child([]).get_instance(A)  # side effect only, discarded
+            return A()
+
+    class MyModule:
+        def configure(self, binder: BinderI) -> None:
+            binder.bind(A, to_provider=ReentrantProvider(), in_scope=scopes.SINGLETON)
+
+    inj = create_injector([MyModule()])
+    result: list[object] = []
+
+    def resolve() -> None:
+        result.append(inj.get_instance(A))
+
+    thread = threading.Thread(target=resolve, daemon=True)
+    thread.start()
+    thread.join(timeout=5)
+
+    assert not thread.is_alive(), (
+        "resolution did not complete within the timeout -- Singleton.scope() "
+        "likely deadlocked (this is what an RLock-to-Lock regression looks "
+        "like)"
+    )
+    assert len(result) == 1
+    assert isinstance(result[0], A)
+    assert construction_count == 2  # documented double construction, not a bug
+
+
 def test_singleton_scope_rlock_allows_nested_resolution_of_another_singleton() -> None:
-    """Regression guard for scopes.Singleton using threading.RLock, not a
-    plain threading.Lock: constructing one singleton-scoped binding can
-    legitimately re-enter Singleton.scope() on the SAME thread for a
-    DIFFERENT binding, when that dependency is *also* scoped through the
-    same Singleton() instance. Here A depends on B, and both are bound
-    in_scope=the same shared_scope: resolving A means A's own
-    Singleton.scope() call is still holding self._lock (inside the
-    "with self._lock:" block, constructing A) when A's __init__ triggers
-    get_instance(B), which re-enters scope() on that identical scope
-    object. An RLock lets the same thread re-acquire it; a plain Lock
-    would block forever waiting for a lock it already holds, deadlocking
-    on the very first resolution -- so if a future "simplification" swaps
-    RLock for Lock, this must fail loudly instead of just hanging CI.
+    """Regression guard pinning nested resolution of a DIFFERENT singleton
+    completing correctly on one thread: A depends on B, both bound
+    in_scope=the same shared_scope. Resolving A means A's own
+    Singleton.scope() call is holding A's Binding.scope_lock (constructing
+    A) when A's __init__ triggers get_instance(B), re-entering scope() for
+    B's own, distinct Binding.scope_lock -- so with per-binding locks this
+    never contends with itself in the first place. (The RLock-vs-Lock
+    rationale that used to live here -- re-entering the identical shared
+    scope object's lock -- no longer applies now that each Binding gets its
+    own lock; that reasoning is pinned instead by
+    test_provider_reenter_same_binding_via_child_constructs_twice,
+    where a provider re-enters resolution for the SAME binding.)
 
     Resolution runs in a daemon worker thread with a bounded join() for
     exactly that reason: a regression here is a hang, not an exception, so

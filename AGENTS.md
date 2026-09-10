@@ -75,9 +75,10 @@ caches the first instance per `Key`, per injector: the cache lives on the
 `Binding` (found via the same ambient context as above), not on the shared
 `Singleton` object, so independent injectors don't share a cache - a
 `create_child()` injector still does, inheriting the parent's `Binding`.
-First construction is guarded by a lock so concurrent callers building the
-same singleton construct exactly once. `scopes.THREAD_LOCAL` is the same idea
-scoped per-thread instead of per-injector.
+First construction is guarded by a per-binding lock (`Binding.scope_lock`) so
+concurrent callers building the same singleton construct exactly once, and
+unrelated singletons never wait on each other. `scopes.THREAD_LOCAL` is the
+same idea scoped per-thread instead of per-injector.
 
 **Multibinder** (`multibinder.py`): `ListBinder`/`DictBinder` let multiple
 modules contribute to one `List[T]`/`Dict[str, T]` binding; `DictBinder` raises
