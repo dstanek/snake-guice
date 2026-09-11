@@ -16,13 +16,13 @@ _configuring: "ContextVar[tuple[tuple[ModuleI, InjectorI | None], ...]]" = Conte
 instance so one module instance can safely configure more than one injector
 - see `Module._injector`.
 
-A flat "last write wins" var isn't enough: `PrivateModule.run_configure()`
-runs the module's own `configure()` *nested* one layer inside
-`_PrivateModuleWrapper`'s own `ModuleAdapter.configure()` call (for its
-private child injector), so by the time the module's `configure()` body
-runs, the innermost frame belongs to the wrapper, not to it. `Module._injector`
-therefore searches the stack for the frame pushed for `self` specifically,
-rather than trusting whichever frame is innermost.
+A flat "last write wins" var isn't enough: `self.install(binder, other)`
+runs `other`'s `configure()` *nested* inside the installing module's own
+`ModuleAdapter.configure()` call, so by the time `other.configure()` body
+runs, the innermost frame belongs to `other`, not to the installer.
+`Module._injector` therefore searches the stack for the frame pushed for
+`self` specifically, rather than trusting whichever frame is innermost - so
+an installed module's frame can't shadow the installer's.
 """
 
 

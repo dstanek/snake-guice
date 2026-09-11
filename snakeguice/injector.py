@@ -44,10 +44,7 @@ class Injector:
         elif not hasattr(modules, "__iter__"):
             modules = [modules]
 
-        if binder:
-            self._binder = binder.create_child()
-        else:
-            self._binder = Binder()
+        self._binder = binder if binder is not None else Binder()
 
         self._add_modules(modules)
 
@@ -55,6 +52,20 @@ class Injector:
         for module in modules:
             ModuleAdapter(module, self).configure(self._binder)
         self._binder.raise_if_errors()
+        self._build_private_injectors()
+
+    def _build_private_injectors(self) -> None:
+        # Two-phase bootstrap: every `PrivateModule` installed while
+        # configuring this injector's binder registered a `PrivateBinder`
+        # child (see `Binder.create_private`) instead of an injector, so
+        # that a private module nested inside another private module's
+        # `configure()` parents its `PrivateBinder` to the *enclosing*
+        # private binder rather than to the outermost injector. Now that
+        # configuration (and error validation) is done, turn each of those
+        # binders into its own child `Injector` - recursively, since a
+        # private child may itself have private children of its own.
+        for child in self._binder._private_children:
+            child.injector = Injector(binder=child)
 
     @overload
     def get_provider(
@@ -128,7 +139,7 @@ class Injector:
         All bindings are inherited. In the future this may become closer to
         child injectors on google-guice.
         """
-        return Injector(modules, binder=self._binder)
+        return Injector(modules, binder=self._binder.create_child())
 
     def _has_binding(self, param: Any) -> bool:
         key = Key(param.dtype, param.annotation)

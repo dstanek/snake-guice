@@ -8,6 +8,7 @@ from snakeguice import (
     provides,
     scopes,
 )
+from snakeguice.binder import Binder as ConcreteBinder
 from snakeguice.errors import (
     BindingError,
     CircularDependencyError,
@@ -305,6 +306,12 @@ def test_reusing_a_private_module_across_two_injectors_keeps_them_independent() 
     exposed bindings into the second injector's private scope. Both
     injectors must resolve correctly and independently, even after the
     second one is built.
+
+    Today each run_configure() call instead creates its own PrivateBinder
+    (binder.create_private()), and the exposure provider resolves through
+    that specific PrivateBinder's `.injector`, set once - and only once, per
+    run - by Injector._build_private_injectors(), so the two runs can never
+    cross-contaminate each other's private scope.
     """
 
     module = ReusedPrivateModule()
@@ -459,14 +466,14 @@ def test_private_provides_method_is_visible_inside_its_own_private_injector() ->
 def test_private_module_install_sees_the_parent_injector_not_the_private_child() -> (
     None
 ):
-    """Regression test for B5's wrapper-indirection: run_configure() runs
-    the module's own configure() *nested* one layer inside
-    _PrivateModuleWrapper's own ModuleAdapter.configure() call for the
-    private child injector -- so the innermost `_configuring` frame at the
-    point configure() runs belongs to the wrapper, not to the module
-    itself. self._injector (and anything configure() derives from it, like
-    self.install()) must still resolve to the real PARENT injector, not
-    the in-progress private child injector that wraps it.
+    """Inside a PrivateModule's configure(), self._injector (and so anything
+    that derives from it, like self.install()) must be the injector that
+    installed this module - not some injector built for the module's own
+    private bindings. There's no wrapper module or child injector in the
+    picture during configure() any more: configure() runs directly against
+    a PrivateBinder, and the private Injector for that binder isn't built
+    until later, in Injector._build_private_injectors(), well after
+    configure() (and this assertion) has already run.
     """
 
     module = InjectorRecordingPrivateModule()
@@ -474,3 +481,141 @@ def test_private_module_install_sees_the_parent_injector_not_the_private_child()
     injector = create_injector([module])
 
     assert module.seen_injector is injector
+
+
+class NestedSecret:
+    pass
+
+
+class RealNestedSecret(NestedSecret):
+    """Bound privately by OuterNestedModule; must be visible to a
+    PrivateModule installed from *inside* OuterNestedModule's own
+    configure(), not just to OuterNestedModule itself.
+    """
+
+
+class UsesNestedSecret:
+    @inject
+    def __init__(self, secret: NestedSecret) -> None:
+        self.secret = secret
+
+
+class InnerOnly:
+    """Bound and exposed only inside InnerNestedModule; OuterNestedModule
+    never re-exposes it, so it must stay invisible past Outer's boundary.
+    """
+
+
+class InnerNestedModule(PrivateModule):
+    """Installed from inside OuterNestedModule.configure() -- its private
+    binder must chain to Outer's private binder, not to the root, so it can
+    see NestedSecret without Outer exposing it.
+    """
+
+    def configure(self, binder: Binder) -> None:
+        binder.bind(UsesNestedSecret, to=UsesNestedSecret)
+        binder.bind(InnerOnly, annotated_with="inner-only", to=InnerOnly)
+        self.expose(binder, UsesNestedSecret)
+        self.expose(binder, InnerOnly, "inner-only")
+
+
+class OuterNestedModule(PrivateModule):
+    def configure(self, binder: Binder) -> None:
+        binder.bind(NestedSecret, to=RealNestedSecret)
+        self.install(binder, InnerNestedModule())
+        self.expose(binder, UsesNestedSecret)
+
+
+def test_nested_private_modules_see_the_enclosing_private_bindings() -> None:
+    """A PrivateModule installed from inside another PrivateModule's
+    configure() must resolve dependencies against the enclosing module's
+    private bindings, not fall through to implicit construction. Before the
+    PrivateBinder redesign, a nested PrivateModule's child injector chained
+    to the *root* binder instead of the enclosing private binder, so this
+    used to silently construct a plain NestedSecret instead of the private
+    RealNestedSecret.
+    """
+    injector = create_injector([OuterNestedModule()])
+
+    uses = injector.get_instance(UsesNestedSecret)
+
+    assert isinstance(uses.secret, RealNestedSecret)
+
+
+def test_nested_private_bindings_do_not_leak_the_enclosing_binding_to_the_root() -> (
+    None
+):
+    """NestedSecret is bound privately inside OuterNestedModule and never
+    exposed, so resolving it unannotated at the root must fall through to
+    implicit construction of a plain NestedSecret, not the private
+    RealNestedSecret."""
+    injector = create_injector([OuterNestedModule()])
+
+    secret = injector.get_instance(NestedSecret)
+
+    assert type(secret) is NestedSecret
+
+
+def test_type_bound_only_inside_a_nested_private_module_is_invisible_at_the_root() -> (
+    None
+):
+    """InnerOnly is bound and exposed by InnerNestedModule, but Outer never
+    re-exposes it past its own boundary -- the root injector must have no
+    binding for it at all."""
+    injector = create_injector([OuterNestedModule()])
+
+    with pytest.raises(MissingBindingError, match=r"inner-only"):
+        injector.get_instance(InnerOnly, "inner-only")
+
+
+class BrokenExposeOnlyModule(PrivateModule):
+    """Exposes IDatabase without ever binding it privately -- a second,
+    independent source of a configuration error, for the aggregation test
+    below."""
+
+    def configure(self, binder: Binder) -> None:
+        self.expose(binder, IDatabase, "never-bound")
+
+
+class DoublyBrokenAppModule(Module):
+    """Combines a plain bind() error on the parent binder with a
+    PrivateModule's expose() error, to prove both land in the same
+    CreationError."""
+
+    def configure(self, binder: Binder) -> None:
+        binder.bind(IConnectionConfig, to="not a class")
+        self.install(binder, BrokenExposeOnlyModule())
+
+
+def test_parent_bind_error_and_private_expose_error_aggregate_into_one() -> None:
+    """A bind() error recorded directly on the parent's binder and an
+    expose() error recorded on a private binder nested underneath it must
+    both surface in the single CreationError raised at create_injector()
+    time, not just whichever one is discovered first."""
+    with pytest.raises(CreationError, match=r"2 errors") as exc_info:
+        create_injector([DoublyBrokenAppModule()])
+
+    message = str(exc_info.value)
+    assert "'to' requires a new-style class" in message
+    assert "no matching private binding" in message
+
+
+class Bogus:
+    pass
+
+
+class WrongBinderExposeModule(PrivateModule):
+    """Calls expose() with a fresh, unrelated Binder instead of the private
+    binder configure() was actually given."""
+
+    def configure(self, binder: Binder) -> None:
+        binder.bind(Bogus, to=Bogus)
+        self.expose(ConcreteBinder(), Bogus)
+
+
+def test_expose_with_a_binder_other_than_the_one_configure_was_given_raises() -> None:
+    """expose() must be called with the same (private) binder configure()
+    received; passing an unrelated Binder is a programming error, not a
+    configuration error to defer to CreationError time."""
+    with pytest.raises(BindingError, match=r"expose\(\) must be called"):
+        create_injector([WrongBinderExposeModule()])

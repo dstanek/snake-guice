@@ -1,12 +1,15 @@
 import inspect
 import threading
 from dataclasses import dataclass, field
-from typing import Any, TypeVar, overload
+from typing import TYPE_CHECKING, Any, TypeVar, overload
 
 from snakeguice import errors, providers, scopes
 from snakeguice.annotation import UNANNOTATED, AnnotationLike
 from snakeguice.interfaces import Binder as BinderI
 from snakeguice.interfaces import Interface, Provider, Scope
+
+if TYPE_CHECKING:
+    from snakeguice.injector import Injector
 
 _NOT_SET = object()
 _T = TypeVar("_T")
@@ -52,6 +55,7 @@ class Binder:
         self._parent = parent or _EmptyBinder()
         self._binding_map: dict[Key, Binding] = {}
         self._errors: list[BinderErrorRecord] = []
+        self._private_children: list["PrivateBinder"] = []
 
     def add_error(self, msg: str) -> None:
         frame_rec = inspect.stack()[2]
@@ -70,14 +74,21 @@ class Binder:
     def errors(self) -> list[BinderErrorRecord]:
         return self._errors
 
+    def _collect_errors(self) -> list[BinderErrorRecord]:
+        collected = list(self._errors)
+        for child in self._private_children:
+            collected.extend(child._collect_errors())
+        return collected
+
     def raise_if_errors(self) -> None:
-        if not self._errors:
+        all_errors = self._collect_errors()
+        if not all_errors:
             return
 
-        count = len(self._errors)
+        count = len(all_errors)
         noun = "error" if count == 1 else "errors"
         lines = [f"{count} {noun} while creating an injector:", ""]
-        for n, err in enumerate(self._errors, start=1):
+        for n, err in enumerate(all_errors, start=1):
             lines.append(f"{n}) {err.message}")
             lines.append(f"  at {err.location}")
             lines.append(f"      {err.source}")
@@ -183,3 +194,57 @@ class Binder:
 
     def create_child(self) -> BinderI:
         return Binder(self)
+
+    def create_private(self) -> "PrivateBinder":
+        """Create a `PrivateBinder` child, to be configured now and turned
+        into its own child `Injector` once the enclosing injector has
+        finished configuring (see `Injector._build_private_injectors`).
+        """
+        child = PrivateBinder(self)
+        self._private_children.append(child)
+        return child
+
+
+class PrivateBinder(Binder):
+    """A `Binder` whose bindings are configured against it directly but,
+    once configuration finishes, become their own child `Injector` rather
+    than joining the parent binder's own bindings. `expose()` re-binds
+    selected keys on the parent binder with providers that resolve through
+    that private injector - see `PrivateModule`.
+    """
+
+    def __init__(self, parent: Binder) -> None:
+        super().__init__(parent)
+        self._parent_binder = parent
+        self._exposed: list[Key] = []
+        # Set by `Injector._build_private_injectors` after this binder (and
+        # any of its own private children) have finished configuring.
+        self.injector: "Injector | None" = None
+
+    def expose(
+        self, interface: Interface, annotation: AnnotationLike = UNANNOTATED
+    ) -> None:
+        key = Key(interface, annotation)
+        self._exposed.append(key)
+
+        private_binder = self
+
+        class ExposedProvider:
+            def get(self) -> Any:
+                if private_binder.injector is None:
+                    raise errors.BindingError(
+                        "exposed binding resolved before its private injector was built"
+                    )
+                return private_binder.injector.get_instance(interface, annotation)
+
+        self._parent_binder.bind(
+            interface, annotated_with=annotation, to_provider=ExposedProvider
+        )
+
+    def validate_exposures(self) -> None:
+        for key in self._exposed:
+            if self.get_own_binding(key) is None:
+                self._parent_binder.add_error(
+                    f"{key.interface!r} (annotation={key.annotation!r}) is "
+                    "exposed but has no matching private binding"
+                )

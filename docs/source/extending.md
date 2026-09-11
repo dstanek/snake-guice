@@ -115,7 +115,8 @@ that same binder. Overriding `run_configure` lets a `Module` subclass
 change the binder, or do other setup, before its own `configure()` runs.
 
 `PrivateModule` is the built-in example of this pattern: its `run_configure`
-creates a child injector and routes `configure()` through it, then `expose()`
-re-binds selected interfaces on the *original* binder so the parent injector
-can see them. See [Private Modules](private_modules.md) for the full
-walkthrough.
+routes `configure()` through a private binder instead of a private injector -
+the private injector itself is built later, once the enclosing injector
+finishes configuring - and `expose()` re-binds selected interfaces on the
+*original* binder so the parent injector can see them. See
+[Private Modules](private_modules.md) for the full walkthrough.

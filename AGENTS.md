@@ -63,12 +63,19 @@ not a plain attribute - it reads back from an ambient `ContextVar` stack
 `configure()` call, keyed by module identity rather than stored on the module
 instance, so one `Module`/`PrivateModule` instance can safely configure more
 than one injector (e.g. two `create_injector()` calls sharing a module).
-`Module.install(binder, other)` composes modules. `PrivateModule` creates an
-isolated child injector and `expose()`s individual bindings to the parent
-binder (robot-legs pattern, see `tests/system/test_private_modules.py` and
-`docs/source/private_modules.md`); its own per-`run_configure()`-call state
-(`original_binder`, `exposed_keys`, `private_injector`) is likewise held
-ambiently (`private_module.py`'s `_current_run`), for the same reason.
+`Module.install(binder, other)` composes modules. `PrivateModule` uses a
+two-phase bootstrap: `run_configure()` calls `binder.create_private()` to get
+a `PrivateBinder` (`binder.py`), configures the module against it, and
+validates its `expose()`s (`PrivateBinder.validate_exposures()`) - all before
+any private injector exists. Once the *enclosing* injector finishes
+configuring and raising errors, `Injector._build_private_injectors()` turns
+each `PrivateBinder` collected on its binder into its own child `Injector`
+(recursively, so a `PrivateModule` installed from inside another one parents
+its `PrivateBinder` to the enclosing private binder, and its private injector
+to the enclosing private injector). `expose()`s individual bindings to the
+parent binder as providers that resolve through that private injector
+(robot-legs pattern, see `tests/system/test_private_modules.py` and
+`docs/source/private_modules.md`).
 
 **Providers/scopes**: `providers.create_simple_provider(cls)` builds via
 `injector.create_object`; `create_instance_provider(obj)` returns a fixed

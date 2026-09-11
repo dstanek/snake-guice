@@ -62,15 +62,16 @@ only ever uses one.
 ## Isolating Bindings with `PrivateModule`
 
 `snakeguice.PrivateModule` is a `Module` whose `configure(binder)`
-receives a *private* binder, backed by its own child injector. Bindings made
-there - like `IConnectionConfig` - aren't visible to the parent binder or to
-other modules, so two `PrivateModule`s can each bind `IConnectionConfig` to a
+receives a *private* binder, which becomes its own child injector once the
+enclosing injector finishes configuring. Bindings made there - like
+`IConnectionConfig` - aren't visible to the parent binder or to other
+modules, so two `PrivateModule`s can each bind `IConnectionConfig` to a
 different implementation without colliding, and `Database` doesn't need to
 know which one it got.
 
 To make a binding visible outside the private module, call
 `self.expose(binder, interface, annotation)`. This adds a binding to the
-*parent* binder that, when resolved, delegates to the private injector:
+*parent* binder that, when resolved, delegates to that private injector:
 
 ```python
 from snakeguice import annotate, inject, PrivateModule
