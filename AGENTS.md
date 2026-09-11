@@ -57,13 +57,7 @@ boundary.
 **Modules** (`modules.py`): a "simple module" just needs `configure(binder)`; a
 `Module` subclass also gets `run_configure`, whose default (`_configure()`)
 also collects the module's `@provides` methods onto the same binder as
-`configure()`. `Module._injector` is a property,
-not a plain attribute - it reads back from an ambient `ContextVar` stack
-(`_configuring`) that `ModuleAdapter.configure()` pushes/pops around each
-`configure()` call, keyed by module identity rather than stored on the module
-instance, so one `Module`/`PrivateModule` instance can safely configure more
-than one injector (e.g. two `create_injector()` calls sharing a module).
-`Module.install(binder, other)` composes modules. `PrivateModule` uses a
+`configure()`. `Module.install(binder, other)` composes modules. `PrivateModule` uses a
 two-phase bootstrap: `run_configure()` calls `binder.create_private()` to get
 a `PrivateBinder` (`binder.py`), configures the module against it, and
 validates its `expose()`s (`PrivateBinder.validate_exposures()`) - all before

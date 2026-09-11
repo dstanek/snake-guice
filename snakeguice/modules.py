@@ -1,5 +1,4 @@
 import inspect
-from contextvars import ContextVar
 from typing import Any, Callable
 
 from snakeguice._extractor import extract_params
@@ -7,23 +6,6 @@ from snakeguice.decorators import inject
 from snakeguice.interfaces import Binder as BinderI
 from snakeguice.interfaces import Injector as InjectorI
 from snakeguice.interfaces import Module as ModuleI
-
-_configuring: "ContextVar[tuple[tuple[ModuleI, InjectorI | None], ...]]" = ContextVar(
-    "snakeguice_configuring", default=()
-)
-"""A stack of `(module, injector)` frames, one per in-flight
-`ModuleAdapter.configure()` call, ambient rather than stored on the module
-instance so one module instance can safely configure more than one injector
-- see `Module._injector`.
-
-A flat "last write wins" var isn't enough: `self.install(binder, other)`
-runs `other`'s `configure()` *nested* inside the installing module's own
-`ModuleAdapter.configure()` call, so by the time `other.configure()` body
-runs, the innermost frame belongs to `other`, not to the installer.
-`Module._injector` therefore searches the stack for the frame pushed for
-`self` specifically, rather than trusting whichever frame is innermost - so
-an installed module's frame can't shadow the installer's.
-"""
 
 
 class ProvidesBinderHelper:
@@ -63,25 +45,14 @@ def _configure(module: ModuleI, binder: BinderI) -> None:
 class ModuleAdapter:
     """Adapts the simple and standard module interfaces to a common one."""
 
-    def __init__(self, module: ModuleI, injector: InjectorI | None) -> None:
+    def __init__(self, module: ModuleI) -> None:
         self._module = module
-        self._injector = injector
 
     def configure(self, binder: BinderI) -> None:
-        # Modules opt in via `set_injector`; the injector is tracked only
-        # for the duration of this configure() call.
-        token = None
-        if hasattr(self._module, "set_injector"):
-            stack = _configuring.get()
-            token = _configuring.set((*stack, (self._module, self._injector)))
-        try:
-            if hasattr(self._module, "run_configure"):
-                self._module.run_configure(binder)
-            else:
-                _configure(self._module, binder)
-        finally:
-            if token is not None:
-                _configuring.reset(token)
+        if hasattr(self._module, "run_configure"):
+            self._module.run_configure(binder)
+        else:
+            _configure(self._module, binder)
 
 
 class Module:
@@ -89,7 +60,7 @@ class Module:
 
     def install(self, binder: BinderI, module: ModuleI) -> None:
         """Add another module's bindings to a binder."""
-        ModuleAdapter(module, self._injector).configure(binder)
+        ModuleAdapter(module).configure(binder)
 
     def run_configure(self, binder: BinderI) -> None:
         """A hook for intercepting the configure method. Allows different
@@ -105,16 +76,3 @@ class Module:
     def configure(self, binder: BinderI) -> None:
         """A subclass should override this to configure a binder."""
         raise NotImplementedError
-
-    def set_injector(self, injector: InjectorI) -> None:
-        """Marks this module as wanting `self._injector` tracked; see
-        `ModuleAdapter.configure` and `_configuring` for where the value
-        actually lives.
-        """
-
-    @property
-    def _injector(self) -> InjectorI | None:
-        for module, injector in reversed(_configuring.get()):
-            if module is self:
-                return injector
-        return None

@@ -175,8 +175,7 @@ requiring a binding for every parameter.
 
 A **module** is anything with a `configure(binder)` method - that's the
 "simple module" shown above. `snakeguice.modules.Module` is a base class that
-adds two things: it tracks `self._injector`, and it gives you `install()` for
-composing modules:
+gives you `install()` for composing modules:
 
 ```python
 from snakeguice.modules import Module

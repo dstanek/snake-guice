@@ -50,7 +50,7 @@ class Injector:
 
     def _add_modules(self, modules: Any) -> None:
         for module in modules:
-            ModuleAdapter(module, self).configure(self._binder)
+            ModuleAdapter(module).configure(self._binder)
         self._binder.raise_if_errors()
         self._build_private_injectors()
 

@@ -16,7 +16,6 @@ from snakeguice.errors import (
     MissingBindingError,
 )
 from snakeguice.interfaces import Binder
-from snakeguice.interfaces import Injector as InjectorI
 from snakeguice.modules import Module
 
 
@@ -332,27 +331,6 @@ def test_reusing_a_private_module_across_two_injectors_keeps_them_independent() 
     assert m1 is m1_again  # i1 keeps resolving through its OWN private injector
 
 
-class InstalledSubModule:
-    """A plain (non-Private) module installed *from inside* a
-    PrivateModule.configure() -- see
-    test_private_module_install_sees_the_parent_injector_not_the_private_child.
-    """
-
-    def configure(self, binder: Binder) -> None:
-        pass
-
-
-class InjectorRecordingPrivateModule(PrivateModule):
-    def __init__(self) -> None:
-        self.seen_injector: InjectorI | None = None
-
-    def configure(self, binder: Binder) -> None:
-        # Recorded here, not returned, since self._injector is only valid
-        # for the duration of this configure() call.
-        self.seen_injector = self._injector
-        self.install(binder, InstalledSubModule())
-
-
 class Secret:
     pass
 
@@ -461,26 +439,6 @@ def test_private_provides_method_is_visible_inside_its_own_private_injector() ->
     consumer = injector.get_instance(Consumer)
 
     assert type(consumer.dep) is ProvidedDep
-
-
-def test_private_module_install_sees_the_parent_injector_not_the_private_child() -> (
-    None
-):
-    """Inside a PrivateModule's configure(), self._injector (and so anything
-    that derives from it, like self.install()) must be the injector that
-    installed this module - not some injector built for the module's own
-    private bindings. There's no wrapper module or child injector in the
-    picture during configure() any more: configure() runs directly against
-    a PrivateBinder, and the private Injector for that binder isn't built
-    until later, in Injector._build_private_injectors(), well after
-    configure() (and this assertion) has already run.
-    """
-
-    module = InjectorRecordingPrivateModule()
-
-    injector = create_injector([module])
-
-    assert module.seen_injector is injector
 
 
 class NestedSecret:
