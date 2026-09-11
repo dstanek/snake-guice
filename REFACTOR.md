@@ -1,6 +1,20 @@
 # Refactoring notes
 
-## Why `Module` currently knows about `Injector`
+## Status
+
+Steps 1-4 below are done, on the line above `00ec0569`:
+
+- `e67aded6` per-binding singleton lock (step 1's follow-up)
+- `819e802a` `@provides` bound on the same binder as `configure()` (step 2)
+- `13b3f45a` `PrivateBinder` and the two-phase bootstrap (step 3)
+- `61a5b247` module-side injector plumbing deleted (step 4)
+
+`modules.py` and `private_module.py` no longer reference the injector at
+all; a module's only collaborator is its binder. Step 5, the `Binder`
+protocol, is still open. The sections below describe the design as it was
+when the decision was made, and the plan that was followed.
+
+## Why `Module` knew about `Injector`
 
 Conceptually, the core roles in this codebase are:
 
@@ -9,12 +23,12 @@ Conceptually, the core roles in this codebase are:
 - `Injector`: resolves keys into instances at runtime.
 - `Module`: contributes bindings to a binder.
 
-In a clean separation, a module would only need a binder. In the current
-implementation, `Module` subclasses can also reach the current injector.
+In a clean separation, a module would only need a binder. Before this refactor,
+`Module` subclasses could also reach the current injector.
 That exists to support configuration-time behavior that goes beyond simply
 declaring bindings.
 
-The places this shows up, as of the concurrency change (`51cf06ee`):
+The places this showed up, as of the concurrency change (`51cf06ee`):
 
 - `Injector._add_modules()` passes itself into `ModuleAdapter`.
 - `ModuleAdapter.configure()` pushes a `(module, injector)` frame onto an
@@ -39,7 +53,7 @@ composition and private child injectors, and three ambient mechanisms exist
 only to deliver it safely to a `configure()` call that has no parameter for
 it.
 
-## What is awkward about the current design
+## What was awkward about that design
 
 This couples configuration-time concepts to runtime concepts:
 
@@ -58,7 +72,7 @@ by moving that state into the ambient `ContextVar`s listed above. That is
 scaffolding, not design: it is correct, and it is exactly what this refactor
 should delete.
 
-Two live bugs are direct consequences of the coupling:
+Two bugs were direct consequences of the coupling (both fixed by steps 2 and 3):
 
 1. **`@provides` on a `PrivateModule` binds to the parent binder** (BUGS.md
    B2, still open). `Injector._add_modules()` runs the `@provides` scan
