@@ -75,7 +75,7 @@ should delete.
 Two bugs were direct consequences of the coupling (both fixed by steps 2 and 3):
 
 1. **`@provides` on a `PrivateModule` binds to the parent binder** (BUGS.md
-   B2, still open). `Injector._add_modules()` runs the `@provides` scan
+   B2). `Injector._add_modules()` runs the `@provides` scan
    against the injector's own binder, while `ModuleAdapter` has independently
    routed `configure()` into the private child. Two binders in play for one
    module.
