@@ -2,16 +2,19 @@
 
 ## Status
 
-Steps 1-4 below are done, on the line above `00ec0569`:
+All five steps below are done, on the line above `00ec0569`:
 
 - `e67aded6` per-binding singleton lock (step 1's follow-up)
 - `819e802a` `@provides` bound on the same binder as `configure()` (step 2)
 - `13b3f45a` `PrivateBinder` and the two-phase bootstrap (step 3)
 - `61a5b247` module-side injector plumbing deleted (step 4)
+- `e186c0e1` `interfaces.Binder` promoted to a Protocol (step 5)
 
 `modules.py` and `private_module.py` no longer reference the injector at
-all; a module's only collaborator is its binder. Step 5, the `Binder`
-protocol, is still open. The sections below describe the design as it was
+all; a module's only collaborator is its binder, and that binder is now
+type-checked. One known limitation remains from step 5: abstract or
+`Protocol` interfaces bound through `to_provider=`/`to_instance=` still
+trip mypy's abstract-class check and need their own overload. The sections below describe the design as it was
 when the decision was made, and the plan that was followed.
 
 ## Why `Module` knew about `Injector`
