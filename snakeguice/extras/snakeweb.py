@@ -49,14 +49,18 @@ class RoutesModule(Module):
         self.configure(self._binder)
         self._mapper.create_regs([])
 
-    def configure(self, binder: RoutesBinder) -> None:
+    # `run_configure` (above) routes `configure()` through `RoutesBinder`
+    # instead of the real `Binder` - the deliberate "change the binder"
+    # pattern documented in docs/source/extending.md - so this legitimately
+    # narrows `Module.configure(binder: Binder)`'s parameter type.
+    def configure(self, binder: RoutesBinder) -> None:  # type: ignore[override]
         raise NotImplementedError
 
 
 class AutoRoutesModule(RoutesModule):
     configured_routes: dict[Any, Any]
 
-    def configure(self, binder: RoutesBinder) -> None:
+    def configure(self, binder: RoutesBinder) -> None:  # type: ignore[override]
         for route, controller in self.configured_routes.items():
             if isinstance(controller, MethodType):
                 binder.connect(

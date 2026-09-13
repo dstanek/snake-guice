@@ -26,7 +26,9 @@ class HWModule(Module):
 
 
 class HWRoutes(snakeweb.RoutesModule):
-    def configure(self, routes_binder: snakeweb.RoutesBinder) -> None:
+    # RoutesModule.run_configure() deliberately routes configure() through
+    # RoutesBinder instead of Binder - see docs/source/extending.md.
+    def configure(self, routes_binder: snakeweb.RoutesBinder) -> None:  # type: ignore[override]
         routes_binder.connect("/", controller=HWController)
         routes_binder.connect("/:name", controller=HWController, action="hello_name")
 

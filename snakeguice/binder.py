@@ -98,13 +98,19 @@ class Binder:
     @overload
     def bind(
         self,
-        _class: type[_T],
+        _class: type[Any],
         *,
         to: type[Any],
         in_scope: Scope = ...,
         annotated_with: AnnotationLike = ...,
     ) -> None: ...
 
+    # `_class: type[_T]` here is load-bearing (it ties `to_provider=`'s
+    # `Provider[_T]` back to `_class`), unlike the `to=` overload above, so
+    # it can't be widened the same way. Binding an abstract class or
+    # `Protocol` interface through these two overloads still trips mypy's
+    # `[type-abstract]` check; fixing that needs its own overload for
+    # abstract interfaces, not a change to this one.
     @overload
     def bind(
         self,
@@ -192,7 +198,7 @@ class Binder:
     def get_binding(self, key: Key) -> Binding | None:
         return self._binding_map.get(key) or self._parent.get_binding(key)
 
-    def create_child(self) -> BinderI:
+    def create_child(self) -> "Binder":
         return Binder(self)
 
     def create_private(self) -> "PrivateBinder":

@@ -541,7 +541,7 @@ class DoublyBrokenAppModule(Module):
     CreationError."""
 
     def configure(self, binder: Binder) -> None:
-        binder.bind(IConnectionConfig, to="not a class")
+        binder.bind(IConnectionConfig, to="not a class")  # type: ignore[call-overload]
         self.install(binder, BrokenExposeOnlyModule())
 
 

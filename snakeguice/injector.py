@@ -6,7 +6,6 @@ from snakeguice._extractor import extract_params
 from snakeguice.annotation import UNANNOTATED, AnnotationLike
 from snakeguice.binder import Binder, Key
 from snakeguice.errors import CircularDependencyError, MissingBindingError
-from snakeguice.interfaces import Binder as BinderI
 from snakeguice.interfaces import Injector as IInjector
 from snakeguice.interfaces import Provider
 from snakeguice.modules import ModuleAdapter
@@ -38,7 +37,7 @@ def _format_chain(frames: "tuple[tuple[Injector, Key], ...]") -> str:
 
 
 class Injector:
-    def __init__(self, modules: Any = None, binder: BinderI | None = None) -> None:
+    def __init__(self, modules: Any = None, binder: Binder | None = None) -> None:
         if modules is None:
             modules = []
         elif not hasattr(modules, "__iter__"):

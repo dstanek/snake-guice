@@ -99,6 +99,12 @@ are recorded via
 `CreationError` (a `BindingError` subclass) with a numbered list of every
 problem and its source location.
 
+`interfaces.Binder` (the type a `Module.configure(binder)` annotates its
+parameter with) is a `Protocol` mirroring `binder.Binder`'s public surface,
+including the `bind()` overloads, so a `configure()` call site is checked
+against the real DSL rather than against `Any`. `interfaces.Key` and
+`interfaces.Module` remain `Any` for now.
+
 **Other**: `interceptors.ParameterInterceptor` injects a single named param into
 a method call. `config.ConfigParserLoader` binds `.ini` values as
 `Config("file:section:option")`. `extras/snakeweb.py` wraps the `routes`

@@ -3,11 +3,17 @@ from unittest.mock import Mock
 import pytest
 
 from snakeguice import create_injector, inject
-from snakeguice.binder import Binder
+from snakeguice.binder import Binder, PrivateBinder
 from snakeguice.errors import BindingError, CircularDependencyError, CreationError
 from snakeguice.interfaces import Binder as BinderI
 
 from . import cls_heirarchy as ch
+
+# Conformance pins: mypy checks these assignments on every run, so the
+# concrete `Binder`/`PrivateBinder` classes can't silently drift out of sync
+# with the `BinderI` protocol they're meant to satisfy.
+_conforms: BinderI = Binder()
+_private_conforms: BinderI = PrivateBinder(Binder())
 
 
 def test_clean_binder_raises_nothing() -> None:

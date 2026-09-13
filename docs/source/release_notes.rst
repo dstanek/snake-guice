@@ -26,3 +26,9 @@ Python 3.10 or later.
   Added ``scopes.THREAD_LOCAL`` for state that should be cached per thread
   instead. A ``PrivateModule`` instance can now safely configure more than
   one injector.
+- ``interfaces.Binder`` is now a ``Protocol`` (previously an alias for
+  ``Any``), so ``configure(binder)`` is type-checked against the real
+  ``bind()`` overloads and the rest of the binder DSL. An abstract class or
+  ``Protocol`` interface type-checks today when bound with ``to=``; binding
+  one through ``to_provider=`` or ``to_instance=`` doesn't yet - that needs
+  its own overload.

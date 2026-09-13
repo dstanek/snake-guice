@@ -206,7 +206,7 @@ class _Multi:
 
 class FakeModule:
     def __init__(self) -> None:
-        self.binder = None
+        self.binder: Binder | None = None
         self.num_calls = 0
 
     def configure(self, binder: Binder) -> None:
