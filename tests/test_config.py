@@ -2,6 +2,7 @@
 
 """Tests for the ConfigParserLoader."""
 
+import inspect
 from pathlib import Path
 
 import pytest
@@ -102,3 +103,45 @@ def test_config_parser_loader_namespace_avoids_collision(tmp_path: Path) -> None
     injector = create_injector([ConfigModule()])
     assert injector.get_instance(config.Config("primary:x:a")) == "1"
     assert injector.get_instance(config.Config("replica:x:a")) == "2"
+
+
+def test_config_parser_loader_duplicate_key_reports_the_caller_line(
+    tmp_path: Path,
+) -> None:
+    """Guard, not a regression test: bind_configuration() calls
+    binder.add_error() directly, one frame away from the caller -- the same
+    shape as bind()'s own duplicate-binding error -- so the location already
+    names the second bind_configuration() call below, not a library frame
+    inside snakeguice/config.py. Pins that existing, correct behaviour
+    against Binder.add_error() growing a depth= parameter for
+    PrivateBinder.validate_exposures(), in case a wrong default depth were
+    to also shift this path.
+    """
+    d1, d2 = tmp_path / "a", tmp_path / "b"
+    d1.mkdir()
+    d2.mkdir()
+    (d1 / "settings.ini").write_text("[x]\na = 1\n")
+    (d2 / "settings.ini").write_text("[x]\na = 2\n")
+
+    class ConfigModule:
+        def configure(self, binder: Binder) -> None:
+            config.ConfigParserLoader(str(d1 / "settings.ini")).bind_configuration(
+                binder
+            )
+            config.ConfigParserLoader(str(d2 / "settings.ini")).bind_configuration(
+                binder
+            )
+
+    source, start_line = inspect.getsourcelines(ConfigModule.configure)
+    call_lines = [
+        start_line + offset
+        for offset, line in enumerate(source)
+        if "bind_configuration(" in line
+    ]
+    second_call_line = call_lines[1]
+
+    with pytest.raises(CreationError) as exc_info:
+        create_injector([ConfigModule()])
+
+    message = str(exc_info.value)
+    assert f"File {__file__}, line {second_call_line}, in configure" in message

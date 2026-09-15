@@ -1,9 +1,6 @@
 Open items (2026-09-15)
 
 * interfaces.Key and interfaces.Module are still Any; promote like Binder
-* Binder.add_error() hardcodes inspect.stack()[2], so errors recorded from
-  PrivateBinder.validate_exposures() and config.py point inside the library;
-  also inspect.stack() is ~1 ms per error (BUGS.md B6/P2)
 
 Older notes (2010), several since done
 

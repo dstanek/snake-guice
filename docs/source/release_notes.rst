@@ -21,6 +21,12 @@ Unreleased
   ``test_to_instance_accepts_a_duck_typed_stand_in``), so widening them to
   ``type[Any]`` to accept abstract interfaces doesn't give up any checking
   that existed before.
+- A configuration error from ``PrivateModule.expose()`` (an exposed key with
+  no matching private binding) now points at the ``expose()`` call itself,
+  not somewhere inside snakeguice. ``Binder.add_error()`` also no longer
+  builds a full ``inspect.stack()`` (every frame, with source context) for a
+  single-frame lookup - roughly 115x faster per call in a microbenchmark
+  (0.27ms vs. 0.002ms).
 
 1.0.0a1 (alpha)
 ----------------

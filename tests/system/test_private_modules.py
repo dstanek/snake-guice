@@ -1,3 +1,5 @@
+import inspect
+
 import pytest
 
 from snakeguice import (
@@ -577,3 +579,29 @@ def test_expose_with_a_binder_other_than_the_one_configure_was_given_raises() ->
     configuration error to defer to CreationError time."""
     with pytest.raises(BindingError, match=r"expose\(\) must be called"):
         create_injector([WrongBinderExposeModule()])
+
+
+class MissingBindingExposeModule(PrivateModule):
+    """Exposes IDatabase without ever binding it privately, solely to check
+    where the resulting CreationError says the problem is: the call site of
+    self.expose() below, not a library frame inside PrivateModule.run_configure
+    or Injector, which is where validate_exposures() actually runs and
+    records the error."""
+
+    def configure(self, binder: Binder) -> None:
+        self.expose(binder, IDatabase, "location-check")
+
+
+def test_expose_without_matching_binding_reports_the_expose_call_site() -> None:
+    source, start_line = inspect.getsourcelines(MissingBindingExposeModule.configure)
+    expose_line = next(
+        start_line + offset
+        for offset, line in enumerate(source)
+        if "self.expose(" in line
+    )
+
+    with pytest.raises(CreationError) as exc_info:
+        create_injector([MissingBindingExposeModule()])
+
+    message = str(exc_info.value)
+    assert f"File {__file__}, line {expose_line}, in configure" in message

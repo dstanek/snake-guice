@@ -1,4 +1,5 @@
-import inspect
+import linecache
+import sys
 import threading
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, overload
@@ -12,6 +13,24 @@ if TYPE_CHECKING:
     from snakeguice.injector import Injector
 
 _NOT_SET = object()
+
+
+def _frame_location(skip: int) -> tuple[str, str]:
+    """`(location, source)` for the frame `skip` levels above this
+    function's own frame: `skip=1` is this function's caller, `skip=2` the
+    caller's caller, and so on. Uses `sys._getframe()`/`linecache` rather
+    than `inspect.stack()`, which walks and reads source for every frame on
+    the stack whether or not it's used.
+    """
+    frame = sys._getframe(skip)
+    filename = frame.f_code.co_filename
+    lineno = frame.f_lineno
+    function = frame.f_code.co_name
+
+    location = f"File {filename}, line {lineno}, in {function}"
+    line = linecache.getline(filename, lineno)
+    source = line.strip() if line else "<source unavailable>"
+    return location, source
 
 
 @dataclass
@@ -56,15 +75,17 @@ class Binder:
         self._errors: list[BinderErrorRecord] = []
         self._private_children: list["PrivateBinder"] = []
 
-    def add_error(self, msg: str) -> None:
-        frame_rec = inspect.stack()[2]
+    def add_error(self, msg: str, *, depth: int = 2) -> None:
+        """Record an error against the frame `depth` levels above this call;
+        the default is the user code that called `bind()`.
+        """
+        location, source = _frame_location(depth + 1)
+        self._record_error(msg, location, source)
 
-        location = f"File {frame_rec[1]}, line {frame_rec[2]}, in {frame_rec[3]}"
-        code_context, index = frame_rec.code_context, frame_rec.index
-        if code_context is not None and index is not None:
-            source = code_context[index].strip()
-        else:
-            source = "<source unavailable>"
+    def _record_error(self, msg: str, location: str, source: str) -> None:
+        """Append an error whose location was captured earlier (see
+        `PrivateBinder.expose`).
+        """
         self._errors.append(
             BinderErrorRecord(message=msg, location=location, source=source)
         )
@@ -227,6 +248,8 @@ class PrivateBinder(Binder):
         super().__init__(parent)
         self._parent_binder = parent
         self._exposed: list[Key] = []
+        # expose() call sites, captured while that frame is still live.
+        self._expose_locations: dict[Key, tuple[str, str]] = {}
         # Set by `Injector._build_private_injectors` after this binder (and
         # any of its own private children) have finished configuring.
         self.injector: "Injector | None" = None
@@ -236,6 +259,8 @@ class PrivateBinder(Binder):
     ) -> None:
         key = Key(interface, annotation)
         self._exposed.append(key)
+        # 3: this frame, PrivateModule.expose(), the user's configure().
+        self._expose_locations[key] = _frame_location(3)
 
         private_binder = self
 
@@ -252,9 +277,14 @@ class PrivateBinder(Binder):
         )
 
     def validate_exposures(self) -> None:
+        # The expose() frame is long gone and the wrapper depth varies with
+        # nesting, so use the location captured in expose().
         for key in self._exposed:
             if self.get_own_binding(key) is None:
-                self._parent_binder.add_error(
+                location, source = self._expose_locations[key]
+                self._parent_binder._record_error(
                     f"{key.interface!r} (annotation={key.annotation!r}) is "
-                    "exposed but has no matching private binding"
+                    "exposed but has no matching private binding",
+                    location,
+                    source,
                 )
