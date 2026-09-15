@@ -127,17 +127,18 @@ class _GrandchildModule(_ChildModule):
 
 
 def test_method_injection_order_is_stable_across_instances_and_subclass() -> None:
-    """The per-class @inject method order (most-derived definition of a
-    name wins, every name across the MRO runs exactly once) must be
-    identical every time it's computed for a given class, and independent
-    of another class's plan -- guarding a per-class cache of the ordered
-    method list against mixing up two different classes' plans or reusing
-    a stale one.
+    """The per-class @inject method order -- base classes first, declaration
+    order within each class, an overridden method running once at the
+    overriding class's position -- must be identical every time it's
+    computed for a given class, and independent of another class's plan --
+    guarding a per-class cache of the ordered method list against mixing up
+    two different classes' plans or reusing a stale one.
 
-    This test does not pin the exact sequence set_a/set_b/set_c run in --
-    that ordering has a separately tracked issue -- only that whatever
-    order is produced is deterministic and consistent between a class and
-    an identical subclass.
+    Derivation for _ChildModule (and, since it adds no @inject methods of
+    its own, _GrandchildModule too): flattening base-to-derived over the
+    MRO gives set_a (grandparent), set_b (parent), set_a, set_c (child).
+    The grandparent's set_a is overridden by the child's later set_a, so it
+    drops out; what remains, in order, is set_b, set_a (child's), set_c.
     """
 
     injector = create_injector([])
@@ -147,14 +148,63 @@ def test_method_injection_order_is_stable_across_instances_and_subclass() -> Non
     sub_first = injector.get_instance(_GrandchildModule)
     sub_second = injector.get_instance(_GrandchildModule)
 
-    expected_names = {"grandparent:set_a", "child:set_a", "parent:set_b", "child:set_c"}
+    expected = ["parent:set_b", "child:set_a", "child:set_c"]
     for calls in (first.calls, second.calls, sub_first.calls, sub_second.calls):
         # The override wins -- the grandparent's set_a must not also run.
         assert "grandparent:set_a" not in calls
-        assert set(calls) == expected_names - {"grandparent:set_a"}
-        # Each method runs exactly once per instance.
-        assert len(calls) == len(set(calls))
+        assert calls == expected
 
     assert first.calls == second.calls
     assert sub_first.calls == sub_second.calls
     assert first.calls == sub_first.calls
+
+
+class _DiamondBaseModule:
+    def __init__(self) -> None:
+        self.calls: list[str] = []
+
+    @inject
+    def set_x(self) -> None:
+        self.calls.append("base:set_x")
+
+    @inject
+    def set_y(self) -> None:
+        self.calls.append("base:set_y")
+
+
+class _DiamondMidModule(_DiamondBaseModule):
+    # Declares a new method before overriding set_y -- the override must
+    # move to this position, not stay where the base declared it.
+    @inject
+    def set_w(self) -> None:
+        self.calls.append("mid:set_w")
+
+    @inject
+    def set_y(self) -> None:
+        self.calls.append("mid:set_y")
+
+
+class _DiamondLeafModule(_DiamondMidModule):
+    @inject
+    def set_z(self) -> None:
+        self.calls.append("leaf:set_z")
+
+
+def test_method_injection_order_with_override_and_new_leaf_method() -> None:
+    """A three-level chain where the middle class overrides a base method
+    (after declaring a new method of its own) and the leaf adds another.
+
+    Derivation: flattening base-to-derived over the MRO gives set_x, set_y
+    (base), set_w, set_y (mid), set_z (leaf). The base's set_y is
+    overridden by the mid's later set_y, so it drops out; what remains, in
+    order, is set_x, set_w, set_y (mid's), set_z -- the override runs at
+    the mid class's position (after set_w), not at the base's original
+    position.
+    """
+
+    injector = create_injector([])
+
+    instance = injector.get_instance(_DiamondLeafModule)
+
+    assert "base:set_y" not in instance.calls
+    assert instance.calls == ["base:set_x", "mid:set_w", "mid:set_y", "leaf:set_z"]

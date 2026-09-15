@@ -30,18 +30,12 @@ class _DynamicProvider:
 
 @functools.lru_cache(maxsize=None)
 def _guice_method_order(cls: type) -> tuple[str, ...]:
-    # Walk MRO from most-derived to base so that if the same method name
-    # appears in multiple classes, the most-derived definition wins.
-    # Reversing the collected list produces base-first call order.
-    seen: set[str] = set()
+    # Base classes first, declaration order within each class; a method
+    # overridden in a subclass runs once, at the overriding class's position.
     ordered: list[str] = []
-    for klass in cls.__mro__:
-        for method_name in klass.__dict__.get("__guice_methods__", []):
-            if method_name not in seen:
-                seen.add(method_name)
-                ordered.append(method_name)
-    ordered.reverse()
-    return tuple(ordered)
+    for klass in reversed(cls.__mro__):
+        ordered.extend(klass.__dict__.get("__guice_methods__", []))
+    return tuple(n for i, n in enumerate(ordered) if n not in ordered[i + 1 :])
 
 
 def _format_key(key: Key) -> str:
