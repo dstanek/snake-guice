@@ -1,3 +1,15 @@
+Open items (2026-09-15)
+
+* bind(): abstract or Protocol interfaces type-check with to= but not with
+  to_provider= / to_instance= (mypy type-abstract); needs its own overload
+* interfaces.Key and interfaces.Module are still Any; promote like Binder
+* Binder.add_error() hardcodes inspect.stack()[2], so errors recorded from
+  PrivateBinder.validate_exposures() and config.py point inside the library;
+  also inspect.stack() is ~1 ms per error (BUGS.md B6/P2)
+* docs/RELEASE_TMPL.txt still points at Google Code
+
+Older notes (2010), several since done
+
 * figure out what the rules should be for inheritance
 * inject into things that Guice didn't construct
   - specifically third party libraries
