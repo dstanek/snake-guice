@@ -1,5 +1,6 @@
+import functools
 import inspect
-from typing import Any, Callable, Iterable, NamedTuple
+from typing import Any, Callable, NamedTuple
 
 from snakeguice.annotation import UNANNOTATED, AnnotationLike
 
@@ -11,16 +12,26 @@ class Param(NamedTuple):
     default: Any = inspect.Parameter.empty
 
 
-def extract_params(method: Callable[..., Any]) -> Iterable[Param]:
-    types = inspect.get_annotations(method, eval_str=True)
-    annotations = getattr(method, "__guice_annotations__", {})
-    sig = inspect.signature(method)
-    for name, dtype in types.items():
-        if name == "return":
-            continue
+# Process-wide and keyed by function identity: entries keep their function
+# (and its evaluated annotations) alive until evicted.
+@functools.lru_cache(maxsize=1024)
+def _extract_params_cached(func: Callable[..., Any]) -> tuple[Param, ...]:
+    types = inspect.get_annotations(func, eval_str=True)
+    annotations = getattr(func, "__guice_annotations__", {})
+    names = [name for name in types if name != "return"]
+    if not names:
+        return ()
+    sig = inspect.signature(func)
+    params = []
+    for name in names:
         annotation = annotations.get(name, UNANNOTATED)
         sig_param = sig.parameters.get(name)
         default = (
             sig_param.default if sig_param is not None else inspect.Parameter.empty
         )
-        yield Param(name, dtype, annotation, default)
+        params.append(Param(name, types[name], annotation, default))
+    return tuple(params)
+
+
+def extract_params(method: Callable[..., Any]) -> tuple[Param, ...]:
+    return _extract_params_cached(getattr(method, "__func__", method))
