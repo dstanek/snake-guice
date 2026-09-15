@@ -96,6 +96,10 @@ automatically with its `IDashboard`.
 Method injection runs for both implicit construction and explicit `to=`
 bindings — any class that snake-guice constructs is fully injected.
 
+Injected methods run after `__init__`, base classes first and in declaration
+order within each class. A method overridden in a subclass runs once, at the
+subclass's position.
+
 ### Circular Dependencies
 
 `get_instance()` tracks the chain of keys it's currently resolving. If

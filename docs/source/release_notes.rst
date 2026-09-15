@@ -1,6 +1,20 @@
 Release Notes
 =============
 
+Unreleased
+----------
+
+- Resolution is much faster: parameter extraction is memoised per function
+  (~30x on a small dependency graph), method-injection order is computed once
+  per class, and ``bind()`` no longer re-validates a provider class per call.
+- ``@inject`` methods now run in declaration order within each class (they
+  ran in reverse). Base classes still go first, and an overridden method
+  runs once, at the overriding class's position.
+- A subclass of ``Injector`` asked for ``Injector`` (or any base) now returns
+  itself instead of silently building a new, empty injector.
+- Scanning a module for ``@provides`` no longer evaluates its ``@property``
+  attributes.
+
 1.0.0a1 (alpha)
 ----------------
 
