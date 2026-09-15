@@ -98,7 +98,7 @@ class Injector:
     ) -> Any: ...
 
     def get_instance(self, cls: Any, annotation: AnnotationLike = UNANNOTATED) -> Any:
-        if cls is IInjector or cls is type(self):
+        if cls is IInjector or (cls is not object and cls in type(self).__mro__):
             return self
 
         key = Key(cls, annotation)

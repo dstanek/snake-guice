@@ -701,3 +701,93 @@ def test_resolving_the_same_key_in_child_then_parent_is_not_flagged() -> None:
 
     child.get_instance(Widget)
     parent.get_instance(Widget)
+
+
+class _Svc:
+    pass
+
+
+class _Impl(_Svc):
+    pass
+
+
+class _SvcModule:
+    def configure(self, binder: Binder) -> None:
+        binder.bind(_Svc, to=_Impl)
+
+
+class TracingInjector(injector.Injector):
+    pass
+
+
+def test_subclassed_injector_returns_itself_for_base_and_own_type() -> None:
+    """A subclass of Injector asked for the base Injector, its own type, or
+    the Injector Protocol must get itself back, not a freshly constructed
+    (and empty) base Injector."""
+
+    s = TracingInjector(_SvcModule())
+    assert s.get_instance(injector.Injector) is s
+    assert s.get_instance(TracingInjector) is s
+    assert s.get_instance(InjectorI) is s
+
+
+class _Base(injector.Injector):
+    pass
+
+
+class _Sub(_Base):
+    pass
+
+
+def test_two_level_injector_subclass_chain_returns_itself_for_intermediate_base() -> (
+    None
+):
+    """A two-level subclass chain must resolve every ancestor in the MRO to
+    the same instance, not just the immediate class."""
+
+    s = _Sub(_SvcModule())
+    assert s.get_instance(_Base) is s
+
+
+class _NeedsInjector:
+    @inject
+    def __init__(self, inj: injector.Injector) -> None:
+        self.injector = inj
+
+
+def test_constructor_injection_of_injector_receives_the_actual_subclass_instance() -> (
+    None
+):
+    """A class that constructor-injects `Injector` must receive the actual
+    (possibly subclassed) instance it was resolved from, not a fresh, empty
+    base Injector -- otherwise resolving _Svc through it would silently miss
+    the module's binding."""
+
+    s = TracingInjector(_SvcModule())
+    consumer = s.get_instance(_NeedsInjector)
+    assert consumer.injector is s
+    assert isinstance(consumer.injector.get_instance(_Svc), _Impl)
+
+
+def test_get_instance_of_object_does_not_return_the_injector() -> None:
+    """`object` is in every class's MRO, but it must not be special-cased to
+    mean "give me the injector" -- get_instance(object) implicitly
+    constructs a plain object() instead."""
+
+    s = TracingInjector([])
+    result = s.get_instance(object)
+    assert result is not s
+    assert type(result) is object
+
+
+def test_non_type_key_still_resolves_after_injector_self_check() -> None:
+    """The `cls in type(self).__mro__` self-check must not raise for a
+    non-type key such as an Annotation-bound to_instance= binding."""
+
+    class MyModule:
+        def configure(self, binder: Binder) -> None:
+            binder.bind(ch.Person, annotated_with="mine", to_instance=ch.EvilPerson())
+
+    inj = injector.Injector(MyModule())
+    person = inj.get_instance(ch.Person, "mine")
+    assert isinstance(person, ch.EvilPerson)
