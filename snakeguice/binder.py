@@ -152,6 +152,7 @@ class Binder:
         annotated_with: AnnotationLike = UNANNOTATED,
     ) -> None:
         key = Key(interface=_class, annotation=annotated_with)
+        provider: Provider[Any] | type[Provider[Any]]
 
         if key in self._binding_map:
             self.add_error(f"baseclass {_class!r} already bound")
@@ -180,7 +181,11 @@ class Binder:
             provider = to_provider
 
         elif to_instance is not _NOT_SET:
-            provider = providers.create_instance_provider(to_instance)
+            # An instance, not the provider class: `Binding.provider` accepts
+            # either, and resolving an instance binding this way skips a full
+            # get_instance() round trip (cycle-detection frame, create_object)
+            # on every access.
+            provider = providers.create_instance_provider(to_instance)()
 
         else:
             self.add_error(
