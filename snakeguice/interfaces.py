@@ -1,19 +1,25 @@
 """Interfaces used by snake-guice directly"""
 
-from typing import TYPE_CHECKING, Any, Protocol, Type, TypeVar, overload
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any, Iterable, Protocol, Type, TypeVar, overload
 
 from snakeguice.annotation import UNANNOTATED, AnnotationLike
 
 if TYPE_CHECKING:
     from snakeguice.binder import BinderErrorRecord, Binding, PrivateBinder
-    from snakeguice.binder import Key as KeyC
 
 T = TypeVar("T", covariant=True)
 U = TypeVar("U")
 
-Key = Any
 Interface = Type[Any]
-Module = Any
+
+
+@dataclass(frozen=True, slots=True)
+class Key:
+    # Defined here (binder.py imports this module at runtime) and re-exported
+    # as `snakeguice.binder.Key`.
+    interface: Interface
+    annotation: AnnotationLike = UNANNOTATED
 
 
 class Binder(Protocol):
@@ -88,13 +94,22 @@ class Binder(Protocol):
 
     def raise_if_errors(self) -> None: ...
 
-    def get_binding(self, key: "KeyC") -> "Binding | None": ...
+    def get_binding(self, key: "Key") -> "Binding | None": ...
 
-    def get_own_binding(self, key: "KeyC") -> "Binding | None": ...
+    def get_own_binding(self, key: "Key") -> "Binding | None": ...
 
     def create_child(self) -> "Binder": ...
 
     def create_private(self) -> "PrivateBinder": ...
+
+
+class Module(Protocol):
+    """A `configure(binder)` callable. Satisfied structurally, so a plain
+    class with a `configure()` method (a "simple module") counts, not just
+    `snakeguice.modules.Module` subclasses.
+    """
+
+    def configure(self, binder: Binder) -> None: ...
 
 
 class Injector(Protocol):
@@ -124,7 +139,9 @@ class Injector(Protocol):
 
     def inject_members(self, instance: Any) -> Any: ...
 
-    def create_child(self, modules: Any) -> "Injector": ...
+    def create_child(
+        self, modules: "Module | Iterable[Module] | None"
+    ) -> "Injector": ...
 
 
 class Factory(Protocol[T]):

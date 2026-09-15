@@ -8,6 +8,7 @@ from snakeguice import errors, providers, scopes
 from snakeguice.annotation import UNANNOTATED, AnnotationLike
 from snakeguice.interfaces import Binder as BinderI
 from snakeguice.interfaces import Interface, Provider, Scope
+from snakeguice.interfaces import Key as Key  # re-exported as `binder.Key`
 
 if TYPE_CHECKING:
     from snakeguice.injector import Injector
@@ -38,12 +39,6 @@ class BinderErrorRecord:
     message: str
     location: str
     source: str
-
-
-@dataclass(frozen=True, slots=True)
-class Key:
-    interface: Interface
-    annotation: AnnotationLike = UNANNOTATED
 
 
 @dataclass(slots=True)

@@ -1,7 +1,3 @@
-Open items (2026-09-15)
-
-* interfaces.Key and interfaces.Module are still Any; promote like Binder
-
 Older notes (2010), several since done
 
 * figure out what the rules should be for inheritance

@@ -7,7 +7,6 @@ from snakeguice.decorators import inject
 from snakeguice.errors import MultiBindingError
 from snakeguice.interfaces import Binder as BinderI
 from snakeguice.interfaces import Injector as InjectorI
-from snakeguice.interfaces import Key as KeyI
 from snakeguice.interfaces import Provider as ProviderI
 
 
@@ -127,7 +126,7 @@ class DictBinder(_MultiBinder[dict[str, E]]):
 
     def add_binding(
         self,
-        key: KeyI,
+        key: str,
         to: type[E] | _NotSet = _NOT_SET,
         to_provider: type[ProviderI[E]] | ProviderI[E] | None = None,
         to_instance: E | _NotSet = _NOT_SET,

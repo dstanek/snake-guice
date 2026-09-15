@@ -7,7 +7,10 @@ from snakeguice.extras.snakeweb import Application
 
 
 def main() -> None:
-    injector = create_injector([URLMapperModule(), MakoTemplateModule()])
+    # URLMapperModule.configure() takes a RoutesBinder, so it is not a Module.
+    injector = create_injector(
+        [URLMapperModule(), MakoTemplateModule()]  # type: ignore[list-item]
+    )
     app = Application(injector)
 
     httpd = make_server("", 8080, app)

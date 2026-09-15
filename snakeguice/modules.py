@@ -59,8 +59,10 @@ class ModuleAdapter:
         self._module = module
 
     def configure(self, binder: BinderI) -> None:
-        if hasattr(self._module, "run_configure"):
-            self._module.run_configure(binder)
+        # run_configure is a Module-subclass hook, not part of the protocol.
+        run_configure = getattr(self._module, "run_configure", None)
+        if run_configure is not None:
+            run_configure(binder)
         else:
             _configure(self._module, binder)
 

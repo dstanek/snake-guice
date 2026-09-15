@@ -8,8 +8,14 @@ or `to_provider=` must type-check with zero `# type: ignore`s.
 from abc import ABC, abstractmethod
 from typing import Protocol
 
+import pytest
+
 from snakeguice import create_injector
+from snakeguice.binder import Key as KeyC
 from snakeguice.interfaces import Binder
+from snakeguice.interfaces import Key as KeyI
+from snakeguice.interfaces import Module as ModuleI
+from snakeguice.modules import Module
 
 # NOTE: there is no test here pinning a concrete-interface `to_instance=`
 # mismatch with `# type: ignore[call-overload]`. There was never a nominal
@@ -93,3 +99,40 @@ def test_typing_module_resolves_every_binding() -> None:
     assert injector.get_instance(Farewell, "instance").say() == "bye"
     assert injector.get_instance(Farewell, "provider-instance").say() == "bye"
     assert injector.get_instance(Farewell, "provider-class").say() == "bye"
+
+
+class SimpleModule:
+    """A plain class with a `configure()` method -- the "simple module"
+    shape `interfaces.Module` (a `Protocol`) must accept with no ignores,
+    same as the `Module` base class below."""
+
+    def configure(self, binder: Binder) -> None:
+        pass
+
+
+class ModuleSubclass(Module):
+    def configure(self, binder: Binder) -> None:
+        pass
+
+
+# Conformance pins: both module shapes satisfy the `Module` protocol.
+_simple_conforms: ModuleI = SimpleModule()
+_subclass_conforms: ModuleI = ModuleSubclass()
+
+
+def test_create_injector_accepts_a_simple_module_and_a_module_subclass() -> None:
+    create_injector([SimpleModule(), ModuleSubclass()])
+
+
+def test_create_injector_rejects_a_module_class_instead_of_an_instance() -> None:
+    with pytest.raises(TypeError):
+        create_injector([SimpleModule])  # type: ignore[list-item]
+
+
+def test_create_injector_rejects_a_bare_string() -> None:
+    with pytest.raises(TypeError, match="modules"):
+        create_injector("x")  # type: ignore[arg-type]
+
+
+def test_binder_key_and_interfaces_key_are_the_same_object() -> None:
+    assert KeyC is KeyI

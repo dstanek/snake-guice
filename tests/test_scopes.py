@@ -1,5 +1,6 @@
 import threading
 
+from snakeguice.interfaces import Key
 from snakeguice.scopes import Singleton, ThreadLocalScope, _NoScope
 
 
@@ -8,18 +9,23 @@ class FakeProvider:
         return object()
 
 
+class _SomeInterface:
+    """Stands in for a real interface -- the scopes only need a hashable
+    `Key`, not a bound one, so the interface itself is never used."""
+
+
 class Test_the_NoScope_scope:
     def setup_method(self) -> None:
         self.provider = FakeProvider()
         self.scope = _NoScope()
 
     def test_that_the_provider_is_passed_through(self) -> None:
-        assert self.scope.scope("key", self.provider) is self.provider
+        assert self.scope.scope(Key(_SomeInterface), self.provider) is self.provider
 
 
 class Test_the_Singleton_scope:
     def setup_method(self) -> None:
-        self.key = "key"
+        self.key = Key(_SomeInterface)
         self.provider = FakeProvider()
         self.scope = Singleton()
         self.scope.scope(self.key, self.provider)
@@ -37,7 +43,7 @@ class Test_the_Singleton_scope_with_a_falsey_cached_instance:
     recomputed on every call."""
 
     def setup_method(self) -> None:
-        self.key = "key"
+        self.key = Key(_SomeInterface)
         self.scope = Singleton()
 
     def test_falsey_instance_is_cached_and_reused(self) -> None:
@@ -62,7 +68,7 @@ class Test_the_ThreadLocalScope:
     cache directly (no Injector involved) -- see BUGS.md section 6."""
 
     def setup_method(self) -> None:
-        self.key = "key"
+        self.key = Key(_SomeInterface)
         self.provider = FakeProvider()
         self.scope = ThreadLocalScope()
         self.scope.scope(self.key, self.provider)

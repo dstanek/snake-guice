@@ -118,7 +118,10 @@ class TestApplication:
         class GreeterModule(snakeweb.AutoRoutesModule):
             configured_routes = {"/": GreeterController}
 
-        injector = create_injector([GreeterModule()])
+        # AutoRoutesModule.configure() takes a RoutesBinder, not a Binder
+        # (see examples/wsgiapp/app.py), so GreeterModule doesn't
+        # structurally satisfy the Module protocol's configure(binder: Binder).
+        injector = create_injector([GreeterModule()])  # type: ignore[list-item]
         self.app = snakeweb.Application(injector)
 
     def test_matched_route_returns_the_controllers_response(self) -> None:

@@ -1,6 +1,6 @@
 import functools
 import inspect
-from typing import Any, TypeVar, overload
+from typing import Any, Iterable, TypeVar, overload
 
 from snakeguice import _context
 from snakeguice._extractor import extract_params
@@ -8,7 +8,7 @@ from snakeguice.annotation import UNANNOTATED, AnnotationLike
 from snakeguice.binder import Binder, Key
 from snakeguice.errors import CircularDependencyError, MissingBindingError
 from snakeguice.interfaces import Injector as IInjector
-from snakeguice.interfaces import Provider
+from snakeguice.interfaces import Module, Provider
 from snakeguice.modules import ModuleAdapter
 
 U = TypeVar("U")
@@ -62,17 +62,30 @@ def _format_chain(frames: "tuple[tuple[Injector, Key], ...]") -> str:
 
 
 class Injector:
-    def __init__(self, modules: Any = None, binder: Binder | None = None) -> None:
+    def __init__(
+        self,
+        modules: Module | Iterable[Module] | None = None,
+        binder: Binder | None = None,
+    ) -> None:
+        resolved_modules: Iterable[Module]
         if modules is None:
-            modules = []
-        elif not hasattr(modules, "__iter__"):
-            modules = [modules]
+            resolved_modules = []
+        elif isinstance(modules, str):
+            # str is iterable; without this it fails per character, later.
+            raise TypeError(
+                f"modules must be a Module, an iterable of Module, or None, "
+                f"not a str: {modules!r}"
+            )
+        elif isinstance(modules, Iterable):
+            resolved_modules = modules
+        else:
+            resolved_modules = [modules]
 
         self._binder = binder if binder is not None else Binder()
 
-        self._add_modules(modules)
+        self._add_modules(resolved_modules)
 
-    def _add_modules(self, modules: Any) -> None:
+    def _add_modules(self, modules: Iterable[Module]) -> None:
         for module in modules:
             ModuleAdapter(module).configure(self._binder)
         self._binder.raise_if_errors()
@@ -151,7 +164,7 @@ class Injector:
         finally:
             _context.resolving.reset(resolving_token)
 
-    def create_child(self, modules: Any) -> "Injector":
+    def create_child(self, modules: Module | Iterable[Module] | None) -> "Injector":
         """Create a new injector that inherits the state from this injector.
 
         All bindings are inherited. In the future this may become closer to
@@ -188,6 +201,6 @@ class Injector:
         return instance
 
 
-def create_injector(modules: Any) -> Injector:
+def create_injector(modules: Module | Iterable[Module] | None) -> Injector:
     """Factory for creating Injector instances."""
     return Injector(modules)

@@ -27,6 +27,16 @@ Unreleased
   builds a full ``inspect.stack()`` (every frame, with source context) for a
   single-frame lookup - roughly 115x faster per call in a microbenchmark
   (0.27ms vs. 0.002ms).
+- ``interfaces.Key`` and ``interfaces.Module`` are real types now, not
+  aliases for ``Any``: ``Key`` is the same frozen dataclass
+  ``snakeguice.binder.Key`` already was, and ``Module`` is a ``Protocol``
+  requiring `configure(self, binder: Binder) -> None`. A "simple module" (a
+  plain class with just a ``configure()`` method) still satisfies it
+  structurally, same as a ``snakeguice.modules.Module`` subclass.
+  ``create_injector()``, ``Injector()``, and ``Injector.create_child()`` are
+  typed as ``Module | Iterable[Module] | None`` and now raise ``TypeError``
+  for a bare ``str`` - previously iterable, so it silently iterated
+  characters and failed deep inside with a confusing per-character error.
 
 1.0.0a1 (alpha)
 ----------------

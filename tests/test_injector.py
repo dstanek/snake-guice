@@ -791,3 +791,26 @@ def test_non_type_key_still_resolves_after_injector_self_check() -> None:
     inj = injector.Injector(MyModule())
     person = inj.get_instance(ch.Person, "mine")
     assert isinstance(person, ch.EvilPerson)
+
+
+def test_create_injector_rejects_a_bare_string_as_modules() -> None:
+    """`modules` accepts any iterable of modules, and a `str` is iterable --
+    so without a dedicated check, passing one directly (instead of wrapping
+    it in a list) used to iterate its characters and blow up deep inside
+    `ModuleAdapter.configure()` with an `AttributeError` naming a single
+    character, not a message about `modules`."""
+
+    with pytest.raises(TypeError, match="modules"):
+        create_injector("not a module")  # type: ignore[arg-type]
+
+
+def test_injector_constructor_rejects_a_bare_string_as_modules() -> None:
+    with pytest.raises(TypeError, match="modules"):
+        injector.Injector("not a module")  # type: ignore[arg-type]
+
+
+def test_create_child_rejects_a_bare_string_as_modules() -> None:
+    parent = create_injector([])
+
+    with pytest.raises(TypeError, match="modules"):
+        parent.create_child("not a module")  # type: ignore[arg-type]

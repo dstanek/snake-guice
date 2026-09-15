@@ -22,7 +22,8 @@ class HWController:
 
 class HWModule(Module):
     def configure(self, binder: Binder) -> None:
-        self.install(binder, HWRoutes())
+        # HWRoutes.configure() takes a RoutesBinder, so it is not a Module.
+        self.install(binder, HWRoutes())  # type: ignore[arg-type]
 
 
 class HWRoutes(snakeweb.RoutesModule):
