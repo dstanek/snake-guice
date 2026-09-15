@@ -10,12 +10,22 @@ from snakeguice.interfaces import Module as ModuleI
 
 class ProvidesBinderHelper:
     def bind_providers(self, module: ModuleI, binder: BinderI) -> None:
-        members = [m for m in inspect.getmembers(module) if inspect.ismethod(m[1])]
-        for _name, method in members:
-            if hasattr(method, "__guice_provides__"):
-                provided_type = method.__guice_provides__
-                provider = self._build_provider(method)
-                binder.bind(provided_type, to_provider=provider)
+        # Walk the MRO's own __dict__s instead of inspect.getmembers(module):
+        # getmembers() calls getattr() for every attribute, which would run
+        # any @property on the module as a side effect at configuration time.
+        seen: set[str] = set()
+        for cls in type(module).__mro__:
+            for name, member in cls.__dict__.items():
+                if name in seen:
+                    continue
+                seen.add(name)
+                if isinstance(member, classmethod):
+                    member = member.__func__
+                if inspect.isfunction(member) and hasattr(member, "__guice_provides__"):
+                    method = getattr(module, name)
+                    provided_type = method.__guice_provides__
+                    provider = self._build_provider(method)
+                    binder.bind(provided_type, to_provider=provider)
 
     def _build_provider(self, method: Callable[..., Any]) -> type[Any]:
         class GenericProvider:
