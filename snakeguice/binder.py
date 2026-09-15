@@ -1,7 +1,7 @@
 import inspect
 import threading
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, TypeVar, overload
+from typing import TYPE_CHECKING, Any, overload
 
 from snakeguice import errors, providers, scopes
 from snakeguice.annotation import UNANNOTATED, AnnotationLike
@@ -12,7 +12,6 @@ if TYPE_CHECKING:
     from snakeguice.injector import Injector
 
 _NOT_SET = object()
-_T = TypeVar("_T")
 
 
 @dataclass
@@ -105,18 +104,18 @@ class Binder:
         annotated_with: AnnotationLike = ...,
     ) -> None: ...
 
-    # `_class: type[_T]` here is load-bearing (it ties `to_provider=`'s
-    # `Provider[_T]` back to `_class`), unlike the `to=` overload above, so
-    # it can't be widened the same way. Binding an abstract class or
-    # `Protocol` interface through these two overloads still trips mypy's
-    # `[type-abstract]` check; fixing that needs its own overload for
-    # abstract interfaces, not a change to this one.
+    # `to_instance=`/`to_provider=` accept a duck-typed stand-in for
+    # `_class` at runtime (see
+    # tests/test_binder.py::test_to_instance_accepts_a_duck_typed_stand_in),
+    # so there's no real type relationship between `_class` and the target
+    # to enforce here; `_class` is left as `type[Any]` like the `to=`
+    # overload above.
     @overload
     def bind(
         self,
-        _class: type[_T],
+        _class: type[Any],
         *,
-        to_provider: type[Provider[_T]] | Provider[_T],
+        to_provider: type[Provider[Any]] | Provider[Any],
         in_scope: Scope = ...,
         annotated_with: AnnotationLike = ...,
     ) -> None: ...
@@ -124,9 +123,9 @@ class Binder:
     @overload
     def bind(
         self,
-        _class: type[_T],
+        _class: type[Any],
         *,
-        to_instance: _T,
+        to_instance: Any,
         in_scope: Scope = ...,
         annotated_with: AnnotationLike = ...,
     ) -> None: ...

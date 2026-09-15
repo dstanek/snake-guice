@@ -10,7 +10,6 @@ if TYPE_CHECKING:
 
 T = TypeVar("T", covariant=True)
 U = TypeVar("U")
-_T = TypeVar("_T")
 
 Key = Any
 Interface = Type[Any]
@@ -35,12 +34,18 @@ class Binder(Protocol):
         annotated_with: AnnotationLike = ...,
     ) -> None: ...
 
+    # `to_instance=`/`to_provider=` accept a duck-typed stand-in for
+    # `_class` at runtime (see
+    # tests/test_binder.py::test_to_instance_accepts_a_duck_typed_stand_in),
+    # so there's no real type relationship between `_class` and the target
+    # to enforce here; `_class` is left as `type[Any]` like the `to=`
+    # overload above.
     @overload
     def bind(
         self,
-        _class: type[_T],
+        _class: type[Any],
         *,
-        to_provider: "type[Provider[_T]] | Provider[_T]",
+        to_provider: "type[Provider[Any]] | Provider[Any]",
         in_scope: "Scope" = ...,
         annotated_with: AnnotationLike = ...,
     ) -> None: ...
@@ -48,9 +53,9 @@ class Binder(Protocol):
     @overload
     def bind(
         self,
-        _class: type[_T],
+        _class: type[Any],
         *,
-        to_instance: _T,
+        to_instance: Any,
         in_scope: "Scope" = ...,
         annotated_with: AnnotationLike = ...,
     ) -> None: ...

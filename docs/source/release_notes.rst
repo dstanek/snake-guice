@@ -14,6 +14,13 @@ Unreleased
   itself instead of silently building a new, empty injector.
 - Scanning a module for ``@provides`` no longer evaluates its ``@property``
   attributes.
+- An abstract class or ``Protocol`` interface now type-checks with every
+  ``bind()`` form, not just ``to=``. The ``to_provider=``/``to_instance=``
+  overloads never actually enforced that the provider/instance matched
+  ``_class`` (both are duck-typed against it at runtime instead - see
+  ``test_to_instance_accepts_a_duck_typed_stand_in``), so widening them to
+  ``type[Any]`` to accept abstract interfaces doesn't give up any checking
+  that existed before.
 
 1.0.0a1 (alpha)
 ----------------
@@ -42,7 +49,4 @@ Python 3.10 or later.
   one injector.
 - ``interfaces.Binder`` is now a ``Protocol`` (previously an alias for
   ``Any``), so ``configure(binder)`` is type-checked against the real
-  ``bind()`` overloads and the rest of the binder DSL. An abstract class or
-  ``Protocol`` interface type-checks today when bound with ``to=``; binding
-  one through ``to_provider=`` or ``to_instance=`` doesn't yet - that needs
-  its own overload.
+  ``bind()`` overloads and the rest of the binder DSL.

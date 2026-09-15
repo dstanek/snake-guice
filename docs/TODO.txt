@@ -1,7 +1,5 @@
 Open items (2026-09-15)
 
-* bind(): abstract or Protocol interfaces type-check with to= but not with
-  to_provider= / to_instance= (mypy type-abstract); needs its own overload
 * interfaces.Key and interfaces.Module are still Any; promote like Binder
 * Binder.add_error() hardcodes inspect.stack()[2], so errors recorded from
   PrivateBinder.validate_exposures() and config.py point inside the library;
