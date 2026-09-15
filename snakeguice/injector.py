@@ -1,3 +1,4 @@
+import functools
 import inspect
 from typing import Any, TypeVar, overload
 
@@ -11,6 +12,36 @@ from snakeguice.interfaces import Provider
 from snakeguice.modules import ModuleAdapter
 
 U = TypeVar("U")
+
+
+class _DynamicProvider:
+    __slots__ = ("_injector", "_cls", "_annotation")
+
+    def __init__(
+        self, injector: "Injector", cls: Any, annotation: AnnotationLike
+    ) -> None:
+        self._injector = injector
+        self._cls = cls
+        self._annotation = annotation
+
+    def get(self) -> Any:
+        return self._injector.get_instance(self._cls, self._annotation)
+
+
+@functools.lru_cache(maxsize=None)
+def _guice_method_order(cls: type) -> tuple[str, ...]:
+    # Walk MRO from most-derived to base so that if the same method name
+    # appears in multiple classes, the most-derived definition wins.
+    # Reversing the collected list produces base-first call order.
+    seen: set[str] = set()
+    ordered: list[str] = []
+    for klass in cls.__mro__:
+        for method_name in klass.__dict__.get("__guice_methods__", []):
+            if method_name not in seen:
+                seen.add(method_name)
+                ordered.append(method_name)
+    ordered.reverse()
+    return tuple(ordered)
 
 
 def _format_key(key: Key) -> str:
@@ -79,13 +110,7 @@ class Injector:
     def get_provider(
         self, cls: Any, annotation: AnnotationLike = UNANNOTATED
     ) -> Provider[Any]:
-        injector = self
-
-        class DynamicProvider:
-            def get(self) -> Any:
-                return injector.get_instance(cls, annotation)
-
-        return DynamicProvider()
+        return _DynamicProvider(self, cls, annotation)
 
     @overload
     def get_instance(
@@ -155,18 +180,7 @@ class Injector:
         return cls(**kwargs)
 
     def inject_members(self, instance: Any) -> Any:
-        # Walk MRO from most-derived to base so that if the same method name
-        # appears in multiple classes, the most-derived definition wins.
-        # Reversing the collected list produces base-first call order.
-        seen: set[str] = set()
-        ordered: list[str] = []
-        for cls in instance.__class__.__mro__:
-            for method_name in cls.__dict__.get("__guice_methods__", []):
-                if method_name not in seen:
-                    seen.add(method_name)
-                    ordered.append(method_name)
-
-        for method_name in reversed(ordered):
+        for method_name in _guice_method_order(instance.__class__):
             kwargs = {}
             method = getattr(instance, method_name)
             for param in extract_params(method):
