@@ -63,7 +63,12 @@ those methods regardless of which form you use for `__init__`.
   `UNANNOTATED`, snake-guice falls back to *implicit construction*: it calls
   `create_object(cls)`, which inspects `cls.__init__` and injects each
   annotated parameter, and then `inject_members(instance)`, which calls every
-  `@inject`-decorated method (other than `__init__`) the same way.
+  `@inject`-decorated method (other than `__init__`) the same way. This
+  fallback refuses a builtin or standard-library type (`str`, `list`,
+  `pathlib.Path`, ...) instead of constructing one, raising
+  `ImplicitConstructionError` - a zero-argument `str()` is a vacuous value,
+  never the one a forgotten binding should have produced, so it's treated
+  as a mismatch rather than a plausible result.
 - **Unbound, annotated** - if no binding exists for an annotated key,
   snake-guice raises `MissingBindingError` instead of implicitly constructing
   anything. An annotation names one specific binding; if there's no match,

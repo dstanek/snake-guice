@@ -1,12 +1,17 @@
 import functools
 import inspect
+import sys
 from typing import Any, Iterable, TypeVar, overload
 
 from snakeguice import _context
-from snakeguice._extractor import extract_params
+from snakeguice._extractor import Param, extract_params
 from snakeguice.annotation import UNANNOTATED, AnnotationLike
 from snakeguice.binder import Binder, Key
-from snakeguice.errors import CircularDependencyError, MissingBindingError
+from snakeguice.errors import (
+    CircularDependencyError,
+    ImplicitConstructionError,
+    MissingBindingError,
+)
 from snakeguice.interfaces import Injector as IInjector
 from snakeguice.interfaces import Module, Provider
 from snakeguice.modules import ModuleAdapter
@@ -38,8 +43,37 @@ def _guice_method_order(cls: type) -> tuple[str, ...]:
     return tuple(n for i, n in enumerate(ordered) if n not in ordered[i + 1 :])
 
 
+def _type_name(dtype: Any) -> str:
+    # `dtype` isn't always a `type` -- e.g. `Foo | None` is a `types.
+    # UnionType` instance -- so `__name__` isn't guaranteed; fall back to
+    # `str()`, which renders a union as "module.Foo | None".
+    return getattr(dtype, "__name__", None) or str(dtype)
+
+
+def _refuses_implicit_construction(dtype: Any) -> bool:
+    # A zero-arg str()/int()/list()/pathlib.Path() is a vacuous *value* --
+    # never the specific one a forgotten binding should have produced --
+    # whereas a zero-arg HWController() is a working object, so builtin and
+    # standard-library types are refused and everything else (third-party
+    # or in-app classes alike) is still built as before. `dtype` also isn't
+    # always a real type (e.g. `Foo | None` is a `types.UnionType`
+    # instance, which create_object() would otherwise try to call and fail
+    # on with a confusing `TypeError: ... not callable`), so anything that
+    # isn't a `type` is refused too.
+    if not isinstance(dtype, type):
+        return True
+    top_level_module = dtype.__module__.partition(".")[0]
+    return top_level_module == "builtins" or top_level_module in sys.stdlib_module_names
+
+
+def _why_refused(dtype: Any) -> str:
+    if not isinstance(dtype, type):
+        return "isn't a constructible type"
+    return "is a builtin or standard-library type"
+
+
 def _format_key(key: Key) -> str:
-    name = getattr(key.interface, "__name__", None) or repr(key.interface)
+    name = _type_name(key.interface)
     if key.annotation != UNANNOTATED:
         return f"{name}[{key.annotation!r}]"
     return name
@@ -159,6 +193,13 @@ class Injector:
                     "never implicitly constructed"
                 )
             else:
+                if _refuses_implicit_construction(cls):
+                    name = _type_name(cls)
+                    raise ImplicitConstructionError(
+                        f"no binding for {name}; {name} {_why_refused(cls)}, "
+                        "so it is never implicitly constructed - add a "
+                        "binding"
+                    )
                 instance = self.create_object(cls)
                 return self.inject_members(instance)
         finally:
@@ -176,13 +217,35 @@ class Injector:
         key = Key(param.dtype, param.annotation)
         return bool(self._binder.get_binding(key))
 
+    def _require_constructible(
+        self, owner: type, member: str, param: Param, has_binding: bool
+    ) -> None:
+        # get_instance(dtype, annotation) is what would actually attempt the
+        # implicit construction, but by then it no longer knows which class
+        # and parameter asked for it -- only the type. Checking here, where
+        # `owner`/`member`/`param` are all in hand, is what lets the error
+        # name the parameter instead of just the type. An annotated param
+        # skips this: it already raises MissingBindingError inside
+        # get_instance() regardless, since an annotation names one specific
+        # binding and is never implicitly constructed.
+        if has_binding or param.annotation != UNANNOTATED:
+            return
+        if not _refuses_implicit_construction(param.dtype):
+            return
+        name = _type_name(param.dtype)
+        raise ImplicitConstructionError(
+            f"no binding for '{param.name}: {name}' required by "
+            f"{owner.__name__}.{member}; {name} {_why_refused(param.dtype)}, "
+            "so it is never implicitly constructed - add a binding"
+        )
+
     def create_object(self, cls: type[Any]) -> Any:
         kwargs = {}
         for param in extract_params(cls.__init__):
-            if param.default is not inspect.Parameter.empty and not self._has_binding(
-                param
-            ):
+            has_binding = self._has_binding(param)
+            if param.default is not inspect.Parameter.empty and not has_binding:
                 continue  # no explicit binding — let Python use its own default
+            self._require_constructible(cls, "__init__", param, has_binding)
             kwargs[param.name] = self.get_instance(param.dtype, param.annotation)
         return cls(**kwargs)
 
@@ -191,11 +254,12 @@ class Injector:
             kwargs = {}
             method = getattr(instance, method_name)
             for param in extract_params(method):
-                if (
-                    param.default is not inspect.Parameter.empty
-                    and not self._has_binding(param)
-                ):
+                has_binding = self._has_binding(param)
+                if param.default is not inspect.Parameter.empty and not has_binding:
                     continue  # no explicit binding — let Python use its own default
+                self._require_constructible(
+                    instance.__class__, method_name, param, has_binding
+                )
                 kwargs[param.name] = self.get_instance(param.dtype, param.annotation)
             method(**kwargs)
         return instance

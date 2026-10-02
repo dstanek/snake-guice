@@ -29,6 +29,20 @@ class MissingBindingError(BindingError):
     the wrong object instead of the requested one."""
 
 
+class ImplicitConstructionError(BindingError):
+    """Raised at resolution time (create_object()/inject_members()) when an
+    unannotated, unbound parameter's type is a builtin or standard-library
+    type -- or isn't a type at all, e.g. a `Foo | None` union, which used to
+    reach this same fallback and fail with a confusing `TypeError: ... not
+    callable`. A zero-argument str()/int()/list()/pathlib.Path() is a
+    vacuous *value*, never the specific one a forgotten binding should have
+    produced, unlike an application's own concrete class, where a zero-arg
+    constructor still produces a working object. Third-party and in-app
+    classes are left to implicitly construct as before -- they almost
+    always need real configuration and get an explicit binding anyway, so
+    being wrong there costs a loud error rather than a silent one."""
+
+
 class AssistError(SnakeGuiceError):
     """Raised when an issue with assisted injection is found."""
 

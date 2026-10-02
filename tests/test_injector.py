@@ -4,6 +4,8 @@
 injector module unit tests
 """
 
+from pathlib import Path
+
 import pytest
 
 from snakeguice import (
@@ -21,6 +23,7 @@ from snakeguice.assist import AssistProvider, assisted_inject
 from snakeguice.errors import (
     CircularDependencyError,
     CreationError,
+    ImplicitConstructionError,
     MissingBindingError,
 )
 from snakeguice.interfaces import Binder
@@ -689,6 +692,40 @@ def test_unannotated_lookup_of_unbound_class_still_implicitly_constructs() -> No
     assert isinstance(person, ch.Person)
 
 
+def test_unannotated_str_param_with_no_binding_raises_instead_of_empty_str() -> None:
+    """This is the footgun the fallback's builtin/stdlib carve-out exists to
+    catch: a forgotten binding for a builtin-typed parameter must raise,
+    not silently hand back str() -- a falsy, plausible-looking empty string
+    that's easy to mistake for a real (if blank) configured value."""
+
+    class Config:
+        @inject
+        def __init__(self, course_root: str) -> None:
+            self.course_root = course_root
+
+    with pytest.raises(
+        ImplicitConstructionError, match=r"course_root: str.*Config\.__init__"
+    ):
+        injector.Injector([]).get_instance(Config)
+
+
+def test_unannotated_stdlib_param_with_no_binding_raises_instead_of_default() -> None:
+    """Same footgun, one level past builtins: Path() succeeds too, handing
+    back a plausible-looking PosixPath('.') that's just as wrong as str()'s
+    `''` -- this is why the carve-out checks standard-library modules, not
+    only `builtins`."""
+
+    class Loader:
+        @inject
+        def __init__(self, base: Path) -> None:
+            self.base = base
+
+    with pytest.raises(
+        ImplicitConstructionError, match=r"base: Path.*Loader\.__init__"
+    ):
+        injector.Injector([]).get_instance(Loader)
+
+
 def test_resolving_the_same_key_in_child_then_parent_is_not_flagged() -> None:
     """Parent and child injectors keep independent resolving stacks, so
     sequentially resolving the same key on each is not a false positive."""
@@ -771,13 +808,16 @@ def test_constructor_injection_of_injector_receives_the_actual_subclass_instance
 
 def test_get_instance_of_object_does_not_return_the_injector() -> None:
     """`object` is in every class's MRO, but it must not be special-cased to
-    mean "give me the injector" -- get_instance(object) implicitly
-    constructs a plain object() instead."""
+    mean "give me the injector" -- it falls through past that check to the
+    implicit-construction fallback like any other unbound, unannotated key.
+    `object` is a builtin, though, so that fallback now refuses it (a
+    zero-arg object() is as vacuous a value as a zero-arg str()) rather than
+    building one, same as it would for any other builtin or standard-library
+    type."""
 
     s = TracingInjector([])
-    result = s.get_instance(object)
-    assert result is not s
-    assert type(result) is object
+    with pytest.raises(ImplicitConstructionError, match="object"):
+        s.get_instance(object)
 
 
 def test_non_type_key_still_resolves_after_injector_self_check() -> None:
